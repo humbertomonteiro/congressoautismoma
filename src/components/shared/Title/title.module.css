@@ -1,0 +1,34 @@
+.container {
+  width: 100%;
+  display: flex;
+  & h2 {
+    max-width: 800px;
+    font-size: 2.5rem;
+    margin: 1rem 0;
+    color: var(--text-light);
+  }
+
+  & [data-color="white"] {
+    color: var(--white);
+  }
+}
+
+[data-align="center"] {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+[data-align="start"] {
+  justify-content: space-between;
+  align-items: center;
+}
+
+@media (max-width: 480px) {
+  .container {
+    & h2 {
+      font-size: 2rem;
+      width: 80%;
+    }
+  }
+}

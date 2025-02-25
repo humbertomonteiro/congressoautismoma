@@ -1,0 +1,38 @@
+.container {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+  & .timer {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    background-color: var(--color-3);
+    padding: 1rem;
+    border-radius: 1.5rem;
+    max-width: 90%;
+    border: 1px solid var(--border-color);
+
+    & h3 {
+      font-size: 0.8rem;
+    }
+
+    & .boxes {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      & .box {
+        padding: 0 1rem;
+        color: var(--text-dark);
+        & strong {
+          display: block;
+          font-size: 1.8rem;
+        }
+
+        & p {
+          font-size: 0.7rem;
+        }
+      }
+    }
+  }
+}

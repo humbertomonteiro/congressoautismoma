@@ -1,0 +1,114 @@
+.container {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #0d0d0d;
+  color: #eaeff7;
+}
+
+.content {
+  padding: 20px;
+  width: 1400px;
+  max-width: 100%;
+  min-height: 100vh;
+  margin: 0 auto;
+  background-color: #121826;
+}
+
+h1 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: var(--white);
+}
+
+.metrics {
+  background-color: #1e293b;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  list-style: none;
+}
+
+.metrics h2 {
+  margin-bottom: 1rem;
+  padding-left: 0.5rem;
+}
+
+.metrics li {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 01rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid #3f475e;
+}
+
+.boxFilters {
+  background-color: #1e293b;
+  padding: 1rem;
+  border-radius: 4px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.table th,
+.table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+
+.table th {
+  background-color: #1e293b;
+  font-weight: bold;
+}
+
+.table tr {
+  background-color: #c4c4c4;
+  color: var(--text-dark-2);
+  transition: 0.3s all;
+}
+
+.table tr:hover {
+  background-color: #8a8a8a;
+}
+
+.loading {
+  text-align: center;
+  font-size: 1.2rem;
+  margin-top: 50px;
+}
+
+.approved {
+  color: green;
+}
+
+.pending {
+  color: orange;
+}
+
+.error {
+  color: red;
+}
+
+details {
+  cursor: pointer;
+}
+
+details summary {
+  font-weight: bold;
+}
+
+details ul {
+  list-style-type: disc;
+  margin-left: 20px;
+}
+
+.loading {
+  width: 100%;
+  height: 100vh;
+  background-color: #0d0d0d;
+}

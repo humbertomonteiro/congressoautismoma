@@ -1,0 +1,54 @@
+.boxes {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0 0 1rem 0;
+
+  & article {
+    margin: 0 auto;
+    width: 23%;
+    background: var(--color-5);
+    border: 1px solid var(--border-color);
+    padding: 2rem 1rem;
+    border-radius: 1.5rem;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+
+    & svg {
+      font-size: 5rem;
+      color: var(--color-1);
+    }
+
+    & h3 {
+      font-size: 1.2rem;
+      color: var(--text-dark);
+      text-transform: uppercase;
+    }
+
+    & p {
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--text-dark-2);
+    }
+  }
+}
+
+@media (max-width: 890px) {
+  .boxes {
+    & article {
+      width: 45%;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .boxes {
+    & article {
+      width: 100%;
+    }
+  }
+}

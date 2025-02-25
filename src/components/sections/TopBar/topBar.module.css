@@ -1,0 +1,65 @@
+.container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--color-2);
+  color: var(--text-light);
+  z-index: 4;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+
+  & a,
+  button {
+    background-color: var(--button-primary);
+    color: var(--text-light);
+    font-weight: bold;
+    font-size: 0.8rem;
+    text-align: center;
+    border: none;
+    border-radius: 1rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    text-decoration: none;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    transition: 0.3s;
+    animation: zoomInOut 2s infinite ease-in-out;
+  }
+
+  & a:hover,
+  button:hover {
+    background-color: var(--button-primary-hover);
+    border: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    font-size: 0.7rem;
+    justify-content: space-between;
+    padding: 0.5rem;
+
+    & a,
+    button {
+      padding: 0.3rem 0.5rem;
+      font-size: 0.6rem;
+    }
+  }
+}
+
+@keyframes zoomInOut {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

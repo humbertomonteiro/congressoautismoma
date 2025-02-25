@@ -1,0 +1,81 @@
+.container {
+  background-image: var(--gradient-3),
+    url("https://img.freepik.com/vetores-gratis/fundo-branco-monocromatico-de-estilo-de-papel_52683-66443.jpg?t=st=1738973798~exp=1738977398~hmac=9a001b97a58ff861d8d55d547aa48e26ecf2397c0459c88f75d1430f7c03ce99&w=740");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-color: var(--color-4);
+  padding: 1.5rem;
+
+  & .reviews {
+    display: flex;
+    justify-content: space-around;
+    gap: 1.5rem;
+    overflow-x: auto;
+
+    & .review {
+      display: flex;
+      padding: 1.5rem 0;
+
+      & .content {
+        background-color: var(--color-5);
+        width: 350px;
+        padding: 1.5rem;
+        border-radius: 1.5rem;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+
+        & .quote {
+          position: absolute;
+          right: -1rem;
+          top: -1rem;
+          font-size: 4rem;
+          color: var(--color-1);
+        }
+
+        & .stars {
+          color: var(--color-3);
+          font-size: 1.5rem;
+          text-align: center;
+          margin: 0.5rem 0;
+        }
+
+        & p {
+          line-height: 150%;
+          color: var(--text-dark-2);
+          font-size: 0.8rem;
+        }
+
+        & .user {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          margin-top: 1rem;
+
+          & img {
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 50%;
+            aspect-ratio: 16 / 9;
+          }
+
+          & h3 {
+            color: var(--text-dark);
+          }
+        }
+      }
+    }
+  }
+
+  & .button {
+    width: 400px;
+    max-width: 90%;
+    margin: 0 auto;
+    padding-top: 1.5rem;
+  }
+}

@@ -1,0 +1,27 @@
+.box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+  user-select: none;
+  width: 100%;
+
+  & h3 {
+    padding: 1rem;
+    border-radius: 1rem;
+    font-size: 1.7rem;
+  }
+
+  & ul {
+    padding: 1.5rem;
+    border-radius: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-left: 2.2rem;
+
+    & li {
+      line-height: 150%;
+    }
+  }
+}

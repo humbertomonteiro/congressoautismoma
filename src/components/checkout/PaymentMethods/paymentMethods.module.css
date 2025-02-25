@@ -1,0 +1,52 @@
+.paymentMethods {
+  margin-bottom: 2.5rem;
+  padding-bottom: 2.5rem;
+  border-bottom: 1px solid var(--border-color);
+  & h2 {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  & .methods {
+    display: flex;
+    gap: 1.5rem;
+
+    & button {
+      flex: 1 1 30%;
+      padding: 1.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      cursor: pointer;
+      background-color: #f7f9fa;
+      border: 1px solid var(--border-color);
+      border-radius: 0.2rem;
+
+      & svg {
+        font-size: 1.5rem;
+        color: var(--color-4);
+      }
+
+      & strong {
+        text-align: start;
+      }
+    }
+  }
+}
+
+@media (max-width: 580px) {
+  .paymentMethods .methods {
+    gap: 1rem;
+    & button {
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 1rem;
+
+      & strong {
+        text-align: center;
+        font-size: 0.8rem;
+      }
+    }
+  }
+}

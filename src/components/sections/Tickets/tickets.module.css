@@ -1,0 +1,214 @@
+.container {
+  background-color: var(--color-5);
+  padding: 1.5rem;
+  border-radius: 1.5rem;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+
+  & .content {
+    align-self: center;
+    text-align: center;
+
+    & h3 {
+      font-size: 1.8rem;
+      color: var(--text-dark);
+      margin-bottom: 0.5rem;
+    }
+
+    & > p {
+      width: 80%;
+      margin: 0.5rem auto;
+      line-height: 150%;
+      color: var(--text-dark-2);
+    }
+
+    & > strong {
+      color: var(--text-dark);
+    }
+  }
+
+  .boxes {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-top: 1rem;
+    gap: 1rem;
+
+    & .box {
+      display: flex;
+      flex-direction: column;
+      width: 32%;
+      position: relative;
+      opacity: 0.4;
+
+      & .sale {
+        position: absolute;
+        right: 0;
+        font-size: 1.3rem;
+        background-color: var(--color-1);
+        padding: 0.3rem 0.5rem;
+        border-radius: 0 1.5rem 0 0;
+        color: var(--text-light);
+      }
+
+      & .boxContent {
+        background-color: var(--color-2);
+        width: 100%;
+        padding: 1rem;
+        border-radius: 1.5rem 1.5rem 0 0;
+        border: 1px solid var(--border-color);
+
+        & span {
+          font-size: 0.8rem;
+          color: var(--color-5);
+        }
+
+        & h4 {
+          font-size: 1.8rem;
+          margin-bottom: 0.5rem;
+          color: var(--text-light);
+        }
+
+        & h5 {
+          color: var(--text-light-2);
+          margin-bottom: 0.3rem;
+        }
+
+        & p {
+          font-size: 0.9rem;
+          color: var(--text-light-2);
+
+          & a {
+            color: var(--text-light);
+            transition: 0.3s all ease-in-out;
+          }
+
+          & a:hover {
+            color: var(--text-dark);
+          }
+        }
+
+        & p:nth-child(4) {
+          margin-bottom: 0.5rem;
+        }
+      }
+
+      .boxValue {
+        padding: 1rem;
+        background-color: var(--color-5);
+        border: 1px solid var(--border-color);
+        border-radius: 0 0 1.5rem 1.5rem;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+
+        & h4 {
+          font-size: 2rem;
+          margin-bottom: 0.5rem;
+          color: var(--text-dark);
+
+          & s {
+            color: #c4c4c4;
+            font-size: 1.2rem;
+          }
+
+          & span {
+            font-size: 0.8rem;
+            color: #c4c4c4;
+            font-weight: 500;
+          }
+
+          & strong {
+            font-size: 1rem;
+          }
+        }
+
+        & h3 {
+          color: var(--text-dark-2);
+          opacity: 0.9;
+          margin: 0.5rem 0;
+          font-size: 1.12rem;
+        }
+
+        & ul {
+          margin-left: 1rem;
+
+          & li {
+            font-size: 0.8rem;
+            color: var(--text-dark-2);
+            margin-bottom: 0.5rem;
+          }
+        }
+
+        & > a {
+          color: var(--button-primary);
+          font-size: 0.8rem;
+          text-align: center;
+        }
+      }
+
+      & .buttons {
+        margin-top: 1rem;
+
+        & .button {
+          margin-bottom: 1rem;
+
+          & div {
+            display: flex;
+            align-items: flex-end;
+            margin-top: 0.5rem;
+          }
+
+          & strong {
+            color: var(--text-dark);
+            margin-left: 0.5rem;
+            display: block;
+            margin-bottom: 0.3rem;
+          }
+
+          & span {
+            font-size: 0.7rem;
+            margin-left: 0.5rem;
+            margin-bottom: 0.3rem;
+            display: block;
+            color: var(--text-dark-2);
+          }
+        }
+      }
+    }
+
+    & [data-active="true"] {
+      opacity: 1;
+    }
+  }
+}
+
+@media (max-width: 1060px) {
+  .container {
+    & .boxes {
+      flex-direction: column;
+      & .box {
+        width: 100%;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    & .content {
+      & h3 {
+        font-size: 1.2rem;
+      }
+
+      & p {
+        font-size: 0.9rem;
+      }
+
+      & strong {
+        color: var(--text-1);
+      }
+    }
+  }
+}
