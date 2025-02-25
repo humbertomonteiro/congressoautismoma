@@ -25,4 +25,4 @@ dist-ssr
 
 
 .env
-firebaseConfig.js
+firebaseProduction.js
