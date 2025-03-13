@@ -10,6 +10,21 @@ import { IoTicketOutline } from "react-icons/io5";
 import { useState } from "react";
 import CountdownTimer from "../../shared/CountdownTimer";
 
+const handleAddToCart = (itemId, itemName, price) => {
+  window.dataLayer.push({
+    event: "add_to_cart",
+    items: [
+      {
+        item_id: itemId,
+        item_name: itemName,
+        price: price,
+        quantity: 1,
+      },
+    ],
+    timestamp: new Date().toISOString(),
+  });
+};
+
 const Item1 = ({ setFormGetData, setLink, setGroup }) => {
   const handleBuyTicket = (link) => {
     setFormGetData(true);
@@ -22,7 +37,7 @@ const Item1 = ({ setFormGetData, setLink, setGroup }) => {
         <span>Ingresso</span>
         <h4>Pré-venda - Ingresso INDIVIDUAL</h4>
         <h5>Disponível até:</h5>
-        <p>15/03 ou enquanto durar</p>
+        <p>31/03 ou enquanto durar</p>
       </div>
       <div className={styles.boxValue}>
         <h4>
@@ -50,11 +65,12 @@ const Item1 = ({ setFormGetData, setLink, setGroup }) => {
               style={{ width: "100%" }}
               action="button"
               onClick={() => {
+                handleAddToCart();
                 setGroup(false);
                 handleBuyTicket("https://cielolink.com.br/3EhFl7C");
               }}
             >
-              COMPRAR INGRESSO{" "}
+              Comprar Ingresso{" "}
               <IoTicketOutline style={{ fontSize: "1.2rem" }} />
             </ButtonSecondary>
           </div>
@@ -76,7 +92,7 @@ const Item2 = ({ setFormGetData, setLink, setGroup }) => {
         <span>Ingresso</span>
         <h4>Pré-venda - Ingresso GRUPO</h4>
         <h5>Disponível até:</h5>
-        <p>15/03 ou enquanto durar</p>
+        <p>31/03 ou enquanto durar</p>
         <p>Compre no mínimo 5 ingressos para ter desconto.</p>
       </div>
       <div className={styles.boxValue}>
@@ -108,12 +124,13 @@ const Item2 = ({ setFormGetData, setLink, setGroup }) => {
             </span>
 
             <ButtonSecondary
+              onClick={handleAddToCart}
               style={{ width: "100%" }}
               action="link"
               target="_blank"
               link="https://wa.me/5598988259214?text=Quero%20saber%20como%20comprar%20o%20ingresso%20grupo%3F"
             >
-              COMPRAR INGRESSO{" "}
+              Comprar Ingresso{" "}
               <IoTicketOutline style={{ fontSize: "1.2rem" }} />
             </ButtonSecondary>
           </div>
@@ -135,7 +152,7 @@ const ItemHalf = ({ setFormGetData, setLink, setGroup }) => {
         <span>Ingresso</span>
         <h4>Pré-venda - Ingresso MEIA-ENTRADA</h4>
         <h5>Disponível até:</h5>
-        <p>15/03 ou enquanto durar</p>
+        <p>31/03 ou enquanto durar</p>
         <p>
           Lembre-se: os documentos comprobatórios devem ser apresentados na
           entrada do evento.
@@ -184,11 +201,12 @@ const ItemHalf = ({ setFormGetData, setLink, setGroup }) => {
               style={{ width: "100%" }}
               action="button"
               onClick={() => {
+                handleAddToCart();
                 setGroup(false);
                 handleBuyTicket("https://cielolink.com.br/40yi0G0");
               }}
             >
-              COMPRAR INGRESSO{" "}
+              Comprar Ingresso{" "}
               <IoTicketOutline style={{ fontSize: "1.2rem" }} />
             </ButtonSecondary>
           </div>
@@ -278,7 +296,7 @@ const Tickets = () => {
             antecipado.
           </p>
           <strong>⚡ Confira os valores e garanta o melhor preço:</strong>
-          <CountdownTimer targetDate="2025-03-15T23:59:59" />
+          <CountdownTimer targetDate="2025-03-31T23:59:59" />
         </div>
         <div className={styles.boxes}>
           <Item1
@@ -291,7 +309,11 @@ const Tickets = () => {
           // setLink={setLink}
           // setGroup={setGroup}
           />
-          <ItemHalf />
+          <ItemHalf
+            setFormGetData={setFormGetData}
+            setLink={setLink}
+            setGroup={setGroup}
+          />
           {/* <Item4 /> */}
         </div>
         {formGetData && (

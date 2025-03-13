@@ -9,6 +9,15 @@ import ButtonSecondary from "../../shared/ButtonSecondary";
 import podcast from "../../../assets/bg/neuropod.jpg";
 
 const Local = () => {
+  const handleViewItem = (itemId, itemName) => {
+    window.dataLayer.push({
+      event: "view_item",
+      item_id: itemId,
+      item_name: itemName,
+      timestamp: new Date().toISOString(),
+    });
+  };
+
   return (
     <Section>
       <Title text={"Local confirmado"} align="center" />
@@ -37,7 +46,11 @@ const Local = () => {
                   <img src={podcast} alt="Podcast Neuropod" />
                 </li>
               </ul>
-              <ButtonSecondary action={"link"} link={"#tickets"}>
+              <ButtonSecondary
+                action={"link"}
+                link={"#tickets"}
+                onClick={handleViewItem}
+              >
                 COMPRAR INGRESSO
               </ButtonSecondary>
             </div>

@@ -4,7 +4,7 @@ class PaymentMethods {
   constructor(calculateTotal, participants) {
     this.calculateTotal = calculateTotal;
     this.participants = participants;
-    this.baseURL = "http://localhost:5000/api/payments";
+    this.baseURL = import.meta.env.VITE_BASE_URL;
   }
 
   async processCreditCard({

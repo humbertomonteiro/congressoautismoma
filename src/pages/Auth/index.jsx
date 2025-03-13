@@ -1,5 +1,7 @@
+// src/components/Auth.js
 import useAuth from "../../data/hooks/useAuth";
 import { useState } from "react";
+import styles from "./auth.module.css";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -12,30 +14,37 @@ const Auth = () => {
   }
 
   return (
-    <div>
-      <h1>Área Administrativa Congresso Autismo MA</h1>
-      <form onSubmit={handleLogin}>
-        <label>
-          <p>Email</p>
-          <input
-            onChange={(e) => setEmail(e.target.value)}
-            value={email}
-            type="text"
-            required
-          />
-        </label>
-        <label>
-          <p>Senha</p>
-          <input
-            onChange={(e) => setPassword(e.target.value)}
-            value={password}
-            type="password"
-            required
-          />
-        </label>
-        {error && <div className="">{error}</div>}
-        <button type="submit">Login</button>
-      </form>
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <h1>Área Administrativa</h1>
+        <h2>Congresso Autismo MA</h2>
+        <form onSubmit={handleLogin}>
+          <label>
+            <p>Email</p>
+            <input
+              onChange={(e) => setEmail(e.target.value)}
+              value={email}
+              type="text"
+              required
+              className={styles.input}
+            />
+          </label>
+          <label>
+            <p>Senha</p>
+            <input
+              onChange={(e) => setPassword(e.target.value)}
+              value={password}
+              type="password"
+              required
+              className={styles.input}
+            />
+          </label>
+          {error && <div className={styles.error}>{error}</div>}
+          <button type="submit" className={styles.loginButton}>
+            Login
+          </button>
+        </form>
+      </div>
     </div>
   );
 };

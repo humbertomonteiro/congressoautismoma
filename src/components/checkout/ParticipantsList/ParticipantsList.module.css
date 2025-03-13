@@ -1,38 +1,93 @@
-.participantList {
+/* ParticipantsList.module.css */
+
+/* Container geral */
+.participantsList {
+  margin-bottom: 2.5rem;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.participantsList h2 {
+  font-size: 18px;
+  color: #34495e;
+  margin-bottom: 15px;
+  font-weight: 500;
+}
+
+/* Lista de participantes */
+.participantsList ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.participantItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease;
+}
+
+.participantItem:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Informações do participante */
+.participantInfo {
   display: flex;
   flex-direction: column;
-  margin-bottom: 2.5rem;
-  padding-bottom: 2.5rem;
-  border-bottom: 1px solid var(--border-color);
+  gap: 5px;
+  font-size: 16px;
+  color: #555;
+}
 
-  & h2 {
-    font-size: 1.2rem;
-    margin-bottom: 0.5rem;
+.ticketType {
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+/* Botão Remover */
+.removeButton {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.removeButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsividade */
+@media (max-width: 580px) {
+  .participantItem {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px 15px;
   }
 
-  & .participantItem {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-    padding: 0.5rem;
-    border: 1px solid var(--border-color);
-    border-radius: 0.2rem;
+  .participantInfo {
+    margin-bottom: 10px;
+  }
 
-    & > div {
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-      font-size: 0.9rem;
-    }
-
-    & button {
-      background-color: var(--color-2);
-      padding: 0.5rem;
-      border: 1px solid var(--border-color);
-      border-radius: 0.2rem;
-      color: var(--white);
-      cursor: pointer;
-    }
+  .removeButton {
+    padding: 8px 16px;
+    font-size: 12px;
+    align-self: flex-end;
   }
 }

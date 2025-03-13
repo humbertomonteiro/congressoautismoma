@@ -5,6 +5,7 @@ import Home from "../pages/Home";
 import AdminDashboard from "../pages/Admin";
 import Private from "./Private";
 import Auth from "../pages/Auth";
+import Scanner from "../components/admin/Scanner";
 
 const RoutesApp = () => {
   return (
@@ -12,6 +13,7 @@ const RoutesApp = () => {
       <Route path="/" element={<Home />} />
       <Route path="/checkout" element={<PaymentForm />} />
       <Route path="/login" element={<Auth />} />
+      <Route path="/scanner" element={<Scanner />} />
       <Route
         path="/dashboard"
         element={
@@ -20,6 +22,7 @@ const RoutesApp = () => {
           </Private>
         }
       />
+      <Route path="*" element={<Home />} />
     </Routes>
   );
 };

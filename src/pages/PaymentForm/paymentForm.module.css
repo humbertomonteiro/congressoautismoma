@@ -1,316 +1,450 @@
+/* paymentForm.module.css */
+
+/* Estilo geral do container com background */
 .container {
-  width: 100%;
-  background-color: #f7f9fa;
-  padding: 2rem 0;
   min-height: 100vh;
-
-  & .content {
-    background-color: var(--white);
-    border: 1px solid var(--border-color);
-    border-radius: 0.5rem;
-    width: 800px;
-    max-width: 93%;
-    margin: 0 auto;
-    padding: 2.5rem 1.5rem;
-
-    & .order {
-      width: 100%;
-      & .description {
-        width: 100%;
-        display: flex;
-        margin-bottom: 2.5rem;
-
-        & img {
-          width: 200px;
-          object-fit: contain;
-          aspect-ratio: 16/9;
-        }
-
-        & .text {
-          & h1 {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
-            color: var(--text-dark-2);
-          }
-
-          & span {
-            font-size: 0.9rem;
-          }
-
-          & h2 {
-            font-size: 1.2rem;
-            margin: 1rem 0 0.5rem;
-          }
-
-          & p {
-            font-size: 0.9rem;
-          }
-        }
-      }
-    }
-  }
-
-  & .participantForm {
-    width: 100%;
-    margin-bottom: 2.5rem;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 2.5rem;
-
-    & h2 {
-      font-size: 1.2rem;
-      margin-bottom: 0.5rem;
-    }
-
-    & .form {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-
-      & label {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-
-        & p {
-          font-size: 0.8rem;
-        }
-
-        & span {
-          font-size: 0.7rem;
-        }
-
-        & input {
-          width: 100%;
-          height: 45px;
-          border-radius: 0.2rem;
-          border: 1px solid var(--border-color);
-          padding: 0 1rem;
-        }
-
-        & [type="checkbox"] {
-          width: 30px;
-          height: 30px;
-          cursor: pointer;
-        }
-      }
-
-      & button {
-        height: 45px;
-        background-color: #f7f9fa;
-        border: 1px solid var(--border-color);
-        border-radius: 0.2rem;
-        font-size: 1.2rem;
-        cursor: pointer;
-      }
-    }
-  }
-
-  & .orderSummary {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    border: 1px solid var(--border-color);
-    border-radius: 0.2rem;
-    padding: 2.5rem 1rem;
-    margin-bottom: 2.5rem;
-    background-color: #f7f9fa;
-
-    & h2 {
-      font-size: 1.2rem;
-      margin-bottom: 1rem;
-    }
-
-    & .summaryItem,
-    & .summaryTotal {
-      margin-bottom: 0.2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    & .summaryItem {
-      margin-bottom: 0.5rem;
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 0.5rem;
-
-      & button {
-        cursor: pointer;
-        color: var(--black);
-        background-color: #f7f9fa;
-        padding: 0.5rem;
-        border-radius: 0 0.2rem 0.2rem 0;
-        border: 1px solid var(--border-color);
-      }
-
-      & select {
-        padding: 0.4rem;
-        border-radius: 0 0.2rem 0.2rem 0;
-        border: 1px solid var(--border-color);
-        width: 100%;
-      }
-      & label {
-        & p {
-          font-size: 0.8rem;
-          margin-bottom: 0.2rem;
-        }
-        & .couponInputWrapper {
-          display: flex;
-
-          & input {
-            padding: 0.5rem;
-            border-radius: 0 0.2rem 0.2rem 0;
-            border: 1px solid var(--border-color);
-          }
-        }
-      }
-    }
-
-    & .summaryTotal {
-      margin-top: 0.5rem;
-      display: flex;
-
-      & strong {
-        font-size: 1.2rem;
-      }
-
-      & .value {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-
-        & .info {
-          font-size: 0.7rem;
-        }
-      }
-
-      & .value span:first-child {
-        color: var(--color-1);
-        font-weight: 600;
-        font-size: 1.12rem;
-      }
-    }
-  }
-
-  & .quantityOfItem {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-
-    & h2 {
-      font-size: 1.2rem;
-    }
-
-    & select {
-      background-color: #f7f9fa;
-      font-size: 1rem;
-      border: 0;
-      padding: 0.5rem;
-      border-radius: 0.2rem;
-      border: 1px solid var(--border-color);
-    }
-  }
-
-  /* & .paymentMethods {
-    margin-bottom: 2.5rem;
-    padding-bottom: 2.5rem;
-    border-bottom: 1px solid var(--border-color);
-    & h2 {
-      font-size: 1.2rem;
-      margin-bottom: 0.5rem;
-    }
-
-    & .methods {
-      display: flex;
-      gap: 1.5rem;
-
-      & button {
-        flex: 1 1 30%;
-        padding: 1.5rem;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 1rem;
-        cursor: pointer;
-        background-color: #f7f9fa;
-        border: 1px solid var(--border-color);
-        border-radius: 0.2rem;
-
-        & svg {
-          font-size: 1.5rem;
-        }
-
-        & strong {
-          text-align: start;
-        }
-      }
-    }
-  } */
-
-  .payment {
-    width: 100%;
-
-    & button {
-      width: 100%;
-      height: 45px;
-      background-color: var(--color-1);
-      border: 0;
-      border-radius: 0.2rem;
-      font-size: 1rem;
-      cursor: pointer;
-      color: var(--white);
-      font-weight: 600;
-      line-height: 1.5;
-    }
-
-    .paymentDetails {
-      & h2 {
-        font-size: 1.2rem;
-        margin-bottom: 0.5rem;
-      }
-
-      & > p {
-        font-size: 0.9rem;
-        margin-bottom: 1rem;
-      }
-
-      & label {
-        width: 100%;
-        margin-bottom: 1rem;
-
-        & p {
-          font-size: 0.8rem;
-        }
-
-        & input,
-        & select {
-          width: 100%;
-          height: 45px;
-          border-radius: 0.2rem;
-          border: 1px solid var(--border-color);
-          padding: 0 1rem;
-          margin-bottom: 1rem;
-        }
-
-        & button {
-          height: 45px;
-          background-color: #f7f9fa;
-          border: 1px solid var(--border-color);
-          border-radius: 0.2rem;
-          font-size: 1.2rem;
-          cursor: pointer;
-        }
-      }
-    }
-  }
+  background: linear-gradient(135deg, #f0f4f8 0%, #e0e7ef 100%);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
-@media (max-width: 700px) {
-  .container .content .order .description {
-    flex-direction: column;
-    gap: 2.5rem;
+/* Conteúdo principal */
+.content {
+  max-width: 800px;
+  width: 100%;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  margin-top: 20px;
+}
 
-    & img {
-      align-self: center;
-    }
+/* Barra de Progresso (Stepper) */
+.progressBar {
+  display: flex;
+  justify-content: space-between;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex: 1;
+  text-align: center;
+  padding: 12px;
+  background-color: #ecf0f1;
+  color: #7f8c8d;
+  border-radius: 8px;
+  margin: 0 5px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.step.active {
+  background-color: #2c3e50;
+  color: #ffffff;
+}
+
+.step span {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  background-color: #ffffff;
+  color: #2c3e50;
+  border-radius: 50%;
+  margin-right: 8px;
+  font-weight: bold;
+}
+
+/* Card genérico */
+.card {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+  margin: 20px 0;
+}
+
+/* Descrição do evento */
+.description {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.description img {
+  width: 150px;
+  margin-right: 20px;
+}
+
+.text h1 {
+  color: #2c3e50;
+  font-size: 24px;
+  margin: 0 0 5px 0;
+}
+
+.text span {
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+.text h2 {
+  color: #34495e;
+  font-size: 18px;
+  margin: 10px 0 5px 0;
+}
+
+.text p {
+  color: #555;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Resumo da compra (orderSummary) */
+.orderSummary {
+  background-color: #ffffff;
+}
+
+.orderSummary h2 {
+  color: #2c3e50;
+  font-size: 20px;
+  margin-bottom: 15px;
+}
+
+.orderSummary label {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.orderSummary label p {
+  color: #2c3e50;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.orderSummary select,
+.orderSummary input {
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  color: #333;
+  background-color: #fff;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  outline: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.orderSummary select:focus,
+.orderSummary input:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+}
+
+.orderSummary p {
+  color: #555;
+  font-size: 16px;
+  margin: 5px 0;
+}
+
+.total {
+  color: #2c3e50;
+  font-size: 20px;
+  font-weight: bold;
+  margin-top: 15px;
+}
+
+/* Formulário de participante */
+.participantForm h2 {
+  color: #34495e;
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 1rem;
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+}
+
+.form label p {
+  color: #2c3e50;
+  font-size: 14px;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+}
+
+.form label p svg {
+  margin-right: 8px;
+  color: #7f8c8d;
+}
+
+.form input,
+.form select {
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  color: #333;
+  background-color: #fff;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  outline: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form input:focus,
+.form select:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+}
+
+/* Toggle customizado para meia entrada */
+.toggleLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.toggle {
+  width: 60px;
+  height: 30px;
+  background-color: #ecf0f1;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 2px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.toggleActive {
+  background-color: #27ae60;
+  justify-content: flex-end;
+}
+
+.toggle span {
+  color: #2c3e50;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0 5px;
+}
+
+/* Estilização geral */
+.error {
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+/* Botões */
+.primaryButton {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.primaryButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.applyButton {
+  background: linear-gradient(135deg, #27ae60 0%, #219653 100%);
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.applyButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.removeCouponButton {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.removeCouponButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.addButton {
+  background: linear-gradient(135deg, #27ae60 0%, #219653 100%);
+}
+
+.addButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.nextButton {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+}
+
+.nextButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.backButton {
+  background: linear-gradient(135deg, #7f8c8d 0%, #6c757d 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.backButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.submitButton {
+  background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
+}
+
+.submitButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.couponInputWrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.couponInputWrapper input {
+  flex: 1;
+}
+
+/* Detalhes de pagamento */
+.paymentDetails h2 {
+  color: #34495e;
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+
+.paymentDetails p {
+  color: #555;
+  font-size: 16px;
+}
+
+.paymentDetails label {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.paymentDetails label p {
+  color: #2c3e50;
+  font-size: 14px;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+}
+
+.paymentDetails label p svg {
+  margin-right: 8px;
+  color: #7f8c8d;
+}
+
+.paymentDetails input,
+.paymentDetails select {
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  color: #333;
+  background-color: #fff;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  outline: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.paymentDetails input:focus,
+.paymentDetails select:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+}
+
+.navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+/* Selo de segurança */
+.securityNote {
+  text-align: center;
+  color: #7f8c8d;
+  font-size: 14px;
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.securityNote svg {
+  margin-right: 5px;
+}
+
+/* Ajustes gerais */
+button:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+input[type="checkbox"] {
+  display: none; /* Esconder o checkbox padrão */
+}
+
+@media (max-width: 480px) {
+  .step {
+    font-size: 0.7rem;
+  }
+  .description {
+    flex-direction: column;
+    gap: 20px;
   }
 }

@@ -51,6 +51,15 @@ const FormGetData = ({ setFormGetData, link, group }) => {
           names: validNames,
           email,
         });
+
+        window.dataLayer.push({
+          event: "checkout",
+          form_id: "checkout_form_group",
+          participants: validNames.length, // Quantidade de participantes
+          email: email,
+          timestamp: new Date().toISOString(), // Opcional: data/hora do evento
+        });
+
         window.location.href = link;
       } catch (error) {
         toast.error("Erro ao coletar dados, tente mais tarde.");
@@ -67,6 +76,15 @@ const FormGetData = ({ setFormGetData, link, group }) => {
           fullName,
           email,
         });
+
+        window.dataLayer.push({
+          event: "checkout",
+          form_id: "checkout_form_individual",
+          full_name: fullName,
+          email: email,
+          timestamp: new Date().toISOString(), // Opcional: data/hora do evento
+        });
+
         window.location.href = link;
       } catch (error) {
         toast.error("Erro ao coletar dados, tente mais tarde.");

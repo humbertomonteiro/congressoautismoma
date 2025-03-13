@@ -8,6 +8,22 @@ import FormGetData from "../../shared/FormGetData";
 import { useState } from "react";
 
 export default function HalfiPrice() {
+  const handleAddToCart = (itemId, itemName, price) => {
+    setFormGetData(true);
+    window.dataLayer.push({
+      event: "add_to_cart",
+      items: [
+        {
+          item_id: itemId,
+          item_name: itemName,
+          price: price,
+          quantity: 1,
+        },
+      ],
+      timestamp: new Date().toISOString(),
+    });
+  };
+
   const [formGetData, setFormGetData] = useState(false);
   return (
     <Section>
@@ -68,10 +84,7 @@ export default function HalfiPrice() {
             <strong>
               <span>10X de</span>R$ 39,90
             </strong>
-            <ButtonSecondary
-              action="button"
-              onClick={() => setFormGetData(true)}
-            >
+            <ButtonSecondary action="button" onClick={handleAddToCart}>
               COMPRAR INGRESSO
             </ButtonSecondary>
           </div>

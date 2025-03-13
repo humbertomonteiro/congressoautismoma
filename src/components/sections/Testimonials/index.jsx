@@ -12,6 +12,15 @@ import ginaCarneiro from "../../../assets/reviews/gina-carneiro.jpeg";
 import ButtonSecondary from "../../shared/ButtonSecondary";
 
 const Testimonials = () => {
+  const handleViewItem = (itemId, itemName) => {
+    window.dataLayer.push({
+      event: "view_item",
+      item_id: itemId,
+      item_name: itemName,
+      timestamp: new Date().toISOString(),
+    });
+  };
+
   return (
     <section className={styles.container}>
       <Title
@@ -124,7 +133,11 @@ const Testimonials = () => {
         </div>
       </div>
       <div className={styles.button}>
-        <ButtonSecondary action={"link"} link={"#tickets"}>
+        <ButtonSecondary
+          action={"link"}
+          link={"#tickets"}
+          onClick={handleViewItem}
+        >
           COMPRAR INGRESSO <IoTicketOutline />
         </ButtonSecondary>
       </div>

@@ -1,0 +1,121 @@
+/* addManualPayment.module.css */
+
+.section {
+  margin-top: 30px;
+  background: linear-gradient(135deg, #ffffff 0%, #f9f9f9 100%);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+}
+
+.title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.title h2 {
+  color: #34495e;
+  font-size: 18px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Campos curtos no topo */
+.headerInputs {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+/* Campos dos participantes */
+.participantSection {
+  margin-bottom: 20px;
+}
+
+/* Linha de campos curtos */
+.shortInputsRow {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+/* Campos curtos */
+.shortInput {
+  flex: 1;
+  min-width: 0; /* Evita que campos curtos quebrem o layout */
+}
+
+/* Estilização dos FormControls */
+.formControl {
+  min-width: 150px;
+}
+
+.formControl .MuiInputBase-root {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.formControl .MuiInputLabel-root {
+  color: #555;
+  font-size: 14px;
+}
+
+.formControl .MuiOutlinedInput-root fieldset {
+  border-color: #ddd;
+}
+
+.formControl .MuiOutlinedInput-root:hover fieldset {
+  border-color: #3498db;
+}
+
+.formControl .MuiOutlinedInput-root.Mui-focused fieldset {
+  border-color: #3498db;
+}
+
+/* Grupo de botões */
+.buttonGroup {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.importButton {
+  background: linear-gradient(135deg, #27ae60 0%, #219653 100%);
+  color: white;
+}
+
+.importButton:hover {
+  background: linear-gradient(135deg, #219653 0%, #1b8047 100%);
+}
+
+.total {
+  margin-top: 20px;
+  text-align: right;
+  color: #2c3e50;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Responsividade para mobile */
+@media (max-width: 768px) {
+  .headerInputs {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .shortInputsRow {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .shortInput {
+    width: 100%;
+  }
+
+  .buttonGroup {
+    flex-direction: column;
+  }
+}

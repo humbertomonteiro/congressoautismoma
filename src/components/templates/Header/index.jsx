@@ -9,6 +9,15 @@ import { IoRocketOutline } from "react-icons/io5";
 // import bgBottom from "../../../assets/bg/bg-bootm1.jpg";
 
 const Header = () => {
+  const handleViewItem = (itemId, itemName) => {
+    window.dataLayer.push({
+      event: "view_item",
+      item_id: itemId,
+      item_name: itemName,
+      timestamp: new Date().toISOString(),
+    });
+  };
+
   return (
     <header id="header" data-aos="fade-up" className={styles.container}>
       {/* <div className={styles.phrase} data-aos="fade-right" data-aos-delay="600">
@@ -30,7 +39,11 @@ const Header = () => {
           encontro dedicado à conscientização e troca de conhecimento.
         </p>
 
-        <ButtonSecondary action={"link"} link="#tickets">
+        <ButtonSecondary
+          action={"link"}
+          link="#tickets"
+          onClick={handleViewItem}
+        >
           COMPRAR INGRESSO <IoRocketOutline style={{ fontSize: "1.7rem" }} />
         </ButtonSecondary>
       </div>

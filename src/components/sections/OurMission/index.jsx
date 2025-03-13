@@ -18,6 +18,15 @@ import "swiper/css/effect-flip";
 import { EffectFlip, Pagination, Navigation, Autoplay } from "swiper/modules";
 
 const OurMission = () => {
+  const handleViewItem = (itemId, itemName) => {
+    window.dataLayer.push({
+      event: "view_item",
+      item_id: itemId,
+      item_name: itemName,
+      timestamp: new Date().toISOString(),
+    });
+  };
+
   return (
     <Section>
       <div data-aos="zoom-in" className={styles.container}>
@@ -31,7 +40,11 @@ const OurMission = () => {
             sempre com empatia e respeito às necessidades de cada indivíduo.
           </p>
 
-          <ButtonSecondary action="link" link="#tickets">
+          <ButtonSecondary
+            action="link"
+            link="#tickets"
+            onClick={handleViewItem}
+          >
             COMPRAR INGRESSO <FaArrowDown />
           </ButtonSecondary>
         </div>

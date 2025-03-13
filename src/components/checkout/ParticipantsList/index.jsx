@@ -1,5 +1,5 @@
-import React from "react";
-import styles from "./ParticipantsList.module.css"; // Presumo que exista
+// src/components/checkout/ParticipantsList.js
+import styles from "./ParticipantsList.module.css";
 
 const ParticipantsList = ({
   participants,
@@ -12,21 +12,27 @@ const ParticipantsList = ({
     const updatedParticipants = participants.filter((_, i) => i !== index);
     setParticipants(updatedParticipants);
 
-    if (participantToRemove.isHalfPrice) {
-      setHalfTickets((prev) => Math.max(0, prev - 1));
-    }
+    const newHalfTickets = updatedParticipants.reduce(
+      (count, p) => count + (p.isHalfPrice ? 1 : 0),
+      0
+    );
+    setHalfTickets(newHalfTickets);
   };
 
   return (
-    <div className={styles.container}>
+    <div className={styles.participantsList}>
       <h2>Participantes Adicionados</h2>
       <ul>
         {participants.map((participant, index) => (
           <li key={index} className={styles.participantItem}>
-            <span>
-              {participant.name} - {participant.cpf}{" "}
-              {participant.isHalfPrice ? "(Meia)" : ""}
-            </span>
+            <div className={styles.participantInfo}>
+              <span>
+                {participant.name} - {participant.email}
+              </span>
+              <span className={styles.ticketType}>
+                {participant.isHalfPrice ? "(Meia)" : "(Inteira)"}
+              </span>
+            </div>
             <button
               onClick={() => handleRemoveParticipant(index)}
               className={styles.removeButton}
