@@ -3,6 +3,7 @@ import { createContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import FirebaseAuth from "../classes/FirebaseAuth";
+import Loading from "../../components/shared/Loading";
 
 export const AuthContext = createContext({});
 
@@ -67,7 +68,7 @@ export default function AuthProvider({ children }) {
     }
   }
 
-  if (loading) return <p className="">Carregando...</p>;
+  if (loading) return <Loading />;
 
   return (
     <AuthContext.Provider

@@ -9,7 +9,7 @@ const usePaymentForm = () => {
     paymentMethod: "creditCard",
     loading: false,
     ticketQuantity: 1,
-    halfTickets: 0,
+    halfTickets: 0, // Mantemos halfTickets para compatibilidade com CheckoutService
     coupon: { code: "", isApplied: false },
   });
 
@@ -19,7 +19,7 @@ const usePaymentForm = () => {
     email: "",
     number: "",
     cpf: "",
-    isHalfPrice: false,
+    isHalfPrice: false, // Mantemos isHalfPrice para calcular halfTickets
   });
 
   const [creditCardData, setCreditCardData] = useState({
@@ -171,11 +171,12 @@ const usePaymentForm = () => {
     }
 
     try {
-      const response = await PaymentService.validateCoupon(
-        trimmedCoupon,
-        formState.ticketQuantity
-      );
-      if (response.success && response.data.valid) {
+      const response = await PaymentService.calculateTotals({
+        ticketQuantity: formState.ticketQuantity,
+        halfTickets: formState.halfTickets,
+        coupon: trimmedCoupon,
+      });
+      if (response.success) {
         setFormState((prev) => ({
           ...prev,
           coupon: { code: trimmedCoupon, isApplied: true },

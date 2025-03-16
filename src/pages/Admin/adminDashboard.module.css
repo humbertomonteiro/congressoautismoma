@@ -88,11 +88,15 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.exit {
+  background: linear-gradient(135deg, #f73a3a 0%, #d62f2f 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
 .exit:hover {
   background: linear-gradient(135deg, #db3434 0%, #b92929 100%);
-  color: #ffffff;
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* Conteúdo principal */

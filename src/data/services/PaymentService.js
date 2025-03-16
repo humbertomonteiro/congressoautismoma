@@ -1,4 +1,3 @@
-// src/services/PaymentService.js
 import axios from "axios";
 
 const isProduction = import.meta.env.VITE_ENV === "production";

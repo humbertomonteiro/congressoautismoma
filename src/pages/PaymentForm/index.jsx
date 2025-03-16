@@ -1,4 +1,3 @@
-// src/PaymentForm.js
 import React, { useState } from "react";
 import InputMask from "react-input-mask";
 import axios from "axios";
@@ -9,6 +8,7 @@ import PaymentMethodsComponent from "../../components/checkout/PaymentMethods";
 import Modal from "../../components/checkout/Modal";
 import logo from "../../assets/logos/logo-no-text.png";
 import usePaymentForm from "../../data/hooks/usePaymentForm";
+import AnimatedButton from "../../components/shared/AnimatedButton";
 
 const PaymentForm = () => {
   const {
@@ -530,19 +530,17 @@ const PaymentForm = () => {
                   <button onClick={prevStep} className={styles.backButton}>
                     Voltar
                   </button>
-                  <button
+                  <AnimatedButton
                     type="submit"
+                    isLoading={formState.loading}
                     disabled={formState.loading}
-                    className={`${styles.submitButton} ${styles.primaryButton}`}
                   >
-                    {formState.loading
-                      ? "Processando..."
-                      : formState.paymentMethod === "creditCard"
+                    {formState.paymentMethod === "creditCard"
                       ? "Fazer Pagamento"
                       : formState.paymentMethod === "pix"
                       ? "Gerar PIX"
                       : "Gerar Boleto"}
-                  </button>
+                  </AnimatedButton>
                 </div>
                 <p className={styles.securityNote}>
                   <FaLock /> Pagamento Seguro

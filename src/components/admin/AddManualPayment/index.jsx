@@ -1,4 +1,3 @@
-// src/components/admin/AddManualPayment.js
 import React, { useState, useEffect } from "react";
 import styles from "./addManualPayment.module.css";
 import {
@@ -299,7 +298,7 @@ const AddManualPayment = () => {
       ))}
       <div className={styles.buttonGroup}>
         <Button
-          variant="contained"
+          variant="outlined"
           color="primary"
           onClick={handleAddParticipantToManualCheckout}
           disabled={loading}
@@ -308,7 +307,7 @@ const AddManualPayment = () => {
         </Button>
         <Button
           variant="contained"
-          color="secondary"
+          color="primary"
           onClick={handleManualCheckout}
           disabled={loading}
         >

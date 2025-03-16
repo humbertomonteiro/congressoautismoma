@@ -1,107 +1,19 @@
 /* src/components/admin/scanner.module.css */
 .container {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   background: linear-gradient(135deg, #f0f4f8 0%, #e0e7ef 100%);
   min-height: 100vh;
 }
 
-h1 {
+.content {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.content h1 {
   color: #2c3e50;
   font-size: 24px;
   font-weight: 600;
   margin-bottom: 20px;
-}
-
-.buttonContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-}
-
-.scanButton {
-  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
-}
-
-.scannerWrapper {
-  width: 100%;
-  max-width: 400px;
-  border: 2px solid #3498db; /* Borda para visibilidade */
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.qrScanner {
-  width: 100%;
-  height: auto;
-}
-
-.stopButton {
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
-}
-
-.result {
-  margin-top: 20px;
-  font-size: 16px;
-  color: #555;
-}
-
-.valid {
-  color: #27ae60;
-  font-weight: 600;
-}
-
-.invalid {
-  color: #e74c3c;
-  font-weight: 600;
-}
-
-.searchSection {
-  width: 100%;
-  max-width: 600px;
-  margin-top: 20px;
-}
-
-.searchInput .MuiInputBase-root {
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.validatedSection {
-  width: 100%;
-  max-width: 800px;
-  margin-top: 30px;
-}
-
-.validatedSection h2 {
-  color: #34495e;
-  font-size: 18px;
-  font-weight: 500;
-  margin-bottom: 15px;
-}
-
-@media (max-width: 768px) {
-  .container {
-    padding: 10px;
-  }
-
-  .scanButton,
-  .stopButton {
-    width: 100%;
-    max-width: 300px;
-  }
-
-  .scannerWrapper {
-    max-width: 100%;
-  }
+  text-align: center;
 }
