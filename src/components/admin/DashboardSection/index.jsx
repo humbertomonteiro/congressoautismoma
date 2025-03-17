@@ -610,6 +610,7 @@ const DashboardSection = () => {
             </CardContent>
           </Card>
         </Grid>
+
         <Grid item xs={12} sm={4}>
           <Card
             sx={{
@@ -944,27 +945,6 @@ const DashboardSection = () => {
                         >
                           <strong>Método:</strong> {checkout.paymentMethod}
                         </Typography>
-                        {/* <Typography
-                          sx={{
-                            color: "#333333",
-                            fontSize: "1.1rem",
-                            fontWeight: 500,
-                            mt: 1,
-                          }}
-                        >
-                          R$ {checkout.totalAmount}
-                        </Typography> */}
-                        {/* <Typography
-                          sx={{ color: "#666666", fontSize: "0.9rem" }}
-                        >
-                          <strong>Participantes:</strong>{" "}
-                          {checkout.participants.length} (
-                          {
-                            checkout.participants.filter((p) => p.isHalfPrice)
-                              .length
-                          }{" "}
-                          meia)
-                        </Typography> */}
                       </CardContent>
                       <CardActions
                         sx={{
@@ -978,9 +958,7 @@ const DashboardSection = () => {
                             color="primary"
                             size="small"
                             sx={{
-                              // color: "#1976D2",
                               textTransform: "none",
-                              // "&:hover": { color: "#1565C0" },
                             }}
                             onClick={() => setOpenDetailsModal(checkout.id)}
                           >

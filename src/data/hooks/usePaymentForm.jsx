@@ -9,7 +9,7 @@ const usePaymentForm = () => {
     paymentMethod: "creditCard",
     loading: false,
     ticketQuantity: 1,
-    halfTickets: 0, // Mantemos halfTickets para compatibilidade com CheckoutService
+    halfTickets: 0,
     coupon: { code: "", isApplied: false },
   });
 
@@ -19,7 +19,7 @@ const usePaymentForm = () => {
     email: "",
     number: "",
     cpf: "",
-    isHalfPrice: false, // Mantemos isHalfPrice para calcular halfTickets
+    isHalfPrice: false,
   });
 
   const [creditCardData, setCreditCardData] = useState({

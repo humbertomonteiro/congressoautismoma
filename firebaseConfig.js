@@ -3,13 +3,13 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBZANOFCjPiG5KZGLuiAdAqtcJt3N1LuHg",
-  authDomain: "congresso-cuidar-mais.firebaseapp.com",
-  projectId: "congresso-cuidar-mais",
-  storageBucket: "congresso-cuidar-mais.firebasestorage.app",
-  messagingSenderId: "700368250122",
-  appId: "1:700368250122:web:a3b4245ad62e814a9086f3",
-  measurementId: "G-PTMSSP7NH1",
+  apiKey: import.meta.env.VITE_API_KEY,
+  authDomain: import.meta.env.VITE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_ID_APP,
+  measurementId: import.meta.env.VITE_MEASUREMENT_ID,
 };
 
 const app = initializeApp(firebaseConfig);

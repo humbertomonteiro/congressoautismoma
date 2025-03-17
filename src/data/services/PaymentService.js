@@ -9,21 +9,28 @@ class PaymentService {
   static WHATSAPP_NUMBER = "+559888259214";
 
   async processCreditCardPayment(paymentData) {
-    const response = await axios.post(`${baseUrl}/credit`, paymentData);
+    const response = await axios.post(
+      `${baseUrl}/payments/credit`,
+      paymentData
+    );
     return response.data;
   }
 
   async processPixPayment(paymentData) {
-    const response = await axios.post(`${baseUrl}/pix`, paymentData);
+    const response = await axios.post(`${baseUrl}/payments/pix`, paymentData);
     return response.data;
   }
 
   async processBoletoPayment(paymentData) {
     try {
       console.log("Enviando requisição de boleto:", paymentData);
-      const response = await axios.post(`${baseUrl}/boleto`, paymentData, {
-        responseType: "blob",
-      });
+      const response = await axios.post(
+        `${baseUrl}/payments/boleto`,
+        paymentData,
+        {
+          responseType: "blob",
+        }
+      );
 
       console.log("Resposta recebida do backend:", response);
       console.log("Tamanho do blob:", response.data.size);
@@ -56,7 +63,7 @@ class PaymentService {
   }
 
   async validateCoupon(coupon, ticketQuantity) {
-    const response = await axios.post(`${baseUrl}/validate-coupon`, {
+    const response = await axios.post(`${baseUrl}/payments/validate-coupon`, {
       coupon,
       ticketQuantity,
     });
@@ -64,7 +71,7 @@ class PaymentService {
   }
 
   async calculateTotals({ ticketQuantity, halfTickets, coupon }) {
-    const response = await axios.post(`${baseUrl}/calculate-totals`, {
+    const response = await axios.post(`${baseUrl}/payments/calculate-totals`, {
       ticketQuantity,
       halfTickets,
       coupon: coupon || "",
@@ -74,7 +81,7 @@ class PaymentService {
 
   async sendConfirmationEmail(emailData) {
     console.log("Dados enviados para /send-email:", emailData);
-    const response = await axios.post(`${baseUrl}/send-email`, emailData);
+    const response = await axios.post(`${baseUrl}/email/send-email`, emailData);
     return response.data;
   }
 
