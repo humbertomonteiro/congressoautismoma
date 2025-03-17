@@ -81,7 +81,10 @@ class PaymentService {
 
   async sendConfirmationEmail(emailData) {
     console.log("Dados enviados para /send-email:", emailData);
-    const response = await axios.post(`${baseUrl}/email/send-email`, emailData);
+    const response = await axios.post(
+      `${baseUrl}/payments/send-email`,
+      emailData
+    );
     return response.data;
   }
 
