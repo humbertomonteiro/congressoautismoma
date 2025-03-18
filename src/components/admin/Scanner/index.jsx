@@ -100,7 +100,7 @@ const Scanner = () => {
 
       console.log("Enviando qrData para validação:", qrText);
       const response = await axios.post(
-        "http://localhost:5000/api/payments/validate-qr-code",
+        "http://localhost:5000/api/credentials/validate-qr-code",
         { qrData: qrText },
         { headers: { "Content-Type": "application/json" } }
       );
