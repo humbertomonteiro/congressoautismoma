@@ -278,10 +278,17 @@ const DashboardSection = () => {
   };
 
   const handleContactParticipant = (participantPhone, paymentMethod) => {
+    const cleanPhone = participantPhone.replace(/\D/g, "");
+
+    const formattedPhone = cleanPhone.startsWith("55")
+      ? cleanPhone
+      : `55${cleanPhone}`;
+
     const message = `Olá! Vi que houve uma tentativa de pagamento via ${paymentMethod} no Congresso Autismo MA 2025. Podemos ajudar com algo?`;
-    const whatsappUrl = `https://wa.me/${participantPhone}?text=${encodeURIComponent(
+    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(
       message
     )}`;
+
     window.open(whatsappUrl, "_blank");
   };
 
