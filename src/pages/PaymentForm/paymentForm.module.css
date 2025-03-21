@@ -22,6 +22,10 @@
   margin-top: 20px;
 }
 
+.content select {
+  height: 45px;
+}
+
 /* Barra de Progresso (Stepper) */
 .progressBar {
   display: flex;
@@ -111,7 +115,7 @@
 
 /* Resumo da compra (orderSummary) */
 .orderSummary {
-  background-color: #ffffff;
+  background-color: #f9f9f9;
 }
 
 .orderSummary h2 {
@@ -159,9 +163,16 @@
 
 .total {
   color: #2c3e50;
-  font-size: 20px;
   font-weight: bold;
-  margin-top: 15px;
+  margin: 15px 0;
+}
+
+.total strong {
+  font-size: 1.3rem;
+}
+
+[data-primary-button-next="true"] {
+  width: 100%;
 }
 
 /* Formulário de participante */
@@ -215,6 +226,25 @@
   box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
 }
 
+/* toggle do document */
+.toggleWrapper {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+.toggleButton {
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  cursor: pointer;
+}
+.toggleButton.active {
+  background-color: #007bff;
+  color: #fff;
+  border-color: #007bff;
+}
+
 /* Toggle customizado para meia entrada */
 .toggleLabel {
   display: flex;
@@ -255,8 +285,12 @@
 }
 
 /* Botões */
-.primaryButton {
-  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+
+.content button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -268,6 +302,10 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.primaryButton {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+}
+
 .primaryButton:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
@@ -275,12 +313,6 @@
 
 .applyButton {
   background: linear-gradient(135deg, #27ae60 0%, #219653 100%);
-  padding: 12px 24px;
-  font-size: 16px;
-  font-weight: 500;
-  border: 0;
-  border-radius: 8px;
-  cursor: pointer;
 }
 
 .applyButton:hover {
@@ -290,12 +322,7 @@
 
 .removeCouponButton {
   background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-  padding: 12px 24px;
-  font-size: 16px;
-  font-weight: 500;
-  border: 0;
-  border-radius: 8px;
-  cursor: pointer;
+  max-width: fit-content;
 }
 
 .removeCouponButton:hover {
@@ -312,8 +339,9 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.nextButton {
+.content .nextButton {
   background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  padding-right: 15px;
 }
 
 .nextButton:hover {
@@ -321,15 +349,9 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.backButton {
+.content .backButton {
   background: linear-gradient(135deg, #7f8c8d 0%, #6c757d 100%);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  padding-left: 15px;
 }
 
 .backButton:hover {
@@ -354,7 +376,7 @@
 }
 
 .couponInputWrapper input {
-  flex: 1;
+  max-width: 200px;
 }
 
 /* Detalhes de pagamento */

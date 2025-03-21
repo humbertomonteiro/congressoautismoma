@@ -1,3 +1,4 @@
+// src/components/dashboard/DashboardSection.jsx
 import React, { useState, useEffect } from "react";
 import { db } from "../../../../firebaseConfig";
 import {
@@ -51,6 +52,7 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Loading from "../../shared/Loading";
+import PaymentService from "../../../data/services/PaymentService";
 
 const DashboardSection = () => {
   const [checkouts, setCheckouts] = useState([]);
@@ -74,7 +76,7 @@ const DashboardSection = () => {
   const [openManualPaymentModal, setOpenManualPaymentModal] = useState(false);
 
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm")); // Telas menores que 600px
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -173,7 +175,6 @@ const DashboardSection = () => {
       setFilteredCheckouts(checkoutData);
       setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
 
-      // Preenche qrCodeData com os QR codes salvos no Firestore
       const qrData = {};
       checkoutData.forEach((checkout) => {
         checkout.participants.forEach((p, index) => {
@@ -191,6 +192,11 @@ const DashboardSection = () => {
   const updateMetrics = async () => {
     setLoading(true);
     try {
+      // Verificar todos os pagamentos pendentes antes de atualizar métricas
+      console.log("Verificando todos os pagamentos pendentes...");
+      await PaymentService.verifyAllPayments();
+      console.log("Verificação de todos os pagamentos concluída.");
+
       const snapshot = await getDocs(collection(db, "checkouts"));
       const checkouts = snapshot.docs.map((doc) => doc.data());
 
@@ -250,15 +256,13 @@ const DashboardSection = () => {
     fetchCheckouts();
   }, [statusFilter, methodFilter, dateFilter, eventFilter]);
 
-  const isProduction = import.meta.env.VITE_ENV === "production";
-  const baseUrl = isProduction
-    ? import.meta.env.VITE_BASE_URL_PRODUCTION
-    : import.meta.env.VITE_BASE_URL_SANDBOX;
-
   const handleCheckPaymentStatus = async (checkoutId, paymentId) => {
     try {
-      const response = await axios.post(baseUrl, { paymentId });
-      const { status } = response.data;
+      const response = await PaymentService.verifyPayment(paymentId);
+      console.log(`Status verificado para ${paymentId}:`, response);
+      const { status } = response; // PaymentService retorna { success, message, status }
+      if (!response.success) throw new Error(response.message);
+
       const checkoutRef = doc(db, "checkouts", checkoutId);
       await updateDoc(checkoutRef, { status });
       setCheckouts((prev) =>
@@ -268,7 +272,8 @@ const DashboardSection = () => {
         prev.map((c) => (c.id === checkoutId ? { ...c, status } : c))
       );
     } catch (error) {
-      console.error("Erro ao checar status:", error);
+      console.error("Erro ao verificar status:", error);
+      alert(`Erro ao verificar pagamento: ${error.message}`);
     }
   };
 
@@ -466,11 +471,11 @@ const DashboardSection = () => {
         </Typography>
         <Typography sx={{ color: "#666666" }}>
           Inteiros: {checkout.orderDetails.fullTickets} (R${" "}
-          {checkout.orderDetails.fullTicketsValue})
+          {checkout.orderDetails.valueTicketsAll})
         </Typography>
         <Typography sx={{ color: "#666666" }}>
           Meia: {checkout.orderDetails.halfTickets} (R${" "}
-          {checkout.orderDetails.halfTicketsValue})
+          {checkout.orderDetails.valueTicketsHalf})
         </Typography>
         <Typography sx={{ color: "#666666" }}>
           Desconto: R$ {checkout.orderDetails.discount}
@@ -800,7 +805,6 @@ const DashboardSection = () => {
         </Grid>
       </Grid>
 
-      {/* Button Adicinoar manual */}
       {isMobile ? (
         <>
           <Button
@@ -860,7 +864,6 @@ const DashboardSection = () => {
         <AddManualPayment />
       )}
 
-      {/* Filtros desktop */}
       {!isMobile && (
         <Card
           sx={{
@@ -874,7 +877,6 @@ const DashboardSection = () => {
         </Card>
       )}
 
-      {/* Checkouts */}
       <Card
         sx={{
           backgroundColor: "#FFFFFF",
@@ -1039,7 +1041,10 @@ const DashboardSection = () => {
                             Detalhes
                           </Button>
                           {checkout.paymentId &&
-                            checkout.status === "pending" && (
+                            checkout.status === "pending" &&
+                            ["pix", "boleto"].includes(
+                              checkout.paymentMethod
+                            ) && (
                               <Button
                                 size="small"
                                 sx={{
@@ -1054,11 +1059,10 @@ const DashboardSection = () => {
                                   )
                                 }
                               >
-                                Checar Status
+                                Verificar Pagamento
                               </Button>
                             )}
                         </Box>
-
                         {checkout.participants[0]?.number && (
                           <IconButton
                             onClick={() =>

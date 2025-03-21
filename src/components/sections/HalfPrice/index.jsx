@@ -3,28 +3,12 @@ import styles from "./halfPrice.module.css";
 import Section from "../../shared/Section";
 import Title from "../../shared/Title";
 import ButtonSecondary from "../../shared/ButtonSecondary";
-import FormGetData from "../../shared/FormGetData";
 
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function HalfiPrice() {
-  const handleAddToCart = (itemId, itemName, price) => {
-    setFormGetData(true);
-    window.dataLayer.push({
-      event: "add_to_cart",
-      items: [
-        {
-          item_id: itemId,
-          item_name: itemName,
-          price: price,
-          quantity: 1,
-        },
-      ],
-      timestamp: new Date().toISOString(),
-    });
-  };
+  const navigate = useNavigate();
 
-  const [formGetData, setFormGetData] = useState(false);
   return (
     <Section>
       <Title text="Meia entrada" align="center" />
@@ -84,17 +68,16 @@ export default function HalfiPrice() {
             <strong>
               <span>10X de</span>R$ 39,90
             </strong>
-            <ButtonSecondary action="button" onClick={handleAddToCart}>
+            <ButtonSecondary
+              action="button"
+              onClick={() => {
+                navigate("/checkout?type=half");
+              }}
+            >
               COMPRAR INGRESSO
             </ButtonSecondary>
           </div>
         </div>
-        {formGetData && (
-          <FormGetData
-            setFormGetData={setFormGetData}
-            link={"https://cielolink.com.br/40yi0G0"}
-          />
-        )}
       </div>
     </Section>
   );

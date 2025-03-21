@@ -30,7 +30,8 @@ const ParticipantsList = ({
                 {participant.name} - {participant.email}
               </span>
               <span className={styles.ticketType}>
-                {participant.isHalfPrice ? "(Meia)" : "(Inteira)"}
+                Ingresso
+                {participant.isHalfPrice ? " meia entrada" : " valor integral"}
               </span>
             </div>
             <button

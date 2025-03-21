@@ -4,6 +4,7 @@ import Section from "../../shared/Section";
 import Title from "../../shared/Title";
 import ButtonSecondary from "../../shared/ButtonSecondary";
 import FormGetData from "../../shared/FormGetData";
+import { useNavigate } from "react-router-dom";
 
 import { IoTicketOutline } from "react-icons/io5";
 
@@ -25,11 +26,8 @@ const handleAddToCart = (itemId, itemName, price) => {
   });
 };
 
-const Item1 = ({ setFormGetData, setLink, setGroup }) => {
-  const handleBuyTicket = (link) => {
-    setFormGetData(true);
-    setLink(link);
-  };
+const Item1 = () => {
+  const navigate = useNavigate();
   return (
     <div className={styles.box} data-active="true">
       <strong className={styles.sale}>40% OFF</strong>
@@ -65,9 +63,8 @@ const Item1 = ({ setFormGetData, setLink, setGroup }) => {
               style={{ width: "100%" }}
               action="button"
               onClick={() => {
+                navigate("/checkout");
                 handleAddToCart();
-                setGroup(false);
-                handleBuyTicket("https://cielolink.com.br/3EhFl7C");
               }}
             >
               Comprar Ingresso{" "}
@@ -80,11 +77,9 @@ const Item1 = ({ setFormGetData, setLink, setGroup }) => {
   );
 };
 
-const Item2 = ({ setFormGetData, setLink, setGroup }) => {
-  const handleBuyTicket = (link) => {
-    setFormGetData(true);
-    setLink(link);
-  };
+const Item2 = () => {
+  const navigate = useNavigate();
+
   return (
     <div className={styles.box} data-active="true">
       <strong className={styles.sale}>40% OFF</strong>
@@ -124,11 +119,12 @@ const Item2 = ({ setFormGetData, setLink, setGroup }) => {
             </span>
 
             <ButtonSecondary
-              onClick={handleAddToCart}
               style={{ width: "100%" }}
-              action="link"
-              target="_blank"
-              link="https://wa.me/5598988259214?text=Quero%20saber%20como%20comprar%20o%20ingresso%20grupo%3F"
+              action="button"
+              onClick={() => {
+                navigate("/checkout?tickets=5&coupon=grupo");
+                handleAddToCart();
+              }}
             >
               Comprar Ingresso{" "}
               <IoTicketOutline style={{ fontSize: "1.2rem" }} />
@@ -140,11 +136,9 @@ const Item2 = ({ setFormGetData, setLink, setGroup }) => {
   );
 };
 
-const ItemHalf = ({ setFormGetData, setLink, setGroup }) => {
-  const handleBuyTicket = (link) => {
-    setFormGetData(true);
-    setLink(link);
-  };
+const ItemHalf = () => {
+  const navigate = useNavigate();
+
   return (
     <div className={styles.box} data-active="true">
       <strong className={styles.sale}>40% OFF</strong>
@@ -201,9 +195,8 @@ const ItemHalf = ({ setFormGetData, setLink, setGroup }) => {
               style={{ width: "100%" }}
               action="button"
               onClick={() => {
+                navigate("/checkout?type=half");
                 handleAddToCart();
-                setGroup(false);
-                handleBuyTicket("https://cielolink.com.br/40yi0G0");
               }}
             >
               Comprar Ingresso{" "}

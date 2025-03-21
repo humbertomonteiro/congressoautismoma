@@ -1,3 +1,4 @@
+// src/components/admin/AddManualPayment/index.jsx
 import React, { useState, useEffect } from "react";
 import styles from "./addManualPayment.module.css";
 import {
@@ -26,6 +27,7 @@ const AddManualPayment = () => {
     valueTicketsHalf: "0.00",
     discount: "0.00",
     total: "0.00",
+    totalInCents: 0, // Adicionado pra consistência
   });
   const [loading, setLoading] = useState(false);
 
@@ -65,6 +67,7 @@ const AddManualPayment = () => {
         valueTicketsHalf: "0.00",
         discount: "0.00",
         total: "0.00",
+        totalInCents: 0,
       });
       return;
     }
@@ -79,11 +82,8 @@ const AddManualPayment = () => {
         halfTickets,
         coupon: coupon || "",
       });
-      if (response.success) {
-        setTotals(response.data);
-      } else {
-        throw new Error(response.message || "Erro ao calcular totais");
-      }
+      console.log("Resposta de calculateTotals:", response);
+      setTotals(response); // Agora response é diretamente { valueTicketsAll, valueTicketsHalf, discount, total, totalInCents }
     } catch (error) {
       console.error("Erro ao calcular total:", error);
       setTotals({
@@ -91,6 +91,7 @@ const AddManualPayment = () => {
         valueTicketsHalf: "0.00",
         discount: "0.00",
         total: "0.00",
+        totalInCents: 0,
       });
     } finally {
       setLoading(false);
@@ -111,6 +112,9 @@ const AddManualPayment = () => {
       manualCheckoutData;
     if (participants.some((p) => !p.email || !p.name || !p.ticketType)) {
       console.error("Dados incompletos para checkout manual");
+      alert(
+        "Por favor, preencha todos os campos obrigatórios dos participantes."
+      );
       return;
     }
 
@@ -127,14 +131,13 @@ const AddManualPayment = () => {
             valueTicketsHalf: "0.00",
             discount: "0.00",
             total: "0.00",
+            totalInCents: 0,
           }
-        : (
-            await PaymentService.calculateTotals({
-              ticketQuantity,
-              halfTickets,
-              coupon: coupon || "",
-            })
-          ).data;
+        : await PaymentService.calculateTotals({
+            ticketQuantity,
+            halfTickets,
+            coupon: coupon || "",
+          });
 
       const manualCheckout = {
         transactionId: `MANUAL_${Date.now()}`,
@@ -173,9 +176,12 @@ const AddManualPayment = () => {
         valueTicketsHalf: "0.00",
         discount: "0.00",
         total: "0.00",
+        totalInCents: 0,
       });
+      alert("Checkout manual adicionado com sucesso!");
     } catch (error) {
       console.error("Erro ao criar checkout manual:", error);
+      alert("Erro ao adicionar checkout manual: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -185,14 +191,6 @@ const AddManualPayment = () => {
     <div className={styles.section}>
       <div className={styles.title}>
         <h2>Adicionar Pagamento Manual</h2>
-        {/* <Button
-          variant="contained"
-          className={styles.importButton}
-          onClick={importCieloSales}
-          disabled={loading}
-        >
-          Importar Vendas Cielo
-        </Button> */}
       </div>
       <div className={styles.headerInputs}>
         <FormControl className={styles.shortInput}>
@@ -315,7 +313,7 @@ const AddManualPayment = () => {
         </Button>
       </div>
       <p className={styles.total}>
-        <strong>Total: R$ {totals.total}</strong>
+        <strong>Total: R$ {loading ? "Calculando..." : totals.total}</strong>
       </p>
     </div>
   );

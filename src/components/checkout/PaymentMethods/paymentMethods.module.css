@@ -34,27 +34,17 @@
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: linear-gradient(135deg, #7f8c8d 0%, #6c757d 100%);
+  color: #fff;
+}
+
+.methods button.active {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
 }
 
 .methods button:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* Estilo específico para cada botão */
-.creditCardButton {
-  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-  color: white;
-}
-
-.pixButton {
-  background: linear-gradient(135deg, #27ae60 0%, #219653 100%);
-  color: white;
-}
-
-.boletoButton {
-  background: linear-gradient(135deg, #7f8c8d 0%, #6c757d 100%);
-  color: white;
 }
 
 /* Ícones e texto dentro dos botões */

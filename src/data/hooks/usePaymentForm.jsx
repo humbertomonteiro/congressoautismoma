@@ -18,7 +18,8 @@ const usePaymentForm = () => {
     name: "",
     email: "",
     number: "",
-    cpf: "",
+    document: "",
+    documentType: "cpf",
     isHalfPrice: false,
   });
 
@@ -53,6 +54,7 @@ const usePaymentForm = () => {
     valueTicketsHalf: "0.00",
     discount: "0.00",
     total: "0.00",
+    totalInCents: 0, // Adicionado para consistência
   });
 
   // Calcular totais sempre que ticketQuantity, halfTickets ou coupon mudar
@@ -70,20 +72,20 @@ const usePaymentForm = () => {
 
       try {
         const response = await PaymentService.calculateTotals({
-          ticketQuantity: formState.ticketQuantity,
-          halfTickets: formState.halfTickets,
+          ticketQuantity: ticketQty,
+          halfTickets: halfQty,
           coupon: formState.coupon.isApplied ? formState.coupon.code : "",
         });
-        if (response.success) {
-          setTotals(response.data);
-        }
+        console.log("Resposta de calculateTotals:", response); // Log para depurar
+        setTotals(response); // Agora response é diretamente { valueTicketsAll, valueTicketsHalf, discount, total, totalInCents }
       } catch (error) {
-        console.error("Erro ao calcular totais:", error);
+        console.error("Erro ao calcular totais:", error.message);
         setTotals({
           valueTicketsAll: "0.00",
           valueTicketsHalf: "0.00",
           discount: "0.00",
           total: "0.00",
+          totalInCents: 0,
         });
       }
     };
@@ -117,13 +119,19 @@ const usePaymentForm = () => {
       );
       return;
     }
-    if (formState.coupon.isApplied && newQuantity < 5) {
+
+    if (
+      formState.coupon.isApplied &&
+      formState.coupon.code === "grupo" &&
+      newQuantity < 5
+    ) {
       setModalError(
         "Cupom de grupo aplicado",
         "Para diminuir para menos de 5 ingressos, remova o cupom."
       );
       return;
     }
+
     setFormState((prev) => ({ ...prev, ticketQuantity: newQuantity }));
   };
 
@@ -157,14 +165,20 @@ const usePaymentForm = () => {
       name: "",
       email: "",
       number: "",
-      cpf: "",
+      document: "",
+      documentType: "cpf", //
       isHalfPrice: false,
     });
   };
 
-  const handleApplyCoupon = async (e) => {
-    e.preventDefault();
-    const trimmedCoupon = formState.coupon.code.trim().toLowerCase();
+  const handleApplyCoupon = async (e, couponCode = null) => {
+    if (e && typeof e.preventDefault === "function") {
+      e.preventDefault();
+    }
+
+    const trimmedCoupon = (couponCode || formState.coupon.code)
+      .trim()
+      .toLowerCase();
     if (!trimmedCoupon) {
       setModalError("Cupom Inválido", "Digite um cupom válido.");
       return;
@@ -176,33 +190,24 @@ const usePaymentForm = () => {
         halfTickets: formState.halfTickets,
         coupon: trimmedCoupon,
       });
-      if (response.success) {
-        setFormState((prev) => ({
-          ...prev,
-          coupon: { code: trimmedCoupon, isApplied: true },
-        }));
-        setModalState({
-          isOpen: true,
-          title: "Cupom Aplicado",
-          message: "Cupom aplicado com sucesso!",
-          type: "success",
-        });
-      } else {
-        setFormState((prev) => ({
-          ...prev,
-          coupon: { code: "", isApplied: false },
-        }));
-        setModalError("Cupom Inválido", response.message || "Cupom inválido!");
-      }
+      console.log("Resposta ao aplicar cupom:", response);
+      setFormState((prev) => ({
+        ...prev,
+        coupon: { code: trimmedCoupon, isApplied: true },
+      }));
+      setModalState({
+        isOpen: true,
+        title: "Cupom Aplicado",
+        message: "Cupom aplicado com sucesso!",
+        type: "success",
+      });
     } catch (error) {
+      console.error("Erro ao aplicar cupom:", error);
       setFormState((prev) => ({
         ...prev,
         coupon: { code: "", isApplied: false },
       }));
-      setModalError(
-        "Erro ao Validar Cupom",
-        error.response?.data?.message || "Erro ao validar o cupom."
-      );
+      setModalError("Cupom Inválido", error.message || "Cupom inválido!");
     }
   };
 
@@ -213,9 +218,10 @@ const usePaymentForm = () => {
     }));
   };
 
-  const handlePayment = async (e) => {
+  const handlePayment = async (e, selectedPayer, navigate) => {
     e.preventDefault();
     setFormState((prev) => ({ ...prev, loading: true }));
+
     if (!validateParticipants()) return;
 
     const paymentData = {
@@ -223,13 +229,22 @@ const usePaymentForm = () => {
       halfTickets: formState.halfTickets,
       coupon: formState.coupon.isApplied ? formState.coupon.code : "",
       participants,
+      payer: {
+        name: selectedPayer?.name || "",
+        document: selectedPayer?.document || "",
+        documentType: selectedPayer?.documentType || "cpf",
+        zipCode: selectedPayer?.zipCode || "",
+        street: selectedPayer?.street || "",
+        addressNumber: selectedPayer?.addressNumber || "",
+        district: selectedPayer?.district || "",
+        city: selectedPayer?.city || "",
+        state: selectedPayer?.state || "",
+      },
       ...(formState.paymentMethod === "creditCard" && { creditCardData }),
-      ...(formState.paymentMethod === "boleto" && { boletoData }),
     };
 
     try {
       let response;
-      console.log("Enviando pagamento ao backend:", paymentData);
       switch (formState.paymentMethod) {
         case "creditCard":
           response = await PaymentService.processCreditCardPayment(paymentData);
@@ -250,19 +265,21 @@ const usePaymentForm = () => {
       if (response.success) {
         if (formState.paymentMethod === "creditCard") {
           const emailData = {
+            checkoutId: response.transactionId,
             from: EMAIL_FROM,
             to: participants[0].email,
             subject: "Confirmação de Pagamento - Congresso Autismo MA 2025",
             data: {
               name: participants[0].name,
-              transactionId: response.data.transactionId,
+              transactionId: response.paymentId,
               fullTickets: formState.ticketQuantity - formState.halfTickets,
               valueTicketsAll: totals.valueTicketsAll,
               halfTickets: formState.halfTickets,
               valueTicketsHalf: totals.valueTicketsHalf,
               coupon: formState.coupon.isApplied ? formState.coupon.code : "",
-              discount: formState.coupon.isApplied ? totals.discount : "",
+              discount: formState.coupon.isApplied ? totals.discount : "0.00",
               total: totals.total,
+              installments: creditCardData.installments,
             },
           };
 
@@ -271,7 +288,8 @@ const usePaymentForm = () => {
             !emailData.from ||
             !emailData.to ||
             !emailData.subject ||
-            !emailData.data
+            !emailData.data ||
+            !emailData.checkoutId
           ) {
             console.error(
               "Campos obrigatórios faltando no emailData:",
@@ -294,12 +312,15 @@ const usePaymentForm = () => {
               emailError.message
             );
           }
-          setModalState({
-            isOpen: true,
-            title: "Compra Realizada com Sucesso",
-            message:
-              "Seu pagamento foi efetuado! Confira os detalhes no seu e-mail.",
-            type: "success",
+          // setModalState({
+          //   isOpen: true,
+          //   title: "Compra Realizada com Sucesso",
+          //   message:
+          //     "Seu pagamento foi efetuado! Confira os detalhes no seu e-mail.",
+          //   type: "success",
+          // });
+          navigate("/thanks-you", {
+            state: { total: totals.total, paymentMethod: "creditCard" },
           });
         } else if (formState.paymentMethod === "pix") {
           setModalState({
@@ -309,23 +330,23 @@ const usePaymentForm = () => {
             type: "pending",
             content: (
               <div style={{ textAlign: "center" }}>
-                <img
-                  src={`data:image/png;base64,${response.data.qrCode}`}
-                  alt="QR Code PIX"
-                />
+                <img src={response.qrCodeLink} alt="QR Code PIX" />
                 <p>
-                  <strong>Código Pix:</strong> {response.data.qrCodeString}
+                  <strong>Código Pix:</strong> {response.qrCodeString}
                 </p>
               </div>
             ),
           });
         } else if (formState.paymentMethod === "boleto") {
-          setModalState({
-            isOpen: true,
-            title: "Boleto Gerado",
-            message:
-              "O boleto foi baixado com sucesso. Verifique seus downloads!",
-            type: "pending",
+          // setModalState({
+          //   isOpen: true,
+          //   title: "Boleto Gerado",
+          //   message:
+          //     "O boleto foi baixado com sucesso. Verifique seus downloads!",
+          //   type: "success",
+          // });
+          navigate("/thanks-you", {
+            state: { total: totals.total, paymentMethod: "boleto" },
           });
         }
       } else {
@@ -334,10 +355,9 @@ const usePaymentForm = () => {
         );
       }
     } catch (error) {
-      console.error("Erro no handlePayment:", error.message);
+      console.error("[handlePayment] Erro no handlePayment:", error.message);
       const errorMessage =
-        error.response?.data?.message ||
-        `Erro ao processar ${formState.paymentMethod}.`;
+        error.message || `Erro ao processar ${formState.paymentMethod}.`;
       setModalError(
         `Erro ao Processar ${
           formState.paymentMethod === "creditCard"

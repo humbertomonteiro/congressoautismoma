@@ -1,7 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import InputMask from "react-input-mask";
 import axios from "axios";
-import { FaUser, FaEnvelope, FaPhone, FaIdCard, FaLock } from "react-icons/fa";
+
+import {
+  FaUser,
+  FaEnvelope,
+  FaPhone,
+  FaIdCard,
+  FaLock,
+  FaPlus,
+} from "react-icons/fa";
+import { MdDelete } from "react-icons/md";
+import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
+
 import styles from "./paymentForm.module.css";
 import ParticipantsList from "../../components/checkout/ParticipantsList";
 import PaymentMethodsComponent from "../../components/checkout/PaymentMethods";
@@ -9,6 +20,8 @@ import Modal from "../../components/checkout/Modal";
 import logo from "../../assets/logos/logo-no-text.png";
 import usePaymentForm from "../../data/hooks/usePaymentForm";
 import AnimatedButton from "../../components/shared/AnimatedButton";
+import { useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const PaymentForm = () => {
   const {
@@ -34,47 +47,173 @@ const PaymentForm = () => {
 
   const [step, setStep] = useState(1);
   const [cepError, setCepError] = useState("");
-  const [cpfError, setCpfError] = useState("");
+  const [documentError, setDocumentError] = useState("");
+  const [payerType, setPayerType] = useState("participant");
+  const [selectedPayer, setSelectedPayer] = useState(null);
+
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [isCouponAppliedInitially, setIsCouponAppliedInitially] =
+    useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [hasShownHalfPriceModal, setHasShownHalfPriceModal] = useState(false);
+
   const brands = ["Visa", "Mastercard", "Amex", "Elo"];
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // useEffect para tickets e coupon
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tickets = searchParams.get("tickets");
+    const coupon = searchParams.get("coupon");
+
+    // Executar apenas na primeira carga
+    if (!isInitialized) {
+      // Ajustar quantidade de ingressos inicial
+      if (tickets && formState.ticketQuantity !== parseInt(tickets, 10)) {
+        handleTicketQuantityChange({
+          target: { value: parseInt(tickets, 10) },
+        });
+      }
+
+      // Aplicar cupom automaticamente apenas na primeira vez
+      if (coupon && !isCouponAppliedInitially) {
+        setFormState((prev) => ({
+          ...prev,
+          coupon: { ...prev.coupon, code: coupon, isApplied: true },
+        }));
+        handleApplyCoupon(null, coupon);
+        setIsCouponAppliedInitially(true);
+      }
+
+      // Marcar como inicializado
+      setIsInitialized(true);
+    }
+  }, [
+    location.search,
+    formState.ticketQuantity,
+    handleTicketQuantityChange,
+    handleApplyCoupon,
+    setFormState,
+    isCouponAppliedInitially,
+    isInitialized, // Adicionar à lista de dependências
+  ]);
+
+  // useEffect para ativar o toggle de meia-entrada no primeiro participante
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const type = searchParams.get("type");
+
+    if (
+      type === "half" &&
+      isFirstLoad &&
+      currentParticipant.isHalfPrice !== true
+    ) {
+      setCurrentParticipant((prev) => ({
+        ...prev,
+        isHalfPrice: true,
+      }));
+      setIsFirstLoad(false);
+    }
+  }, [
+    location.search,
+    isFirstLoad,
+    currentParticipant.isHalfPrice,
+    setCurrentParticipant,
+  ]);
+
+  // useEffect para o modal de meia-entrada no step 2
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const type = searchParams.get("type");
+
+    if (type === "half" && step === 2 && !hasShownHalfPriceModal) {
+      setModalState({
+        isOpen: true,
+        title: "Atenção: Ingresso Meia-Entrada",
+        message:
+          "Você selecionou um ingresso meia-entrada. O toggle 'Meia entrada?' está ativado por padrão para o primeiro participante. Para os próximos, ative manualmente se necessário. Lembre-se: será necessário apresentar documento comprobatório (como carteira de estudante, identidade para idosos, laudo para PcD ou comprovante de vínculo para professores/pais de autistas) na entrada do evento.",
+        type: "info",
+      });
+      setHasShownHalfPriceModal(true);
+    }
+  }, [step, location.search, hasShownHalfPriceModal, setModalState]);
+
+  // Chamar o evento na montagem do componente
+  useEffect(() => {
+    handleAddPaymentInfo();
+  }, []);
+
+  const handleAddPaymentInfo = (itemId, itemName, price) => {
+    window.dataLayer.push({
+      event: "add_payment_info",
+      items: [
+        {
+          item_id: itemId,
+          item_name: itemName,
+          price: price,
+          quantity: 1,
+        },
+      ],
+      timestamp: new Date().toISOString(),
+    });
+  };
 
   const handleParticipantChange = (field, value) => {
     setCurrentParticipant((prev) => ({ ...prev, [field]: value }));
-    if (field === "cpf") {
-      const cleanCpf = value.replace(/\D/g, "");
-      if (cleanCpf.length > 0 && cleanCpf.length !== 11) {
-        setCpfError("O CPF deve ter 11 dígitos.");
-      } else {
-        setCpfError("");
+    if (field === "document") {
+      const cleanDoc = value.replace(/\D/g, "");
+      if (currentParticipant.documentType === "cpf") {
+        if (cleanDoc.length > 0 && cleanDoc.length !== 11) {
+          setDocumentError("O CPF deve ter 11 dígitos.");
+        } else {
+          setDocumentError("");
+        }
+      } else if (currentParticipant.documentType === "cnpj") {
+        if (cleanDoc.length > 0 && cleanDoc.length !== 14) {
+          setDocumentError("O CNPJ deve ter 14 dígitos.");
+        } else {
+          setDocumentError("");
+        }
       }
     }
   };
+
+  // const handleDocumentTypeChange = (type) => {
+  //   setCurrentParticipant((prev) => ({
+  //     ...prev,
+  //     documentType: type,
+  //     document: "", // Limpa o campo ao mudar o tipo
+  //   }));
+  //   setDocumentError("");
+  // };
 
   const handleCreditCardChange = (field, value) => {
     setCreditCardData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleBoletoChange = (field, value) => {
-    setBoletoData((prev) => ({ ...prev, [field]: value }));
-    if (field === "zipCode") {
-      const cleanCep = value.replace(/\D/g, "");
-      if (cleanCep.length === 8) {
-        fetchAddressFromCep(cleanCep);
-      }
-    }
-  };
+  // const handleBoletoChange = (field, value) => {
+  //   setBoletoData((prev) => ({ ...prev, [field]: value }));
+  //   if (field === "zipCode") {
+  //     const cleanCep = value.replace(/\D/g, "");
+  //     if (cleanCep.length === 8) {
+  //       fetchAddressFromCep(cleanCep);
+  //     }
+  //   }
+  // };
 
   const fetchAddressFromCep = async (cep) => {
     try {
       const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
       if (!response.data.erro) {
-        setBoletoData((prev) => ({
+        setSelectedPayer((prev) => ({
           ...prev,
           street: response.data.logradouro,
           district: response.data.bairro,
           city: response.data.localidade,
           state: response.data.uf,
         }));
-        setCepError("");
+        setCepError(""); // Limpa erro, se houver
       } else {
         setCepError("CEP não encontrado.");
       }
@@ -178,7 +317,7 @@ const PaymentForm = () => {
                     onClick={handleRemoveCoupon}
                     className={styles.removeCouponButton}
                   >
-                    Remover
+                    Remover <MdDelete />
                   </button>
                 </label>
               )}
@@ -187,9 +326,10 @@ const PaymentForm = () => {
               </p>
               <button
                 onClick={nextStep}
+                data-primary-button-next="true"
                 className={`${styles.nextButton} ${styles.primaryButton}`}
               >
-                Próximo
+                Próximo <IoIosArrowForward />
               </button>
             </div>
           )}
@@ -244,22 +384,56 @@ const PaymentForm = () => {
                         {(inputProps) => <input {...inputProps} type="text" />}
                       </InputMask>
                     </label>
+                    {/* <label>
+                      <p>Tipo de Documento</p>
+                      <div className={styles.toggleWrapper}>
+                        <button
+                          type="button"
+                          className={`${styles.toggleButton} ${
+                            currentParticipant.documentType === "cpf"
+                              ? styles.active
+                              : ""
+                          }`}
+                          onClick={() => handleDocumentTypeChange("cpf")}
+                        >
+                          CPF
+                        </button>
+                        <button
+                          type="button"
+                          className={`${styles.toggleButton} ${
+                            currentParticipant.documentType === "cnpj"
+                              ? styles.active
+                              : ""
+                          }`}
+                          onClick={() => handleDocumentTypeChange("cnpj")}
+                        >
+                          CNPJ
+                        </button>
+                      </div>
+                    </label> */}
                     <label>
                       <p>
-                        <FaIdCard /> CPF
+                        <FaIdCard />{" "}
+                        {currentParticipant.documentType === "cnpj"
+                          ? "CNPJ"
+                          : "CPF"}
                       </p>
                       <InputMask
-                        mask="999.999.999-99"
-                        value={currentParticipant.cpf}
+                        mask={
+                          currentParticipant.documentType === "cnpj"
+                            ? "99.999.999/9999-99"
+                            : "999.999.999-99"
+                        }
+                        value={currentParticipant.document}
                         onChange={(e) =>
-                          handleParticipantChange("cpf", e.target.value)
+                          handleParticipantChange("document", e.target.value)
                         }
                         required
                       >
                         {(inputProps) => <input {...inputProps} type="text" />}
                       </InputMask>
-                      {cpfError && (
-                        <span className={styles.error}>{cpfError}</span>
+                      {documentError && (
+                        <span className={styles.error}>{documentError}</span>
                       )}
                     </label>
                     <label className={styles.toggleLabel}>
@@ -311,13 +485,13 @@ const PaymentForm = () => {
               )}
               <div className={styles.navigation}>
                 <button onClick={prevStep} className={styles.backButton}>
-                  Voltar
+                  <IoIosArrowBack /> Voltar
                 </button>
                 <button
                   onClick={nextStep}
                   className={`${styles.nextButton} ${styles.primaryButton}`}
                 >
-                  Próximo
+                  Próximo <IoIosArrowForward />
                 </button>
               </div>
             </>
@@ -353,7 +527,10 @@ const PaymentForm = () => {
                   <strong>Total: R$ {totals.total}</strong>
                 </p>
               </div>
-              <form className={styles.payment} onSubmit={handlePayment}>
+              <form
+                className={styles.payment}
+                onSubmit={(e) => handlePayment(e, selectedPayer, navigate)}
+              >
                 {formState.paymentMethod === "creditCard" ? (
                   <div className={styles.paymentDetails}>
                     <h2>Pagamento com Cartão de Crédito</h2>
@@ -452,14 +629,136 @@ const PaymentForm = () => {
                 ) : (
                   <div className={styles.paymentDetails}>
                     <h2>Pagamento com Boleto</h2>
+
+                    {/* Seleção do tipo de pagador */}
+                    <label>
+                      <p>Tipo de Pagador</p>
+                      <select
+                        value={payerType}
+                        onChange={(e) => {
+                          setPayerType(e.target.value);
+                          setSelectedPayer(null);
+                        }}
+                      >
+                        <option value="participant">
+                          Um dos participantes
+                        </option>
+                        <option value="new">Adicionar pagador</option>
+                      </select>
+                    </label>
+                    {/* Dados do pagador */}
+                    {payerType === "participant" ? (
+                      <label>
+                        <p>Selecione o Pagador</p>
+                        <select
+                          value={selectedPayer?.document || ""}
+                          onChange={(e) => {
+                            const selectedDocument = e.target.value;
+                            const payer = participants.find(
+                              (p) => p.document === selectedDocument
+                            );
+                            setSelectedPayer({
+                              name: payer?.name || "",
+                              document: payer?.document || "",
+                              documentType: payer?.documentType || "cpf",
+                              // Endereço começa vazio
+                              zipCode: "",
+                              street: "",
+                              addressNumber: "",
+                              district: "",
+                              city: "",
+                              state: "",
+                            });
+                          }}
+                          required
+                        >
+                          <option value="">Selecione um participante</option>
+                          {participants.map((participant) => (
+                            <option
+                              key={participant.document}
+                              value={participant.document}
+                            >
+                              {participant.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    ) : (
+                      <>
+                        <label>
+                          <p>Nome do Pagador</p>
+                          <input
+                            type="text"
+                            value={selectedPayer?.name || ""}
+                            onChange={(e) =>
+                              setSelectedPayer((prev) => ({
+                                ...prev,
+                                name: e.target.value,
+                              }))
+                            }
+                            required
+                          />
+                        </label>
+                        <label>
+                          <p>Tipo de Documento</p>
+                          <select
+                            value={selectedPayer?.documentType || "cpf"}
+                            onChange={(e) =>
+                              setSelectedPayer((prev) => ({
+                                ...prev,
+                                documentType: e.target.value,
+                                document: "",
+                              }))
+                            }
+                          >
+                            <option value="cpf">CPF</option>
+                            <option value="cnpj">CNPJ</option>
+                          </select>
+                        </label>
+                        <label>
+                          <p>
+                            {selectedPayer?.documentType === "cnpj"
+                              ? "CNPJ"
+                              : "CPF"}
+                          </p>
+                          <InputMask
+                            mask={
+                              selectedPayer?.documentType === "cnpj"
+                                ? "99.999.999/9999-99"
+                                : "999.999.999-99"
+                            }
+                            value={selectedPayer?.document || ""}
+                            onChange={(e) =>
+                              setSelectedPayer((prev) => ({
+                                ...prev,
+                                document: e.target.value,
+                              }))
+                            }
+                            required
+                          >
+                            {(inputProps) => (
+                              <input {...inputProps} type="text" />
+                            )}
+                          </InputMask>
+                        </label>
+                      </>
+                    )}
                     <label>
                       <p>CEP</p>
                       <InputMask
                         mask="99999-999"
-                        value={boletoData.zipCode}
-                        onChange={(e) =>
-                          handleBoletoChange("zipCode", e.target.value)
-                        }
+                        value={selectedPayer?.zipCode || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setSelectedPayer((prev) => ({
+                            ...prev,
+                            zipCode: value,
+                          }));
+                          const cleanCep = value.replace(/\D/g, "");
+                          if (cleanCep.length === 8) {
+                            fetchAddressFromCep(cleanCep);
+                          }
+                        }}
                         required
                       >
                         {(inputProps) => <input {...inputProps} type="text" />}
@@ -472,9 +771,12 @@ const PaymentForm = () => {
                       <p>Rua</p>
                       <input
                         type="text"
-                        value={boletoData.street}
+                        value={selectedPayer?.street || ""}
                         onChange={(e) =>
-                          handleBoletoChange("street", e.target.value)
+                          setSelectedPayer((prev) => ({
+                            ...prev,
+                            street: e.target.value,
+                          }))
                         }
                         required
                       />
@@ -483,9 +785,12 @@ const PaymentForm = () => {
                       <p>Número</p>
                       <input
                         type="text"
-                        value={boletoData.number}
+                        value={selectedPayer?.addressNumber || ""}
                         onChange={(e) =>
-                          handleBoletoChange("number", e.target.value)
+                          setSelectedPayer((prev) => ({
+                            ...prev,
+                            addressNumber: e.target.value,
+                          }))
                         }
                         required
                       />
@@ -494,9 +799,12 @@ const PaymentForm = () => {
                       <p>Bairro</p>
                       <input
                         type="text"
-                        value={boletoData.district}
+                        value={selectedPayer?.district || ""}
                         onChange={(e) =>
-                          handleBoletoChange("district", e.target.value)
+                          setSelectedPayer((prev) => ({
+                            ...prev,
+                            district: e.target.value,
+                          }))
                         }
                         required
                       />
@@ -505,9 +813,12 @@ const PaymentForm = () => {
                       <p>Cidade</p>
                       <input
                         type="text"
-                        value={boletoData.city}
+                        value={selectedPayer?.city || ""}
                         onChange={(e) =>
-                          handleBoletoChange("city", e.target.value)
+                          setSelectedPayer((prev) => ({
+                            ...prev,
+                            city: e.target.value,
+                          }))
                         }
                         required
                       />
@@ -516,9 +827,12 @@ const PaymentForm = () => {
                       <p>Estado (ex.: SP)</p>
                       <input
                         type="text"
-                        value={boletoData.state}
+                        value={selectedPayer?.state || ""}
                         onChange={(e) =>
-                          handleBoletoChange("state", e.target.value)
+                          setSelectedPayer((prev) => ({
+                            ...prev,
+                            state: e.target.value,
+                          }))
                         }
                         maxLength="2"
                         required
@@ -528,7 +842,7 @@ const PaymentForm = () => {
                 )}
                 <div className={styles.navigation}>
                   <button onClick={prevStep} className={styles.backButton}>
-                    Voltar
+                    <IoIosArrowBack /> Voltar
                   </button>
                   <AnimatedButton
                     type="submit"
