@@ -60,6 +60,17 @@ const usePaymentForm = () => {
   // Calcular totais sempre que ticketQuantity, halfTickets ou coupon mudar
   useEffect(() => {
     const fetchTotals = async () => {
+      if (formState.paymentMethod === "courtesy") {
+        setTotals({
+          valueTicketsAll: "0.00",
+          valueTicketsHalf: "0.00",
+          discount: "0.00",
+          total: "0.00",
+          totalInCents: 0,
+        });
+        return;
+      }
+
       const ticketQty = Number(formState.ticketQuantity) || 0;
       const halfQty = Number(formState.halfTickets) || 0;
       if (isNaN(ticketQty) || isNaN(halfQty)) {
@@ -90,7 +101,12 @@ const usePaymentForm = () => {
       }
     };
     fetchTotals();
-  }, [formState.ticketQuantity, formState.halfTickets, formState.coupon]);
+  }, [
+    formState.paymentMethod,
+    formState.ticketQuantity,
+    formState.halfTickets,
+    formState.coupon,
+  ]);
 
   // Funções utilitárias
   const setModalError = (title, message, content = null) => {
@@ -397,6 +413,7 @@ const usePaymentForm = () => {
     modalState,
     setModalState,
     totals,
+    setTotals,
     handleTicketQuantityChange,
     handleAddParticipant,
     handleApplyCoupon,

@@ -1,9 +1,8 @@
 // src/AdminDashboard.js
 import React, { useState } from "react";
 import styles from "./adminDashboard.module.css";
-import DashboardSection from "../../components/admin/DashboardSection";
-import EmailSection from "../../components/admin/EmailSection";
-
+import DashboardSection from "../../components/admin/dashboard/DashboardSection";
+import EmailSection from "../../components/admin/email/EmailSection";
 import { IoExitOutline } from "react-icons/io5";
 import {
   MdOutlineSpaceDashboard,
