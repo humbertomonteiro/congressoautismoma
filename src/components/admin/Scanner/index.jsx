@@ -1,3 +1,4 @@
+// src/components/Scanner.jsx
 import React, { useState, useEffect } from "react";
 import Reader from "react-qr-scanner";
 import styles from "./scanner.module.css";
@@ -11,7 +12,6 @@ import {
   CardContent,
   Typography,
   Box,
-  Grid,
   IconButton,
   Collapse,
 } from "@mui/material";
@@ -34,7 +34,7 @@ const Scanner = () => {
           const checkout = doc.data();
           checkout.participants.forEach((participant, index) => {
             if (participant.validated) {
-              const participantId = `${checkout.transactionId}-${index}`; // Ajuste conforme o campo correto
+              const participantId = `${checkout.transactionId}-${index}`;
               if (participant.validated["2025-05-31"]) {
                 validated.push({
                   participantId,
@@ -70,13 +70,12 @@ const Scanner = () => {
     }
 
     const qrText = data.text;
-    console.log("QR Code lido:", qrText); // Log do valor bruto escaneado
+    console.log("QR Code lido:", qrText);
 
     setResult(qrText);
     setValidationStatus("Validando...");
 
     try {
-      // Verifica se o texto é uma string JSON válida
       let parsedData;
       try {
         parsedData = JSON.parse(qrText);
@@ -87,7 +86,6 @@ const Scanner = () => {
         return;
       }
 
-      // Verifica se contém os campos esperados
       if (
         !parsedData.checkoutId ||
         !parsedData.participantId ||
@@ -119,7 +117,7 @@ const Scanner = () => {
             eventName: parsedData.eventName,
           },
         ]);
-        setIsScanning(false); // Para o escaneamento após sucesso
+        setIsScanning(false);
       } else {
         setValidationStatus(response.data.message || "Inválido");
       }
@@ -172,172 +170,171 @@ const Scanner = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.content}>
-        <h1>Validação de QR Code</h1>
+      <h1>Validação de QR Code</h1>
+      <Card
+        sx={{
+          backgroundColor: "#FFFFFF",
+          borderRadius: "12px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+          p: "20px",
+          width: "100%",
+          maxWidth: "1200px", // Ajuste conforme o layout do dashboard
+          mx: "auto",
+          mb: 3,
+        }}
+      >
         {/* Scanner e Botões */}
-        <Grid container spacing={2} justifyContent="center">
-          <Grid item xs={12} sm={6}>
-            <Box sx={{ textAlign: "center", mb: 2 }}>
-              {!isScanning ? (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleStartScanning}
-                  size="large"
-                  fullWidth
-                  sx={{ py: 1.5 }}
-                >
-                  Iniciar Escaneamento
-                </Button>
-              ) : (
-                <>
-                  <Box
-                    sx={{
-                      position: "relative",
-                      border: "2px dashed #ccc",
-                      borderRadius: 2,
-                      overflow: "hidden",
-                      maxWidth: "100%",
-                      mx: "auto",
-                    }}
-                  >
-                    <Reader
-                      delay={500}
-                      onScan={handleScan}
-                      onError={handleError}
-                      facingMode="environment"
-                      style={{ width: "100%", height: "auto" }}
-                    />
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        border: "20px solid rgba(0, 0, 0, 0.2)",
-                        pointerEvents: "none",
-                      }}
-                    />
-                  </Box>
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    onClick={handleStopScanning}
-                    size="large"
-                    fullWidth
-                    sx={{ mt: 2, py: 1.5 }}
-                  >
-                    Parar Escaneamento
-                  </Button>
-                </>
-              )}
-            </Box>
-            {/* Resultado */}
-            {result && (
-              <Card sx={{ mb: 2, ...getStatusStyle(validationStatus) }}>
-                <CardContent>
-                  {validationStatus === "Válido" ? (
-                    (() => {
-                      const parsed = JSON.parse(result);
-                      return (
-                        <>
-                          <Typography variant="h6" color="success.main">
-                            QR Code Válido
-                          </Typography>
-                          <Typography>
-                            <strong>Nome:</strong> {parsed.participantName}
-                          </Typography>
-                          <Typography>
-                            <strong>Evento:</strong> {parsed.eventName}
-                          </Typography>
-                          <Typography>
-                            <strong>Data:</strong> {parsed.date}
-                          </Typography>
-                        </>
-                      );
-                    })()
-                  ) : (
-                    <Typography
-                      variant="h6"
-                      color={
-                        validationStatus?.startsWith("Erro")
-                          ? "error.main"
-                          : validationStatus === "Validando..."
-                          ? "info.main"
-                          : "text.primary"
-                      }
-                    >
-                      {validationStatus || "Escaneie um QR Code"}
-                    </Typography>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </Grid>
-        </Grid>
-        {/* Busca e Lista de Validados */}
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <TextField
-              label="Buscar por Email"
-              value={searchEmail}
-              onChange={(e) => setSearchEmail(e.target.value)}
-              fullWidth
-              variant="outlined"
-              sx={{ mb: 2 }}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom>
-              QR Codes Validados ({filteredValidatedQRs.length})
-            </Typography>
-            {filteredValidatedQRs.map((qr, index) => (
-              <Card
-                key={index}
+        <Box sx={{ mb: 3 }}>
+          {!isScanning ? (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleStartScanning}
+              sx={{ width: { xs: "100%", sm: "auto" }, py: 1.5 }}
+            >
+              Iniciar Escaneamento
+            </Button>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box
                 sx={{
-                  mb: 1,
-                  borderLeft: "4px solid #4caf50",
-                  "&:hover": { boxShadow: 4 },
+                  position: "relative",
+                  border: "2px dashed #ccc",
+                  borderRadius: 2,
+                  overflow: "hidden",
+                  width: { xs: "100%", sm: "400px" }, // Limita o tamanho do scanner
                 }}
               >
-                <CardContent sx={{ p: 1 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Box>
-                      <Typography variant="subtitle1">{qr.name}</Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        {qr.email} | {qr.date}
-                      </Typography>
-                    </Box>
-                    <IconButton
-                      onClick={() =>
-                        setExpandedCard(expandedCard === index ? null : index)
-                      }
-                    >
-                      {expandedCard === index ? (
-                        <MdExpandLess />
-                      ) : (
-                        <MdExpandMore />
-                      )}
-                    </IconButton>
-                  </Box>
-                  <Collapse in={expandedCard === index}>
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      <strong>ID do Participante:</strong> {qr.participantId}
+                <Reader
+                  delay={500}
+                  onScan={handleScan}
+                  onError={handleError}
+                  facingMode="environment"
+                  style={{ width: "100%", height: "auto" }}
+                />
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    border: "20px solid rgba(0, 0, 0, 0.2)",
+                    pointerEvents: "none",
+                  }}
+                />
+              </Box>
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={handleStopScanning}
+                sx={{ width: { xs: "100%", sm: "auto" }, py: 1.5 }}
+              >
+                Parar Escaneamento
+              </Button>
+            </Box>
+          )}
+        </Box>
+        {/* Resultado */}
+        {result && (
+          <Box
+            sx={{
+              mb: 3,
+              padding: "20px",
+              ...getStatusStyle(validationStatus),
+            }}
+          >
+            {validationStatus === "Válido" ? (
+              (() => {
+                const parsed = JSON.parse(result);
+                return (
+                  <>
+                    <Typography variant="h6" color="success.main">
+                      QR Code Válido
                     </Typography>
-                  </Collapse>
-                </CardContent>
-              </Card>
-            ))}
-          </Grid>
-        </Grid>
-      </div>
+                    <Typography>
+                      <strong>Nome:</strong> {parsed.participantName}
+                    </Typography>
+                    <Typography>
+                      <strong>Evento:</strong> {parsed.eventName}
+                    </Typography>
+                    <Typography>
+                      <strong>Data:</strong> {parsed.date}
+                    </Typography>
+                  </>
+                );
+              })()
+            ) : (
+              <Typography
+                variant="h6"
+                color={
+                  validationStatus?.startsWith("Erro")
+                    ? "error.main"
+                    : validationStatus === "Validando..."
+                    ? "info.main"
+                    : "text.primary"
+                }
+              >
+                {validationStatus || "Escaneie um QR Code"}
+              </Typography>
+            )}
+          </Box>
+        )}
+        {/* Busca e Lista de Validados */}
+        <Box sx={{ mb: 2 }}>
+          <TextField
+            label="Buscar por Email"
+            value={searchEmail}
+            onChange={(e) => setSearchEmail(e.target.value)}
+            fullWidth
+            variant="outlined"
+          />
+        </Box>
+      </Card>
+      <Box sx={{ backgroundColor: "#FFFFFF", borderRadius: "12px", p: 2 }}>
+        <Typography variant="h6" sx={{ mb: 1 }}>
+          QR Codes Validados ({filteredValidatedQRs.length})
+        </Typography>
+        {filteredValidatedQRs.map((qr, index) => (
+          <Card
+            key={index}
+            sx={{
+              mb: 1,
+              borderLeft: "4px solid #4caf50",
+              "&:hover": { boxShadow: 4 },
+            }}
+          >
+            <CardContent sx={{ p: 1 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Box>
+                  <Typography variant="subtitle1">{qr.name}</Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    {qr.email} | {qr.date}
+                  </Typography>
+                </Box>
+                <IconButton
+                  onClick={() =>
+                    setExpandedCard(expandedCard === index ? null : index)
+                  }
+                >
+                  {expandedCard === index ? <MdExpandLess /> : <MdExpandMore />}
+                </IconButton>
+              </Box>
+              <Collapse in={expandedCard === index}>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  <strong>ID do Participante:</strong> {qr.participantId}
+                </Typography>
+              </Collapse>
+            </CardContent>
+          </Card>
+        ))}
+      </Box>
     </div>
   );
 };

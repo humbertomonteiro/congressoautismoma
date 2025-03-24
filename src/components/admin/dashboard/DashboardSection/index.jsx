@@ -1,14 +1,6 @@
 import React from "react";
-import {
-  Button,
-  Card,
-  Box,
-  Modal,
-  useMediaQuery,
-  useTheme,
-} from "@mui/material";
+import { Button, Card, Box, useMediaQuery, useTheme } from "@mui/material";
 import styles from "./dashboardSection.module.css";
-import AddManualPayment from "../AddManualPayment";
 import Loading from "../../../shared/Loading";
 import Filters from "../Filters";
 import Metrics from "../Metrics";
@@ -41,8 +33,6 @@ const DashboardContent = ({
   isMobile,
   openFiltersDrawer,
   setOpenFiltersDrawer,
-  openManualPaymentModal,
-  setOpenManualPaymentModal,
 }) => {
   const { loading, metrics, chartData, updateMetrics } = useDashboard();
 
@@ -86,7 +76,7 @@ const DashboardContent = ({
       <Metrics metrics={metrics} />
       <StatusGrafic chartData={chartData} />
 
-      {isMobile ? (
+      {/* {isMobile ? (
         <>
           <Button
             variant="contained"
@@ -143,7 +133,7 @@ const DashboardContent = ({
         </>
       ) : (
         <AddManualPayment />
-      )}
+      )} */}
 
       {!isMobile && (
         <Card

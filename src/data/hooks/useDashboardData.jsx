@@ -1,4 +1,3 @@
-// src/hooks/useDashboardData.js
 import { useState, useEffect } from "react";
 import { db } from "../../../firebaseConfig";
 import {
@@ -18,23 +17,20 @@ const useDashboardData = () => {
   const [checkouts, setCheckouts] = useState([]);
   const [filteredCheckouts, setFilteredCheckouts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
-  const [totalDocs, setTotalDocs] = useState(0);
   const [statusFilter, setStatusFilter] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [startDateFilter, setStartDateFilter] = useState(""); // Novo
+  const [endDateFilter, setEndDateFilter] = useState(""); // Novo
   const [eventFilter, setEventFilter] = useState("");
   const [eventOptions, setEventOptions] = useState([]);
   const [metrics, setMetrics] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
   const [qrCodeData, setQrCodeData] = useState({});
-  const rowsPerPage = 6;
 
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoading(true);
       try {
-        // Carregar métricas do Firestore
         const metricsDoc = await getDoc(
           doc(db, "dashboard_metrics", "metrics")
         );
@@ -50,7 +46,6 @@ const useDashboardData = () => {
             errorValue: metricsData.errorValue || "0.00",
             successCount: metricsData.successCount || 0,
           });
-          setTotalDocs(metricsData.totalDocs || 0);
           setEventOptions(metricsData.events || []);
         } else {
           setMetrics({
@@ -63,18 +58,15 @@ const useDashboardData = () => {
             errorValue: "0.00",
             successCount: 0,
           });
-          setTotalDocs(0);
           setEventOptions([]);
         }
 
-        // Tentar carregar checkouts do localStorage
         const cachedCheckouts = localStorage.getItem("dashboard_checkouts");
         if (cachedCheckouts) {
           const parsedCheckouts = JSON.parse(cachedCheckouts);
           setCheckouts(parsedCheckouts);
-          applyFiltersAndPagination(parsedCheckouts);
+          applyFilters(parsedCheckouts);
         } else {
-          // Se não houver dados no localStorage, buscar do Firestore
           await fetchCheckoutsFromFirestore();
         }
       } catch (error) {
@@ -88,72 +80,82 @@ const useDashboardData = () => {
 
   const fetchCheckoutsFromFirestore = async () => {
     try {
-      let q = query(collection(db, "checkouts"), orderBy("timestamp", "desc"));
-
-      if (statusFilter)
-        q = query(q, where("status", "==", statusFilter.toLowerCase()));
-      if (methodFilter)
-        q = query(q, where("paymentMethod", "==", methodFilter));
-      if (dateFilter) {
-        const localDate = new Date(dateFilter);
-        const startOfDay = new Date(localDate.setHours(0, 0, 0, 0));
-        const endOfDay = new Date(localDate.setHours(23, 59, 59, 999));
-        const utcStart = new Date(
-          startOfDay.getTime() - startOfDay.getTimezoneOffset() * 60000
-        );
-        const utcEnd = new Date(
-          endOfDay.getTime() - endOfDay.getTimezoneOffset() * 60000
-        );
-        q = query(
-          q,
-          where("timestamp", ">=", utcStart.toISOString()),
-          where("timestamp", "<=", utcEnd.toISOString())
-        );
-      }
-      if (eventFilter) q = query(q, where("eventName", "==", eventFilter));
-
+      const q = query(
+        collection(db, "checkouts"),
+        orderBy("timestamp", "desc")
+      );
       const snapshot = await getDocs(q);
       const allCheckoutData = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
 
-      // Salvar no localStorage
       localStorage.setItem(
         "dashboard_checkouts",
         JSON.stringify(allCheckoutData)
       );
       setCheckouts(allCheckoutData);
-      applyFiltersAndPagination(allCheckoutData);
+      applyFilters(allCheckoutData);
     } catch (error) {
       console.error("Erro ao buscar checkouts do Firestore:", error);
     }
   };
 
-  const applyFiltersAndPagination = (data) => {
-    let filteredData = data;
+  const applyFilters = (data) => {
+    let filteredData = [...data];
 
-    // Aplicar filtro por document
+    // Filtro por status
+    if (statusFilter) {
+      filteredData = filteredData.filter(
+        (checkout) => checkout.status === statusFilter
+      );
+    }
+
+    // Filtro por método de pagamento
+    if (methodFilter) {
+      filteredData = filteredData.filter(
+        (checkout) => checkout.paymentMethod === methodFilter
+      );
+    }
+
+    // Filtro por intervalo de datas
+    if (startDateFilter || endDateFilter) {
+      filteredData = filteredData.filter((checkout) => {
+        const checkoutDate = new Date(checkout.timestamp);
+        const startDate = startDateFilter ? new Date(startDateFilter) : null;
+        const endDate = endDateFilter ? new Date(endDateFilter) : null;
+
+        if (startDate && endDate) {
+          return checkoutDate >= startDate && checkoutDate <= endDate;
+        } else if (startDate) {
+          return checkoutDate >= startDate;
+        } else if (endDate) {
+          return checkoutDate <= endDate;
+        }
+        return true;
+      });
+    }
+
+    // Filtro por documento
     if (searchQuery) {
       const cleanSearchQuery = searchQuery.replace(/[^\d]/g, "");
-      filteredData = data.filter((checkout) => {
+      filteredData = filteredData.filter((checkout) => {
         const cleanDocument = checkout.document.replace(/[^\d]/g, "");
         return cleanDocument.includes(cleanSearchQuery);
       });
     }
 
-    // Paginação no frontend
-    const startIndex = page * rowsPerPage;
-    const paginatedData = filteredData.slice(
-      startIndex,
-      startIndex + rowsPerPage
-    );
+    // Filtro por evento (se aplicável)
+    if (eventFilter) {
+      filteredData = filteredData.filter(
+        (checkout) => checkout.eventName === eventFilter
+      );
+    }
 
-    setFilteredCheckouts(paginatedData);
-    setTotalDocs(filteredData.length);
+    setFilteredCheckouts(filteredData);
 
     const qrData = {};
-    paginatedData.forEach((checkout) => {
+    filteredData.forEach((checkout) => {
       checkout.participants.forEach((p, index) => {
         if (p.qrRawData) {
           qrData[`${checkout.id}-${index}`] = p.qrRawData;
@@ -168,7 +170,7 @@ const useDashboardData = () => {
     try {
       await PaymentService.verifyAllPayments();
       const snapshot = await getDocs(collection(db, "checkouts"));
-      const checkouts = snapshot.docs.map((doc) => doc.data());
+      const checkoutsData = snapshot.docs.map((doc) => doc.data());
 
       let successTicketsFull = 0,
         successTicketsHalf = 0,
@@ -179,7 +181,7 @@ const useDashboardData = () => {
         errorValue = 0,
         successCount = 0;
 
-      checkouts.forEach((data) => {
+      checkoutsData.forEach((data) => {
         if (data.status === "approved") {
           successTicketsFull += data.orderDetails.fullTickets || 0;
           successTicketsHalf += data.orderDetails.halfTickets || 0;
@@ -204,17 +206,14 @@ const useDashboardData = () => {
         errorCount,
         errorValue: errorValue.toFixed(2),
         successCount,
-        events: [...new Set(checkouts.map((c) => c.eventName))],
+        events: [...new Set(checkoutsData.map((c) => c.eventName))],
         lastUpdated: Timestamp.fromDate(new Date()),
       };
 
       await setDoc(doc(db, "dashboard_metrics", "metrics"), updatedMetrics);
 
       setMetrics(updatedMetrics);
-      setTotalDocs(updatedMetrics.totalDocs);
       setEventOptions(updatedMetrics.events);
-
-      // Atualizar checkouts no Firestore e no localStorage
       await fetchCheckoutsFromFirestore();
     } catch (error) {
       console.error("Erro ao atualizar métricas:", error);
@@ -223,15 +222,17 @@ const useDashboardData = () => {
     }
   };
 
-  const handleChangePage = (newPage) => {
-    setPage(newPage);
-    applyFiltersAndPagination(checkouts); // Aplicar filtros e paginação nos dados em memória
-  };
-
   useEffect(() => {
-    setPage(0);
-    applyFiltersAndPagination(checkouts); // Reaplicar filtros sempre que mudarem
-  }, [statusFilter, methodFilter, dateFilter, eventFilter, searchQuery]);
+    applyFilters(checkouts);
+  }, [
+    statusFilter,
+    methodFilter,
+    searchQuery,
+    startDateFilter,
+    endDateFilter,
+    eventFilter,
+    checkouts,
+  ]);
 
   const chartData = metrics
     ? [
@@ -253,24 +254,22 @@ const useDashboardData = () => {
     checkouts,
     filteredCheckouts,
     loading,
-    page,
-    rowsPerPage,
-    totalDocs,
     statusFilter,
     setStatusFilter,
     methodFilter,
     setMethodFilter,
-    dateFilter,
-    setDateFilter,
+    searchQuery,
+    setSearchQuery,
+    startDateFilter,
+    setStartDateFilter,
+    endDateFilter,
+    setEndDateFilter,
     eventFilter,
     setEventFilter,
     eventOptions,
     metrics,
-    searchQuery,
-    setSearchQuery,
     qrCodeData,
     updateMetrics,
-    handleChangePage,
     chartData,
   };
 };

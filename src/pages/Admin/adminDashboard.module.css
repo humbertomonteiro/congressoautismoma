@@ -1,17 +1,16 @@
 /* adminDashboard.module.css */
 
-/* Container geral com fundo gradiente do checkout */
+/* Container geral */
 .dashboardContainer {
+  display: flex;
   min-height: 100vh;
   background: linear-gradient(135deg, #f0f4f8 0%, #e0e7ef 100%);
-  display: flex;
-  overflow: hidden;
 }
 
+/* Logo Container */
 .logoContainer {
+  padding: 20px 0;
   text-align: center;
-  padding: 10px 0;
-  border-bottom: 1px solid #ddd;
 }
 
 .logo {
@@ -19,58 +18,41 @@
   height: auto;
 }
 
-/* Sidebar (aside) - Fixa no desktop */
+/* Sidebar (aside) para desktop */
 .aside {
   width: 250px;
   background-color: #ffffff;
-  padding: 20px;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
   position: fixed;
   top: 0;
   left: 0;
   height: 100vh;
   z-index: 10;
+  display: flex;
+  flex-direction: column;
 }
 
-.aside h2 {
-  color: #2c3e50;
-  font-size: 20px;
-  font-weight: 600;
-  margin: 0;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #ddd;
-}
-
-.aside nav {
+/* Drawer Content (usado tanto no desktop quanto no mobile) */
+.drawerContent {
   display: flex;
   flex-direction: column;
   height: 100%;
   justify-content: space-between;
+  padding: 20px;
 }
 
-.aside nav ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  flex-grow: 1;
-}
-
+/* Itens de navegação */
 .navItem,
-.exit {
+.exitContainer {
   padding: 15px 20px;
   color: #555;
   font-size: 16px;
   font-weight: 500;
-  cursor: pointer;
   border-radius: 8px;
-  border: 0;
   background: linear-gradient(135deg, #fafafa 0%, #f9f9f9 100%);
   margin-bottom: 10px;
-  display: flex;
-  justify-content: space-between;
+  height: 48px;
+  cursor: pointer;
   transition: background 0.3s ease, color 0.3s ease, transform 0.2s ease,
     box-shadow 0.2s ease;
 }
@@ -88,15 +70,22 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.exit {
+/* Botão de sair */
+[data-exit="true"] {
+  align-self: flex-end;
   background: linear-gradient(135deg, #f73a3a 0%, #d62f2f 100%);
-  color: #ffffff;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  color: #fff;
+  margin-top: 100px;
 }
 
-.exit:hover {
-  background: linear-gradient(135deg, #db3434 0%, #b92929 100%);
-  transform: translateY(-2px);
+[data-exit="true"]:hover {
+  align-self: flex-end;
+  background: linear-gradient(135deg, #db3333 0%, #b92929 100%);
+}
+
+/* AppBar para mobile */
+.appBar {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 /* Conteúdo principal */
@@ -104,74 +93,27 @@
   flex-grow: 1;
   padding: 30px;
   background-color: #ffffff;
-  border-radius: 12px 0 0 12px;
-  margin: 10px 0;
-  margin-left: 270px; /* Espaço para a sidebar fixa */
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
-  min-height: 100vh;
 }
 
-/* Responsividade para mobile */
-@media (max-width: 768px) {
-  .dashboardContainer {
-    flex-direction: column;
-  }
-
-  .aside {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: auto;
-    padding: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    z-index: 10;
-  }
-
-  .aside h2 {
-    display: none; /* Esconder o título no mobile para economizar espaço */
-  }
-
-  .aside nav {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .aside nav ul {
-    display: flex;
-    gap: 10px;
-  }
-
-  .navItem,
-  .exit {
-    padding: 10px 15px;
-    font-size: 14px;
-    margin-bottom: 0;
-    border-radius: 6px;
-    background: linear-gradient(135deg, #ebebeb 0%, #ececec 100%);
-    color: #2c3e50;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .navItem:hover {
-    transform: none; /* Remover elevação no mobile para simplicidade */
-    box-shadow: none;
-  }
-
-  .active {
-    box-shadow: none;
-  }
-
+/* Ajustes para mobile (telas menores que 960px) */
+@media (max-width: 960px) {
   .mainContent {
+    margin-top: 100px; /* Espaço para o AppBar fixo */
     margin-left: 0;
-    margin-top: 160px; /* Espaço para o header fixo */
     border-radius: 0;
     padding: 20px;
-    box-shadow: none;
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+/* Ajustes para desktop (telas maiores que 960px) */
+@media (min-width: 961px) {
+  .mainContent {
+    margin-left: 250px; /* Espaço para a sidebar fixa */
+    border-radius: 12px 0 0 12px;
   }
 }

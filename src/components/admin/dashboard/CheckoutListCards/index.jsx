@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -13,18 +13,37 @@ import CheckoutCard from "../CheckoutCard";
 import Filters from "../Filters";
 import { useDashboard } from "../../../../data/contexts/DashboardContext";
 
+// Função para formatar data no padrão brasileiro DD/MM/YYYY (com ou sem hora)
+const formatBrazilianDate = (isoString, includeTime = false) => {
+  if (!isoString) return "N/A";
+  const date = new Date(isoString);
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0"); // +1 porque getMonth começa em 0
+  const year = date.getFullYear();
+  if (includeTime) {
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const seconds = date.getSeconds().toString().padStart(2, "0");
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+  }
+  return `${day}/${month}/${year}`;
+};
+
 const CheckoutListCards = ({
   isMobile,
   setOpenFiltersDrawer,
   openFiltersDrawer,
 }) => {
-  const { filteredCheckouts, page, rowsPerPage, totalDocs, handleChangePage } =
-    useDashboard();
+  const { filteredCheckouts: allFilteredCheckouts } = useDashboard();
+  const [page, setPage] = useState(0);
+  const [rowsPerPage] = useState(6);
+  const [paginatedCheckouts, setPaginatedCheckouts] = useState([]);
 
+  // Função para exportar para CSV com data no formato brasileiro
   const exportToCSV = () => {
     const headers = [
       "ID da Transação",
-      "Data/Hora",
+      "Data do Checkout",
       "Status",
       "Método",
       "Evento",
@@ -34,19 +53,21 @@ const CheckoutListCards = ({
       "Ingressos Meia",
       "Desconto",
       "Cupom",
+      "Data de Vencimento",
     ];
-    const rows = filteredCheckouts.map((checkout) => [
-      checkout.transactionId,
-      new Date(checkout.timestamp).toLocaleString(),
-      checkout.status,
-      checkout.paymentMethod,
-      checkout.eventName,
-      `R$ ${checkout.totalAmount}`,
-      checkout.participants.length,
-      checkout.orderDetails.fullTickets,
-      checkout.orderDetails.halfTickets,
-      `R$ ${checkout.orderDetails.discount}`,
-      checkout.orderDetails.coupon || "Nenhum",
+    const rows = paginatedCheckouts.map((checkout) => [
+      checkout.transactionId || "N/A",
+      formatBrazilianDate(checkout.timestamp, true), // Data do checkout com hora
+      checkout.status || "N/A",
+      checkout.paymentMethod || "N/A",
+      checkout.eventName || "N/A",
+      `R$ ${checkout.totalAmount || "0.00"}`,
+      checkout.participants ? checkout.participants.length : 0,
+      checkout.orderDetails?.fullTickets || 0,
+      checkout.orderDetails?.halfTickets || 0,
+      `R$ ${checkout.orderDetails?.discount || "0.00"}`,
+      checkout.orderDetails?.coupon || "Nenhum",
+      formatBrazilianDate(checkout.paymentDetails?.boleto?.dataVencimento), // Data de vencimento sem hora
     ]);
     const csvContent = [
       headers.join(","),
@@ -61,23 +82,70 @@ const CheckoutListCards = ({
     document.body.removeChild(link);
   };
 
+  // Função para exportar para PDF com data no formato brasileiro
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.text("Checkouts - Congresso Autismo MA", 10, 10);
     autoTable(doc, {
-      head: [["Status", "Método", "Valor Total", "Participantes", "email"]],
-      body: filteredCheckouts.map((checkout) => [
-        checkout.status,
-        checkout.paymentMethod,
-        `R$ ${checkout.totalAmount}`,
-        `${checkout.participants.length} (${
-          checkout.participants.filter((p) => p.isHalfPrice).length
-        } meia)`,
-        checkout.participants[0].email,
+      head: [
+        [
+          "Status",
+          "Método",
+          "Valor Total",
+          "Participantes",
+          "Email",
+          "Data do Checkout",
+          "Data de Vencimento",
+        ],
+      ],
+      body: paginatedCheckouts.map((checkout) => [
+        checkout.status || "N/A",
+        checkout.paymentMethod || "N/A",
+        `R$ ${checkout.totalAmount || "0.00"}`,
+        checkout.participants
+          ? `${checkout.participants.length} (${
+              checkout.participants.filter((p) => p.isHalfPrice).length
+            } meia)`
+          : "0",
+        checkout.participants?.[0]?.email || "N/A",
+        formatBrazilianDate(checkout.timestamp, true), // Data do checkout com hora
+        formatBrazilianDate(checkout.paymentDetails?.boleto?.dataVencimento), // Data de vencimento sem hora
       ]),
     });
     doc.save("checkouts.pdf");
   };
+
+  // Aplicar paginação localmente
+  useEffect(() => {
+    const validCheckouts = (allFilteredCheckouts || []).filter(
+      (checkout) =>
+        checkout &&
+        checkout.id &&
+        Array.isArray(checkout.participants) &&
+        checkout.timestamp &&
+        checkout.orderDetails
+    );
+    const startIndex = page * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    const newPaginatedCheckouts = validCheckouts.slice(startIndex, endIndex);
+    setPaginatedCheckouts(newPaginatedCheckouts);
+  }, [page, allFilteredCheckouts, rowsPerPage]);
+
+  // Função para mudar a página
+  const handleChangePage = (newPage) => {
+    setPage(newPage);
+  };
+
+  // Calcular número total de páginas com base nos checkouts válidos
+  const validCheckoutsCount = (allFilteredCheckouts || []).filter(
+    (checkout) =>
+      checkout &&
+      checkout.id &&
+      Array.isArray(checkout.participants) &&
+      checkout.timestamp &&
+      checkout.orderDetails
+  ).length;
+  const totalPages = Math.ceil(validCheckoutsCount / rowsPerPage);
 
   return (
     <Card
@@ -109,13 +177,9 @@ const CheckoutListCards = ({
             >
               <Typography
                 variant="h6"
-                sx={{
-                  color: "#333333",
-                  fontWeight: 500,
-                  borderRadius: "12px",
-                }}
+                sx={{ color: "#333333", fontWeight: 500 }}
               >
-                Checkouts ({totalDocs})
+                Checkouts ({validCheckoutsCount})
               </Typography>
               {isMobile && (
                 <>
@@ -151,7 +215,7 @@ const CheckoutListCards = ({
                 </>
               )}
             </Box>
-            <Box sx={{ ml: "auto" }}>
+            <Box sx={{ display: "flex", gap: 1 }}>
               <Button
                 variant="outlined"
                 onClick={exportToCSV}
@@ -181,6 +245,7 @@ const CheckoutListCards = ({
               </Button>
             </Box>
           </Box>
+
           <Box
             sx={{
               display: "flex",
@@ -189,7 +254,7 @@ const CheckoutListCards = ({
               flexWrap: "wrap",
             }}
           >
-            {filteredCheckouts.map((checkout) => (
+            {paginatedCheckouts.map((checkout) => (
               <Box
                 sx={{ flex: "1 1 30%", minWidth: "300px" }}
                 key={checkout.id}
@@ -198,6 +263,7 @@ const CheckoutListCards = ({
               </Box>
             ))}
           </Box>
+
           <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
             <Button
               disabled={page === 0}
@@ -218,10 +284,10 @@ const CheckoutListCards = ({
                 alignItems: "center",
               }}
             >
-              Página {page + 1} de {Math.ceil(totalDocs / rowsPerPage)}
+              Página {page + 1} de {totalPages}
             </Typography>
             <Button
-              disabled={page * rowsPerPage + rowsPerPage >= totalDocs}
+              disabled={page + 1 >= totalPages}
               onClick={() => handleChangePage(page + 1)}
               sx={{
                 color: "#1976D2",

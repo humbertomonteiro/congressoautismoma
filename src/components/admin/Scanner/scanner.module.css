@@ -1,19 +1,14 @@
 /* src/components/admin/scanner.module.css */
 .container {
-  background: linear-gradient(135deg, #f0f4f8 0%, #e0e7ef 100%);
+  background-color: #f5f7fa;
+  padding: 20px;
+  border-radius: 12px;
   min-height: 100vh;
 }
 
-.content {
-  padding: 20px;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.content h1 {
+.container h1 {
   color: #2c3e50;
   font-size: 24px;
   font-weight: 600;
   margin-bottom: 20px;
-  text-align: center;
 }

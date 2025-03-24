@@ -11,6 +11,18 @@ import {
 } from "@mui/material";
 import { useDashboard } from "../../../../data/contexts/DashboardContext";
 
+const formatToBrazilianDate = (isoDate) => {
+  if (!isoDate) return "";
+  const [year, month, day] = isoDate.split("-");
+  return `${day}/${month}/${year}`;
+};
+
+const formatToISODate = (brazilianDate) => {
+  if (!brazilianDate) return "";
+  const [day, month, year] = brazilianDate.split("/");
+  return `${year}-${month}-${day}`;
+};
+
 const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
   const {
     statusFilter,
@@ -19,7 +31,26 @@ const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
     setMethodFilter,
     searchQuery,
     setSearchQuery,
+    startDateFilter,
+    setStartDateFilter,
+    endDateFilter,
+    setEndDateFilter,
   } = useDashboard();
+
+  // Converte as datas do formato ISO (YYYY-MM-DD) para o formato brasileiro (DD/MM/YYYY) para exibição
+  const formattedStartDate = formatToBrazilianDate(startDateFilter);
+  const formattedEndDate = formatToBrazilianDate(endDateFilter);
+
+  // Funções para lidar com a mudança nos campos de data
+  const handleStartDateChange = (e) => {
+    const isoDate = e.target.value; // Valor do input no formato YYYY-MM-DD
+    setStartDateFilter(isoDate); // Mantém no formato ISO para o contexto
+  };
+
+  const handleEndDateChange = (e) => {
+    const isoDate = e.target.value; // Valor do input no formato YYYY-MM-DD
+    setEndDateFilter(isoDate); // Mantém no formato ISO para o contexto
+  };
 
   return (
     <Box sx={{ p: "20px" }}>
@@ -66,9 +97,36 @@ const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
         </FormControl>
         <TextField
           fullWidth
-          label="Buscar por documento"
+          label="Buscar por documento do pagador"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          sx={{ borderRadius: "10px", backgroundColor: "#FAFAFA" }}
+        />
+      </Box>
+      <Box
+        sx={{
+          mt: 2,
+          display: "flex",
+          gap: 2,
+          flexDirection: isMobile ? "column" : "row",
+        }}
+      >
+        <TextField
+          fullWidth
+          label="Data Inicial"
+          type="date"
+          value={startDateFilter} // Mantém no formato YYYY-MM-DD para o input
+          onChange={handleStartDateChange}
+          InputLabelProps={{ shrink: true }}
+          sx={{ borderRadius: "10px", backgroundColor: "#FAFAFA" }}
+        />
+        <TextField
+          fullWidth
+          label="Data Final"
+          type="date"
+          value={endDateFilter} // Mantém no formato YYYY-MM-DD para o input
+          onChange={handleEndDateChange}
+          InputLabelProps={{ shrink: true }}
           sx={{ borderRadius: "10px", backgroundColor: "#FAFAFA" }}
         />
       </Box>

@@ -33,8 +33,6 @@ const PaymentForm = () => {
     setCurrentParticipant,
     creditCardData,
     setCreditCardData,
-    boletoData,
-    setBoletoData,
     modalState,
     setModalState,
     totals,
@@ -179,28 +177,9 @@ const PaymentForm = () => {
     }
   };
 
-  // const handleDocumentTypeChange = (type) => {
-  //   setCurrentParticipant((prev) => ({
-  //     ...prev,
-  //     documentType: type,
-  //     document: "", // Limpa o campo ao mudar o tipo
-  //   }));
-  //   setDocumentError("");
-  // };
-
   const handleCreditCardChange = (field, value) => {
     setCreditCardData((prev) => ({ ...prev, [field]: value }));
   };
-
-  // const handleBoletoChange = (field, value) => {
-  //   setBoletoData((prev) => ({ ...prev, [field]: value }));
-  //   if (field === "zipCode") {
-  //     const cleanCep = value.replace(/\D/g, "");
-  //     if (cleanCep.length === 8) {
-  //       fetchAddressFromCep(cleanCep);
-  //     }
-  //   }
-  // };
 
   const fetchAddressFromCep = async (cep) => {
     try {
@@ -384,33 +363,6 @@ const PaymentForm = () => {
                         {(inputProps) => <input {...inputProps} type="text" />}
                       </InputMask>
                     </label>
-                    {/* <label>
-                      <p>Tipo de Documento</p>
-                      <div className={styles.toggleWrapper}>
-                        <button
-                          type="button"
-                          className={`${styles.toggleButton} ${
-                            currentParticipant.documentType === "cpf"
-                              ? styles.active
-                              : ""
-                          }`}
-                          onClick={() => handleDocumentTypeChange("cpf")}
-                        >
-                          CPF
-                        </button>
-                        <button
-                          type="button"
-                          className={`${styles.toggleButton} ${
-                            currentParticipant.documentType === "cnpj"
-                              ? styles.active
-                              : ""
-                          }`}
-                          onClick={() => handleDocumentTypeChange("cnpj")}
-                        >
-                          CNPJ
-                        </button>
-                      </div>
-                    </label> */}
                     <label>
                       <p>
                         <FaIdCard />{" "}
@@ -532,92 +484,180 @@ const PaymentForm = () => {
                 onSubmit={(e) => handlePayment(e, selectedPayer, navigate)}
               >
                 {formState.paymentMethod === "creditCard" ? (
-                  <div className={styles.paymentDetails}>
-                    <h2>Pagamento com Cartão de Crédito</h2>
-                    <label>
-                      <p>
-                        <FaIdCard /> Número do cartão
-                      </p>
-                      <input
-                        type="text"
-                        value={creditCardData.cardNumber}
-                        onChange={(e) =>
-                          handleCreditCardChange("cardNumber", e.target.value)
-                        }
-                        required
-                      />
-                    </label>
-                    <label>
-                      <p>
-                        <FaUser /> Nome no cartão
-                      </p>
-                      <input
-                        type="text"
-                        value={creditCardData.cardName}
-                        onChange={(e) =>
-                          handleCreditCardChange("cardName", e.target.value)
-                        }
-                        required
-                      />
-                    </label>
-                    <label>
-                      <p>Vencimento (MM/YYYY)</p>
-                      <InputMask
-                        mask="99/9999"
-                        value={creditCardData.maturity}
-                        onChange={(e) =>
-                          handleCreditCardChange("maturity", e.target.value)
-                        }
-                        required
-                      >
-                        {(inputProps) => <input {...inputProps} type="text" />}
-                      </InputMask>
-                    </label>
-                    <label>
-                      <p>CVC</p>
-                      <input
-                        type="text"
-                        value={creditCardData.cardCode}
-                        onChange={(e) =>
-                          handleCreditCardChange("cardCode", e.target.value)
-                        }
-                        maxLength="4"
-                        required
-                      />
-                    </label>
-                    <label>
-                      <p>Marca do cartão</p>
-                      <select
-                        value={creditCardData.brand}
-                        onChange={(e) =>
-                          handleCreditCardChange("brand", e.target.value)
-                        }
-                        required
-                      >
-                        {brands.map((brand) => (
-                          <option key={brand} value={brand}>
-                            {brand}
+                  <>
+                    {/* Seção do Pagador */}
+                    <div className={styles.paymentDetails}>
+                      <h2>Dados do Pagador</h2>
+                      <label>
+                        <p>Tipo de Pagador</p>
+                        <select
+                          value={payerType}
+                          onChange={(e) => {
+                            setPayerType(e.target.value);
+                            setSelectedPayer(null);
+                          }}
+                        >
+                          <option value="participant">
+                            Um dos participantes
                           </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      <p>Quantidade de parcelas</p>
-                      <select
-                        value={creditCardData.installments}
-                        onChange={(e) =>
-                          handleCreditCardChange("installments", e.target.value)
-                        }
-                        required
-                      >
-                        {Array.from({ length: 10 }, (_, i) => (
-                          <option key={i + 1} value={i + 1}>
-                            {i + 1} Parcela(s)
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
+                          <option value="new">Adicionar pagador</option>
+                        </select>
+                      </label>
+                      {payerType === "participant" ? (
+                        <label>
+                          <p>Selecione o Pagador</p>
+                          <select
+                            value={selectedPayer?.document || ""}
+                            onChange={(e) => {
+                              const selectedDocument = e.target.value;
+                              const payer = participants.find(
+                                (p) => p.document === selectedDocument
+                              );
+                              setSelectedPayer(payer);
+                            }}
+                            required
+                          >
+                            <option value="">Selecione um participante</option>
+                            {participants.map((participant) => (
+                              <option
+                                key={participant.document}
+                                value={participant.document}
+                              >
+                                {participant.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      ) : (
+                        <>
+                          <label>
+                            <p>Nome do Pagador</p>
+                            <input
+                              type="text"
+                              value={selectedPayer?.name || ""}
+                              onChange={(e) =>
+                                setSelectedPayer((prev) => ({
+                                  ...prev,
+                                  name: e.target.value,
+                                }))
+                              }
+                              required
+                            />
+                          </label>
+                          <label>
+                            <p>CPF</p>
+                            <InputMask
+                              mask="999.999.999-99"
+                              value={selectedPayer?.document || ""}
+                              onChange={(e) =>
+                                setSelectedPayer((prev) => ({
+                                  ...prev,
+                                  document: e.target.value,
+                                }))
+                              }
+                              required
+                            >
+                              {(inputProps) => (
+                                <input {...inputProps} type="text" />
+                              )}
+                            </InputMask>
+                          </label>
+                        </>
+                      )}
+                    </div>
+                    {/* Dados do Cartão */}
+                    <div className={styles.paymentDetails}>
+                      <h2>Pagamento com Cartão de Crédito</h2>
+                      <label>
+                        <p>
+                          <FaIdCard /> Número do cartão
+                        </p>
+                        <input
+                          type="text"
+                          value={creditCardData.cardNumber}
+                          onChange={(e) =>
+                            handleCreditCardChange("cardNumber", e.target.value)
+                          }
+                          required
+                        />
+                      </label>
+                      <label>
+                        <p>
+                          <FaUser /> Nome no cartão
+                        </p>
+                        <input
+                          type="text"
+                          value={creditCardData.cardName}
+                          onChange={(e) =>
+                            handleCreditCardChange("cardName", e.target.value)
+                          }
+                          required
+                        />
+                      </label>
+                      <label>
+                        <p>Vencimento (MM/YYYY)</p>
+                        <InputMask
+                          mask="99/9999"
+                          value={creditCardData.maturity}
+                          onChange={(e) =>
+                            handleCreditCardChange("maturity", e.target.value)
+                          }
+                          required
+                        >
+                          {(inputProps) => (
+                            <input {...inputProps} type="text" />
+                          )}
+                        </InputMask>
+                      </label>
+                      <label>
+                        <p>CVC</p>
+                        <input
+                          type="text"
+                          value={creditCardData.cardCode}
+                          onChange={(e) =>
+                            handleCreditCardChange("cardCode", e.target.value)
+                          }
+                          maxLength="4"
+                          required
+                        />
+                      </label>
+                      <label>
+                        <p>Marca do cartão</p>
+                        <select
+                          value={creditCardData.brand}
+                          onChange={(e) =>
+                            handleCreditCardChange("brand", e.target.value)
+                          }
+                          required
+                        >
+                          {brands.map((brand) => (
+                            <option key={brand} value={brand}>
+                              {brand}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        <p>Quantidade de parcelas</p>
+                        <select
+                          value={creditCardData.installments}
+                          onChange={(e) =>
+                            handleCreditCardChange(
+                              "installments",
+                              e.target.value
+                            )
+                          }
+                          required
+                        >
+                          {Array.from({ length: 10 }, (_, i) => (
+                            <option key={i + 1} value={i + 1}>
+                              {i + 1} Parcela(s)
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                  </>
                 ) : formState.paymentMethod === "pix" ? (
                   <div className={styles.paymentDetails}>
                     <h2>Pagamento com PIX</h2>

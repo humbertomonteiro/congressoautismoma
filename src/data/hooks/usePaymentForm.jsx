@@ -4,6 +4,22 @@ import PaymentService from "../services/PaymentService";
 
 const EMAIL_FROM = import.meta.env.VITE_EMAIL_FROM;
 
+const normalizeBrand = (brand) => {
+  const brandMap = {
+    visa: "Visa",
+    mastercard: "MasterCard",
+    amex: "Amex",
+    elo: "Elo",
+    diners: "Diners",
+    discover: "Discover",
+    jcb: "JCB",
+    aura: "Aura",
+    hipercard: "Hipercard",
+  };
+  const lowerBrand = brand.toLowerCase();
+  return brandMap[lowerBrand] || brand;
+};
+
 const usePaymentForm = () => {
   const [formState, setFormState] = useState({
     paymentMethod: "creditCard",
@@ -240,6 +256,8 @@ const usePaymentForm = () => {
 
     if (!validateParticipants()) return;
 
+    const normalizedBrand = normalizeBrand(creditCardData.brand);
+
     const paymentData = {
       ticketQuantity: formState.ticketQuantity,
       halfTickets: formState.halfTickets,
@@ -256,7 +274,12 @@ const usePaymentForm = () => {
         city: selectedPayer?.city || "",
         state: selectedPayer?.state || "",
       },
-      ...(formState.paymentMethod === "creditCard" && { creditCardData }),
+      ...(formState.paymentMethod === "creditCard" && {
+        creditCardData: {
+          ...creditCardData,
+          brand: normalizedBrand,
+        },
+      }),
     };
 
     try {

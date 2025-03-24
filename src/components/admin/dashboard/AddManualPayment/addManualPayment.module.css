@@ -1,25 +1,25 @@
 /* addManualPayment.module.css */
 
 .section {
-  margin: 30px 0;
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  background-color: #f5f7fa;
   padding: 20px;
+  border-radius: 12px;
 }
 
 .title {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 1.5rem;
 }
 
-.title h2 {
-  color: #34495e;
-  font-size: 18px;
-  font-weight: 500;
-  margin: 0;
+.section {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section h1 {
+  color: #2c3e50;
+  font-size: 24px;
+  font-weight: 600;
 }
 
 /* Seção Geral */
@@ -28,6 +28,10 @@
   gap: 10px; /* Reduzido de 15px para um layout mais compacto */
   margin-bottom: 20px;
   flex-wrap: wrap; /* Permite que os campos quebrem em telas menores */
+  background-color: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+  border-radius: 12px;
 }
 
 .shortInput {
@@ -39,6 +43,10 @@
 /* Seção de Participantes */
 .participantSection {
   margin-bottom: 20px;
+  padding: 20px;
+  background-color: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
 }
 
 .participantFields {
@@ -71,7 +79,7 @@
 
 /* Resumo */
 .summary {
-  background-color: #f9f9f9;
+  background-color: #fff;
   color: #2c3e50;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);

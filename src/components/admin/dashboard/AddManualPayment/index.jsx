@@ -163,7 +163,7 @@ const AddManualPayment = () => {
   return (
     <div className={styles.section}>
       <div className={styles.title}>
-        <h2>Adicionar Pagamento Manual</h2>
+        <h1>Adicionar Pagamento Manual</h1>
       </div>
 
       {/* Seção Geral */}
