@@ -6,8 +6,8 @@ import Filters from "../Filters";
 import Metrics from "../Metrics";
 import StatusGrafic from "../StatusGrafic";
 import CheckoutListCards from "../CheckoutListCards";
-import { DashboardProvider } from "../../../../data/contexts/DashboardContext";
 import { useDashboard } from "../../../../data/contexts/DashboardContext";
+import SalesByDayChart from "../SalesByDayChart";
 
 const DashboardSection = () => {
   const theme = useTheme();
@@ -16,25 +16,15 @@ const DashboardSection = () => {
   const [openManualPaymentModal, setOpenManualPaymentModal] =
     React.useState(false);
 
-  return (
-    <DashboardProvider>
-      <DashboardContent
-        isMobile={isMobile}
-        openFiltersDrawer={openFiltersDrawer}
-        setOpenFiltersDrawer={setOpenFiltersDrawer}
-        openManualPaymentModal={openManualPaymentModal}
-        setOpenManualPaymentModal={setOpenManualPaymentModal}
-      />
-    </DashboardProvider>
-  );
-};
-
-const DashboardContent = ({
-  isMobile,
-  openFiltersDrawer,
-  setOpenFiltersDrawer,
-}) => {
-  const { loading, metrics, chartData, updateMetrics } = useDashboard();
+  // Usar o contexto diretamente
+  const {
+    loading,
+    metrics,
+    chartData,
+    updateMetrics,
+    formatToBrazilianCurrency,
+    checkouts,
+  } = useDashboard();
 
   if (loading || !metrics) return <Loading />;
 
@@ -73,67 +63,26 @@ const DashboardContent = ({
         </Button>
       </Box>
 
-      <Metrics metrics={metrics} />
-      <StatusGrafic chartData={chartData} />
+      <Metrics
+        metrics={metrics}
+        formatToBrazilianCurrency={formatToBrazilianCurrency}
+      />
 
-      {/* {isMobile ? (
-        <>
-          <Button
-            variant="contained"
-            onClick={() => setOpenManualPaymentModal(true)}
-            sx={{
-              mb: 4,
-              backgroundColor: "#1976D2",
-              borderRadius: "8px",
-              textTransform: "none",
-              width: "100%",
-              "&:hover": { backgroundColor: "#1565C0" },
-            }}
-          >
-            Adicionar Checkout Manual
-          </Button>
-          <Modal
-            open={openManualPaymentModal}
-            onClose={() => setOpenManualPaymentModal(false)}
-          >
-            <Box
-              sx={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                width: "90%",
-                height: "90vh",
-                overflowY: "scroll",
-                maxWidth: 400,
-                bgcolor: "#FFFFFF",
-                borderRadius: "12px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                p: 2,
-              }}
-            >
-              <AddManualPayment />
-              <Button
-                variant="outlined"
-                onClick={() => setOpenManualPaymentModal(false)}
-                sx={{
-                  mt: 2,
-                  borderColor: "#1976D2",
-                  color: "#1976D2",
-                  borderRadius: "8px",
-                  textTransform: "none",
-                  width: "100%",
-                  "&:hover": { borderColor: "#1565C0", color: "#1565C0" },
-                }}
-              >
-                Fechar
-              </Button>
-            </Box>
-          </Modal>
-        </>
-      ) : (
-        <AddManualPayment />
-      )} */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "flex-end",
+          gap: isMobile ? 0 : 2,
+          flexDirection: isMobile ? "column" : "row",
+        }}
+      >
+        <SalesByDayChart
+          checkouts={checkouts}
+          formatToBrazilianCurrency={formatToBrazilianCurrency}
+        />
+
+        <StatusGrafic chartData={chartData} />
+      </Box>
 
       {!isMobile && (
         <Card

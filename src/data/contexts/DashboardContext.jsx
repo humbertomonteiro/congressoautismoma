@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from "react";
-import useDashboardData from "../hooks/useDashboardData"; // Ajuste o caminho
+import useDashboardData from "../hooks/useDashboardData";
 
 const DashboardContext = createContext();
 

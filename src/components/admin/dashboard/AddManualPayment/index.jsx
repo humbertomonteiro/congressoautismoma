@@ -16,6 +16,8 @@ import { db } from "../../../../../firebaseConfig";
 import ParticipantsList from "../../../checkout/ParticipantsList";
 import usePaymentForm from "../../../../data/hooks/usePaymentForm";
 import Modal from "../../../checkout/Modal";
+import PaymentService from "../../../../data/services/PaymentService";
+import { useDashboard } from "../../../../data/contexts/DashboardContext";
 
 const AddManualPayment = () => {
   const {
@@ -26,6 +28,7 @@ const AddManualPayment = () => {
     currentParticipant,
     setCurrentParticipant,
     totals,
+    setTotals,
     modalState,
     setModalState,
     handleTicketQuantityChange,
@@ -34,7 +37,9 @@ const AddManualPayment = () => {
     handleRemoveCoupon,
   } = usePaymentForm();
 
+  const { updateMetrics } = useDashboard();
   const [installments, setInstallments] = useState("1");
+  const [cardBrand, setCardBrand] = useState("visa"); // Novo estado para bandeira
 
   const paymentMethods = [
     { value: "creditCard", label: "Cartão de Crédito" },
@@ -44,6 +49,12 @@ const AddManualPayment = () => {
     { value: "boleto", label: "Boleto" },
     { value: "debitCard", label: "Cartão de Débito" },
     { value: "courtesy", label: "Cortesia" },
+  ];
+
+  const cardBrands = [
+    { value: "Visa", label: "Visa" },
+    { value: "Master", label: "Mastercard" },
+    { value: "Elo", label: "Elo" },
   ];
 
   const handleParticipantChange = (field, value) => {
@@ -85,15 +96,48 @@ const AddManualPayment = () => {
       return;
     }
 
+    if (
+      (formState.paymentMethod === "creditCard" ||
+        formState.paymentMethod === "debitCard") &&
+      !cardBrand
+    ) {
+      setModalState({
+        isOpen: true,
+        title: "Bandeira Não Selecionada",
+        message: "Selecione a bandeira do cartão.",
+        type: "error",
+      });
+      return;
+    }
+
     setFormState((prev) => ({ ...prev, loading: true }));
 
     try {
+      // Recalcular os totais antes de salvar
+      const updatedTotals = await PaymentService.calculateTotals({
+        ticketQuantity: formState.ticketQuantity,
+        halfTickets: formState.halfTickets,
+        coupon: formState.coupon.isApplied ? formState.coupon.code : "",
+      });
+
+      // Validação dos valores
+      if (formState.paymentMethod !== "courtesy" && updatedTotals.total <= 0) {
+        throw new Error(
+          "O valor total deve ser maior que zero para métodos pagos."
+        );
+      }
+      if (formState.paymentMethod === "courtesy" && updatedTotals.total !== 0) {
+        throw new Error("O valor total deve ser zero para cortesia.");
+      }
+
+      setTotals(updatedTotals);
+
       const checkoutData = {
         transactionId: `MANUAL_${Date.now()}`,
         timestamp: new Date().toISOString(),
         status: "approved",
         paymentMethod: formState.paymentMethod,
-        totalAmount: totals.total,
+        totalAmount: updatedTotals.total,
         eventName: "Congresso Autismo MA 2025",
         participants: participants.map((p) => ({
           name: p.name,
@@ -107,9 +151,9 @@ const AddManualPayment = () => {
           ticketQuantity: formState.ticketQuantity,
           fullTickets: formState.ticketQuantity - formState.halfTickets,
           halfTickets: formState.halfTickets,
-          fullTicketsValue: totals.valueTicketsAll,
-          halfTicketsValue: totals.valueTicketsHalf,
-          discount: totals.discount,
+          fullTicketsValue: updatedTotals.valueTicketsAll,
+          halfTicketsValue: updatedTotals.valueTicketsHalf,
+          discount: updatedTotals.discount,
           coupon: formState.coupon.isApplied ? formState.coupon.code : null,
         },
         paymentDetails: {
@@ -117,12 +161,31 @@ const AddManualPayment = () => {
           courtesy: formState.paymentMethod === "courtesy",
           installments:
             formState.paymentMethod === "creditCard" ? installments : null,
+          cardBrand:
+            formState.paymentMethod === "creditCard" ||
+            formState.paymentMethod === "debitCard"
+              ? cardBrand
+              : null,
         },
         document: participants[0]?.document || "",
         sentEmails: [],
       };
 
       await addDoc(collection(db, "checkouts"), checkoutData);
+
+      // Atualizar as métricas do dashboard
+      await updateMetrics();
+
+      // Atualizar localStorage localmente
+      const cachedCheckouts = JSON.parse(
+        localStorage.getItem("dashboard_checkouts") || "[]"
+      );
+      cachedCheckouts.push(checkoutData);
+      localStorage.setItem(
+        "dashboard_checkouts",
+        JSON.stringify(cachedCheckouts)
+      );
+
       setModalState({
         isOpen: true,
         title: "Checkout Adicionado",
@@ -147,6 +210,7 @@ const AddManualPayment = () => {
         isHalfPrice: false,
       });
       setInstallments("1");
+      setCardBrand("visa");
     } catch (error) {
       console.error("Erro ao salvar checkout manual:", error);
       setModalState({
@@ -188,6 +252,24 @@ const AddManualPayment = () => {
           </Select>
         </FormControl>
 
+        {(formState.paymentMethod === "creditCard" ||
+          formState.paymentMethod === "debitCard") && (
+          <FormControl className={styles.shortInput}>
+            <InputLabel>Bandeira</InputLabel>
+            <Select
+              value={cardBrand}
+              onChange={(e) => setCardBrand(e.target.value)}
+              disabled={formState.loading}
+            >
+              {cardBrands.map((brand) => (
+                <MenuItem key={brand.value} value={brand.value}>
+                  {brand.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
+
         {formState.paymentMethod === "creditCard" && (
           <FormControl className={styles.shortInput}>
             <InputLabel>Parcelas</InputLabel>
@@ -212,6 +294,7 @@ const AddManualPayment = () => {
           type="number"
           className={styles.shortInput}
           disabled={formState.loading}
+          inputProps={{ min: 1 }}
         />
 
         {formState.paymentMethod !== "courtesy" && (

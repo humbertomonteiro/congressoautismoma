@@ -2,14 +2,7 @@ import React, { useState, useEffect } from "react";
 import InputMask from "react-input-mask";
 import axios from "axios";
 
-import {
-  FaUser,
-  FaEnvelope,
-  FaPhone,
-  FaIdCard,
-  FaLock,
-  FaPlus,
-} from "react-icons/fa";
+import { FaUser, FaEnvelope, FaPhone, FaIdCard, FaLock } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 
@@ -94,7 +87,7 @@ const PaymentForm = () => {
     handleApplyCoupon,
     setFormState,
     isCouponAppliedInitially,
-    isInitialized, // Adicionar à lista de dependências
+    isInitialized,
   ]);
 
   // useEffect para ativar o toggle de meia-entrada no primeiro participante
@@ -192,7 +185,7 @@ const PaymentForm = () => {
           city: response.data.localidade,
           state: response.data.uf,
         }));
-        setCepError(""); // Limpa erro, se houver
+        setCepError("");
       } else {
         setCepError("CEP não encontrado.");
       }
@@ -865,18 +858,21 @@ const PaymentForm = () => {
                     </label>
                     <label>
                       <p>Estado (ex.: SP)</p>
-                      <input
-                        type="text"
+                      <InputMask
+                        mask="aa"
+                        formatChars={{ a: "[A-Za-z]" }}
                         value={selectedPayer?.state || ""}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const value = e.target.value.toUpperCase();
                           setSelectedPayer((prev) => ({
                             ...prev,
-                            state: e.target.value,
-                          }))
-                        }
-                        maxLength="2"
+                            state: value,
+                          }));
+                        }}
                         required
-                      />
+                      >
+                        {(inputProps) => <input {...inputProps} type="text" />}
+                      </InputMask>
                     </label>
                   </div>
                 )}

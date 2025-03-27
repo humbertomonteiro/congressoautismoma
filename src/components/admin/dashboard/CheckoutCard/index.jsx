@@ -15,6 +15,8 @@ import PaymentService from "../../../../data/services/PaymentService";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../../../../../firebaseConfig";
 import { useDashboard } from "../../../../data/contexts/DashboardContext";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const CheckoutCard = ({ checkout, isMobile }) => {
   const [openDetailsModal, setOpenDetailsModal] = useState(null);
@@ -47,9 +49,21 @@ const CheckoutCard = ({ checkout, isMobile }) => {
       setFilteredCheckouts((prev) =>
         prev.map((c) => (c.id === checkoutId ? { ...c, status } : c))
       );
+
+      // Abrir modal com mensagem de sucesso
+      setOpenDetailsModal({
+        type: "success",
+        title: "Verificação concluída",
+        message: `O status do pagamento é: "${status}".`,
+      });
     } catch (error) {
       console.error("Erro ao verificar status:", error);
-      alert(`Erro ao verificar pagamento: ${error.message}`);
+      // Abrir modal com mensagem de erro
+      setOpenDetailsModal({
+        type: "error",
+        title: "Erro ao Verificar Pagamento",
+        message: `Erro: ${error.message}`,
+      });
     }
   };
 
@@ -63,6 +77,16 @@ const CheckoutCard = ({ checkout, isMobile }) => {
         return { borderLeft: "6px solid #D32F2F" };
       default:
         return { borderLeft: "6px solid #B0BEC5" };
+    }
+  };
+
+  const formatTimestamp = (timestamp) => {
+    try {
+      const date = new Date(timestamp);
+      return format(date, "dd/MM/yyyy HH:mm", { locale: ptBR });
+    } catch (error) {
+      console.error("Erro ao formatar timestamp:", error);
+      return timestamp;
     }
   };
 
@@ -82,9 +106,15 @@ const CheckoutCard = ({ checkout, isMobile }) => {
         <CardContent sx={{ padding: 0 }}>
           <Typography
             variant="h6"
-            sx={{ color: "#333333", fontWeight: 500, mb: ".5rem" }}
+            sx={{
+              color: "#333333",
+              fontWeight: 500,
+              mb: ".5rem",
+              whiteSpace: "nowrap",
+              textOverflow: "ellipsis",
+              overflow: "hidden",
+            }}
           >
-            {/* {checkout.eventName} */}
             {checkout.participants[0].name}
           </Typography>
           <Typography sx={{ color: "#666666", fontSize: "0.9rem" }}>
@@ -94,15 +124,21 @@ const CheckoutCard = ({ checkout, isMobile }) => {
           <Typography sx={{ color: "#666666", fontSize: "0.9rem" }}>
             <strong>Método:</strong> {checkout.paymentMethod}
           </Typography>
+          <Typography sx={{ color: "#666666", fontSize: "0.9rem" }}>
+            <strong>Data e Hora:</strong> {formatTimestamp(checkout.timestamp)}
+          </Typography>
+          <Typography sx={{ color: "#666666", fontSize: "0.9rem", mb: 0.5 }}>
+            <strong>Valor:</strong> R$ {checkout.totalAmount}
+          </Typography>
         </CardContent>
         <CardActions
           sx={{ justifyContent: "space-between", gap: 1, padding: 0 }}
         >
-          <Box>
+          <Box sx={{ display: "flex" }}>
             <Button
               color="primary"
               size="small"
-              sx={{ textTransform: "none" }}
+              sx={{ textTransform: "none", fontSize: "0.7rem", p: ".2rem" }}
               onClick={() => setOpenDetailsModal(checkout.id)}
             >
               Detalhes
@@ -115,6 +151,8 @@ const CheckoutCard = ({ checkout, isMobile }) => {
                   sx={{
                     color: "#FFB300",
                     textTransform: "none",
+                    fontSize: "0.7rem",
+                    p: ".2rem",
                     "&:hover": { color: "#F57C00" },
                   }}
                   onClick={() =>
@@ -140,6 +178,8 @@ const CheckoutCard = ({ checkout, isMobile }) => {
           )}
         </CardActions>
       </Card>
+
+      {/* Modal Único */}
       <Modal
         open={!!openDetailsModal}
         onClose={() => setOpenDetailsModal(null)}
@@ -152,17 +192,32 @@ const CheckoutCard = ({ checkout, isMobile }) => {
             maxHeight: "90vh",
             overflowY: "scroll",
             transform: "translate(-50%, -50%)",
-            width: isMobile ? "85%" : 500,
+            width: isMobile
+              ? "85%"
+              : typeof openDetailsModal === "string"
+              ? 500
+              : 400, // Ajuste de largura
             bgcolor: "#FFFFFF",
             borderRadius: "12px",
             boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-            p: 4,
+            p: 2,
           }}
         >
-          {openDetailsModal && (
+          {typeof openDetailsModal === "string" ? (
+            // Exibir detalhes do checkout
             <ModalCheckoutDetails
               checkout={checkout}
               setOpenDetailsModal={setOpenDetailsModal}
+              formatTimestamp={formatTimestamp}
+            />
+          ) : (
+            // Exibir mensagem genérica
+            <ModalCheckoutDetails
+              setOpenDetailsModal={setOpenDetailsModal}
+              formatTimestamp={formatTimestamp}
+              title={openDetailsModal?.title}
+              message={openDetailsModal?.message}
+              openDetailsModal={openDetailsModal?.type}
             />
           )}
         </Box>

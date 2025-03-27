@@ -6,6 +6,7 @@ import {
   Typography,
   Drawer,
   Button,
+  Paper,
 } from "@mui/material";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -18,7 +19,7 @@ const formatBrazilianDate = (isoString, includeTime = false) => {
   if (!isoString) return "N/A";
   const date = new Date(isoString);
   const day = date.getDate().toString().padStart(2, "0");
-  const month = (date.getMonth() + 1).toString().padStart(2, "0"); // +1 porque getMonth começa em 0
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const year = date.getFullYear();
   if (includeTime) {
     const hours = date.getHours().toString().padStart(2, "0");
@@ -34,7 +35,8 @@ const CheckoutListCards = ({
   setOpenFiltersDrawer,
   openFiltersDrawer,
 }) => {
-  const { filteredCheckouts: allFilteredCheckouts } = useDashboard();
+  const { filteredCheckouts: allFilteredCheckouts, filteredMetrics } =
+    useDashboard();
   const [page, setPage] = useState(0);
   const [rowsPerPage] = useState(6);
   const [paginatedCheckouts, setPaginatedCheckouts] = useState([]);
@@ -57,7 +59,7 @@ const CheckoutListCards = ({
     ];
     const rows = paginatedCheckouts.map((checkout) => [
       checkout.transactionId || "N/A",
-      formatBrazilianDate(checkout.timestamp, true), // Data do checkout com hora
+      formatBrazilianDate(checkout.timestamp, true),
       checkout.status || "N/A",
       checkout.paymentMethod || "N/A",
       checkout.eventName || "N/A",
@@ -67,7 +69,7 @@ const CheckoutListCards = ({
       checkout.orderDetails?.halfTickets || 0,
       `R$ ${checkout.orderDetails?.discount || "0.00"}`,
       checkout.orderDetails?.coupon || "Nenhum",
-      formatBrazilianDate(checkout.paymentDetails?.boleto?.dataVencimento), // Data de vencimento sem hora
+      formatBrazilianDate(checkout.paymentDetails?.boleto?.dataVencimento),
     ]);
     const csvContent = [
       headers.join(","),
@@ -108,8 +110,8 @@ const CheckoutListCards = ({
             } meia)`
           : "0",
         checkout.participants?.[0]?.email || "N/A",
-        formatBrazilianDate(checkout.timestamp, true), // Data do checkout com hora
-        formatBrazilianDate(checkout.paymentDetails?.boleto?.dataVencimento), // Data de vencimento sem hora
+        formatBrazilianDate(checkout.timestamp, true),
+        formatBrazilianDate(checkout.paymentDetails?.boleto?.dataVencimento),
       ]),
     });
     doc.save("checkouts.pdf");
@@ -125,9 +127,14 @@ const CheckoutListCards = ({
         checkout.timestamp &&
         checkout.orderDetails
     );
+
+    const sortedCheckouts = [...validCheckouts].sort((a, b) => {
+      return new Date(b.timestamp) - new Date(a.timestamp);
+    });
+
     const startIndex = page * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
-    const newPaginatedCheckouts = validCheckouts.slice(startIndex, endIndex);
+    const newPaginatedCheckouts = sortedCheckouts.slice(startIndex, endIndex);
     setPaginatedCheckouts(newPaginatedCheckouts);
   }, [page, allFilteredCheckouts, rowsPerPage]);
 
@@ -179,7 +186,7 @@ const CheckoutListCards = ({
                 variant="h6"
                 sx={{ color: "#333333", fontWeight: 500 }}
               >
-                Checkouts ({validCheckoutsCount})
+                {validCheckoutsCount} - Checkouts
               </Typography>
               {isMobile && (
                 <>
@@ -244,6 +251,107 @@ const CheckoutListCards = ({
                 Exportar PDF
               </Button>
             </Box>
+            {/* Métricas em mini-cards */}
+            <Box
+              sx={{
+                width: "100%",
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 2,
+                mb: 2,
+              }}
+            >
+              <Paper
+                elevation={1}
+                sx={{
+                  p: 1,
+                  flex: "1 1 30%",
+                  border: "1px solid #c2c2c2",
+                  borderLeft: "6px solid #2E7D32",
+                  color: "#333333",
+                  borderRadius: "8px",
+                  textAlign: "center",
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  Aprovados
+                </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <Typography variant="h6">
+                    {filteredMetrics?.approvedCount || 0}
+                  </Typography>
+                  <Typography variant="body2">
+                    {filteredMetrics?.approvedValue || "R$ 0,00"}
+                  </Typography>
+                </Box>
+              </Paper>
+              <Paper
+                elevation={1}
+                sx={{
+                  p: 1,
+                  flex: "1 1 30%",
+                  border: "1px solid #c2c2c2",
+                  borderLeft: "6px solid #FFB300",
+                  color: "#333333",
+                  borderRadius: "8px",
+                  textAlign: "center",
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  Pendentes
+                </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <Typography variant="h6">
+                    {filteredMetrics?.pendingCount || 0}
+                  </Typography>
+                  <Typography variant="body2">
+                    {filteredMetrics?.pendingValue || "R$ 0,00"}
+                  </Typography>
+                </Box>
+              </Paper>
+              <Paper
+                elevation={1}
+                sx={{
+                  p: 1,
+                  flex: "1 1 30%",
+                  border: "1px solid #c2c2c2",
+                  borderLeft: "6px solid #D32F2F",
+                  color: "#333333",
+                  borderRadius: "8px",
+                  textAlign: "center",
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  Erros
+                </Typography>{" "}
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <Typography variant="h6">
+                    {filteredMetrics?.errorCount || 0}
+                  </Typography>
+                </Box>
+              </Paper>
+            </Box>
           </Box>
 
           <Box
@@ -256,7 +364,7 @@ const CheckoutListCards = ({
           >
             {paginatedCheckouts.map((checkout) => (
               <Box
-                sx={{ flex: "1 1 30%", minWidth: "300px" }}
+                sx={{ flex: "1 1 29%", minWidth: "250px" }}
                 key={checkout.id}
               >
                 <CheckoutCard checkout={checkout} isMobile={isMobile} />

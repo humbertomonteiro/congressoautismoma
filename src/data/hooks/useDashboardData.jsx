@@ -5,13 +5,20 @@ import {
   query,
   orderBy,
   getDocs,
-  where,
   doc,
   setDoc,
-  getDoc,
+  where,
   Timestamp,
 } from "firebase/firestore";
 import PaymentService from "../services/PaymentService";
+
+const formatToBrazilianCurrency = (value) => {
+  const num = parseFloat(value) || 0;
+  return num.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+};
 
 const useDashboardData = () => {
   const [checkouts, setCheckouts] = useState([]);
@@ -20,111 +27,71 @@ const useDashboardData = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [startDateFilter, setStartDateFilter] = useState(""); // Novo
-  const [endDateFilter, setEndDateFilter] = useState(""); // Novo
+  const [startDateFilter, setStartDateFilter] = useState("");
+  const [endDateFilter, setEndDateFilter] = useState("");
   const [eventFilter, setEventFilter] = useState("");
   const [eventOptions, setEventOptions] = useState([]);
   const [metrics, setMetrics] = useState(null);
+  const [filteredMetrics, setFilteredMetrics] = useState(null);
   const [qrCodeData, setQrCodeData] = useState({});
+  const [lastUpdated, setLastUpdated] = useState(null);
 
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      setLoading(true);
-      try {
-        const metricsDoc = await getDoc(
-          doc(db, "dashboard_metrics", "metrics")
-        );
-        if (metricsDoc.exists()) {
-          const metricsData = metricsDoc.data();
-          setMetrics({
-            successTicketsFull: metricsData.successTicketsFull || 0,
-            successTicketsHalf: metricsData.successTicketsHalf || 0,
-            successValue: metricsData.successValue || "0.00",
-            pendingCount: metricsData.pendingCount || 0,
-            pendingValue: metricsData.pendingValue || "0.00",
-            errorCount: metricsData.errorCount || 0,
-            errorValue: metricsData.errorValue || "0.00",
-            successCount: metricsData.successCount || 0,
-          });
-          setEventOptions(metricsData.events || []);
-        } else {
-          setMetrics({
-            successTicketsFull: 0,
-            successTicketsHalf: 0,
-            successValue: "0.00",
-            pendingCount: 0,
-            pendingValue: "0.00",
-            errorCount: 0,
-            errorValue: "0.00",
-            successCount: 0,
-          });
-          setEventOptions([]);
-        }
-
-        const cachedCheckouts = localStorage.getItem("dashboard_checkouts");
-        if (cachedCheckouts) {
-          const parsedCheckouts = JSON.parse(cachedCheckouts);
-          setCheckouts(parsedCheckouts);
-          applyFilters(parsedCheckouts);
-        } else {
-          await fetchCheckoutsFromFirestore();
-        }
-      } catch (error) {
-        console.error("Erro ao buscar dados iniciais:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchInitialData();
-  }, []);
-
-  const fetchCheckoutsFromFirestore = async () => {
+  const loadInitialData = async (forceUpdate = false) => {
+    setLoading(true);
     try {
-      const q = query(
-        collection(db, "checkouts"),
-        orderBy("timestamp", "desc")
-      );
-      const snapshot = await getDocs(q);
-      const allCheckoutData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const cachedMetrics = localStorage.getItem("dashboard_metrics");
+      const cachedCheckouts = localStorage.getItem("dashboard_checkouts");
+      const cachedLastUpdated = localStorage.getItem("metrics_last_updated");
 
-      localStorage.setItem(
-        "dashboard_checkouts",
-        JSON.stringify(allCheckoutData)
-      );
-      setCheckouts(allCheckoutData);
-      applyFilters(allCheckoutData);
+      if (
+        !cachedMetrics ||
+        !cachedCheckouts ||
+        forceUpdate ||
+        !cachedLastUpdated ||
+        (cachedMetrics && !JSON.parse(cachedMetrics).totalTicketsPix)
+      ) {
+        await updateMetrics(true);
+      } else {
+        const metricsData = JSON.parse(cachedMetrics);
+        setMetrics(metricsData);
+        setCheckouts(JSON.parse(cachedCheckouts));
+        setLastUpdated(parseInt(cachedLastUpdated, 10));
+        setEventOptions(metricsData.events || []);
+        applyFilters(JSON.parse(cachedCheckouts));
+      }
     } catch (error) {
-      console.error("Erro ao buscar checkouts do Firestore:", error);
+      console.error("Erro ao carregar dados iniciais:", error);
+      await updateMetrics(true);
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadInitialData();
+    // const interval = setInterval(() => updateMetrics(false), 60000);
+    // return () => clearInterval(interval);
+  }, []);
+
   const applyFilters = (data) => {
     let filteredData = [...data];
-
-    // Filtro por status
     if (statusFilter) {
       filteredData = filteredData.filter(
         (checkout) => checkout.status === statusFilter
       );
     }
-
-    // Filtro por método de pagamento
     if (methodFilter) {
       filteredData = filteredData.filter(
         (checkout) => checkout.paymentMethod === methodFilter
       );
     }
-
-    // Filtro por intervalo de datas
     if (startDateFilter || endDateFilter) {
       filteredData = filteredData.filter((checkout) => {
         const checkoutDate = new Date(checkout.timestamp);
-        const startDate = startDateFilter ? new Date(startDateFilter) : null;
-        const endDate = endDateFilter ? new Date(endDateFilter) : null;
-
+        let startDate = startDateFilter ? new Date(startDateFilter) : null;
+        let endDate = endDateFilter ? new Date(endDateFilter) : null;
+        if (startDate) startDate.setHours(0, 0, 0, 0);
+        if (endDate) endDate.setHours(23, 59, 59, 999);
         if (startDate && endDate) {
           return checkoutDate >= startDate && checkoutDate <= endDate;
         } else if (startDate) {
@@ -135,24 +102,46 @@ const useDashboardData = () => {
         return true;
       });
     }
-
-    // Filtro por documento
     if (searchQuery) {
       const cleanSearchQuery = searchQuery.replace(/[^\d]/g, "");
       filteredData = filteredData.filter((checkout) => {
-        const cleanDocument = checkout.document.replace(/[^\d]/g, "");
+        const document =
+          checkout.document && typeof checkout.document === "string"
+            ? checkout.document
+            : "";
+        const cleanDocument = document.replace(/[^\d]/g, "");
         return cleanDocument.includes(cleanSearchQuery);
       });
     }
-
-    // Filtro por evento (se aplicável)
     if (eventFilter) {
       filteredData = filteredData.filter(
         (checkout) => checkout.eventName === eventFilter
       );
     }
-
     setFilteredCheckouts(filteredData);
+
+    const approvedCheckouts = filteredData.filter(
+      (c) => c.status === "approved"
+    );
+    const pendingCheckouts = filteredData.filter((c) => c.status === "pending");
+    const errorCheckouts = filteredData.filter((c) => c.status === "error");
+
+    const approvedValue = approvedCheckouts.reduce(
+      (acc, curr) => acc + parseFloat(curr.totalAmount || 0),
+      0
+    );
+    const pendingValue = pendingCheckouts.reduce(
+      (acc, curr) => acc + parseFloat(curr.totalAmount || 0),
+      0
+    );
+
+    setFilteredMetrics({
+      approvedValue: formatToBrazilianCurrency(approvedValue),
+      approvedCount: approvedCheckouts.length,
+      pendingValue: formatToBrazilianCurrency(pendingValue),
+      pendingCount: pendingCheckouts.length,
+      errorCount: errorCheckouts.length,
+    });
 
     const qrData = {};
     filteredData.forEach((checkout) => {
@@ -165,63 +154,162 @@ const useDashboardData = () => {
     setQrCodeData(qrData);
   };
 
-  const updateMetrics = async () => {
+  const updateMetrics = async (fullUpdate = false) => {
     setLoading(true);
     try {
       await PaymentService.verifyAllPayments();
-      const snapshot = await getDocs(collection(db, "checkouts"));
-      const checkoutsData = snapshot.docs.map((doc) => doc.data());
 
-      let successTicketsFull = 0,
-        successTicketsHalf = 0,
-        successValue = 0,
-        pendingCount = 0,
-        pendingValue = 0,
-        errorCount = 0,
-        errorValue = 0,
-        successCount = 0;
+      let allCheckouts = [];
+      if (fullUpdate || !lastUpdated) {
+        const snapshot = await getDocs(
+          query(collection(db, "checkouts"), orderBy("timestamp", "desc"))
+        );
+        allCheckouts = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+      } else {
+        const q = query(
+          collection(db, "checkouts"),
+          where("timestamp", ">", Timestamp.fromMillis(lastUpdated)),
+          orderBy("timestamp", "desc")
+        );
+        const snapshot = await getDocs(q);
+        const newCheckouts = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        allCheckouts = [...newCheckouts, ...checkouts];
+      }
 
-      checkoutsData.forEach((data) => {
-        if (data.status === "approved") {
-          successTicketsFull += data.orderDetails.fullTickets || 0;
-          successTicketsHalf += data.orderDetails.halfTickets || 0;
-          successValue += parseFloat(data.totalAmount) || 0;
-          successCount += 1;
-        } else if (data.status === "pending") {
-          pendingCount += 1;
-          pendingValue += parseFloat(data.totalAmount) || 0;
-        } else if (data.status === "error") {
-          errorCount += 1;
-          errorValue += parseFloat(data.totalAmount) || 0;
+      const updatedMetrics = allCheckouts.reduce(
+        (acc, data) => {
+          const totalAmount = parseFloat(data.totalAmount) || 0;
+          const fullTickets = data.orderDetails?.fullTickets || 0;
+          const halfTickets = data.orderDetails?.halfTickets || 0;
+
+          if (data.status === "approved") {
+            acc.successTicketsFull += fullTickets;
+            acc.successTicketsHalf += halfTickets;
+            acc.successValueGross += totalAmount;
+            acc.successCount += 1;
+
+            let fee = 0;
+            const paymentMethod = data.paymentMethod || "unknown";
+            const cardBrand = (
+              data.paymentDetails?.creditCard?.brand || "unknown"
+            ).toLowerCase();
+
+            if (
+              paymentMethod === "creditCard" ||
+              paymentMethod === "debitCard"
+            ) {
+              if (["visa", "mastercard", "master"].includes(cardBrand)) {
+                fee = totalAmount * 0.0449;
+                acc.totalFeeMasterVisa += fee;
+                acc.totalGrossMasterVisa += totalAmount;
+                acc.totalTicketsMasterVisa =
+                  (acc.totalTicketsMasterVisa || 0) + fullTickets + halfTickets;
+              } else if (cardBrand === "elo") {
+                fee = totalAmount * 0.0509;
+                acc.totalFeeElo += fee;
+                acc.totalGrossElo += totalAmount;
+                acc.totalTicketsElo =
+                  (acc.totalTicketsElo || 0) + fullTickets + halfTickets;
+              } else {
+                fee = totalAmount * 0.0449;
+                acc.totalGrossOthers += totalAmount;
+                acc.totalTicketsOthers =
+                  (acc.totalTicketsOthers || 0) + fullTickets + halfTickets;
+              }
+            } else if (paymentMethod === "pix") {
+              fee = totalAmount * 0.0099;
+              acc.totalFeePix += fee;
+              acc.totalGrossPix += totalAmount;
+              acc.totalTicketsPix =
+                (acc.totalTicketsPix || 0) + fullTickets + halfTickets;
+            } else if (paymentMethod === "boleto") {
+              fee = 5.0;
+              acc.totalFeeBoleto += fee;
+              acc.totalGrossBoleto += totalAmount;
+              acc.totalTicketsBoleto =
+                (acc.totalTicketsBoleto || 0) + fullTickets + halfTickets;
+            } else {
+              acc.totalGrossOthers += totalAmount;
+              acc.totalTicketsOthers =
+                (acc.totalTicketsOthers || 0) + fullTickets + halfTickets;
+            }
+
+            acc.successValueNet += totalAmount - fee;
+          } else if (data.status === "pending") {
+            acc.pendingCount += 1;
+            acc.pendingValue += totalAmount;
+          } else if (data.status === "error") {
+            acc.errorCount += 1;
+            acc.errorValue += totalAmount;
+          }
+          return acc;
+        },
+        {
+          totalDocs: 0,
+          successTicketsFull: 0,
+          successTicketsHalf: 0,
+          successValueGross: 0,
+          successValueNet: 0,
+          pendingCount: 0,
+          pendingValue: 0,
+          errorCount: 0,
+          errorValue: 0,
+          successCount: 0,
+          events: [],
+          totalGrossMasterVisa: 0,
+          totalFeeMasterVisa: 0,
+          totalGrossPix: 0,
+          totalFeePix: 0,
+          totalGrossBoleto: 0,
+          totalFeeBoleto: 0,
+          totalGrossElo: 0,
+          totalFeeElo: 0,
+          totalGrossOthers: 0,
+          totalTicketsMasterVisa: 0,
+          totalTicketsPix: 0,
+          totalTicketsBoleto: 0,
+          totalTicketsElo: 0,
+          totalTicketsOthers: 0,
         }
-      });
+      );
 
-      const updatedMetrics = {
-        totalDocs: snapshot.size,
-        successTicketsFull,
-        successTicketsHalf,
-        successValue: successValue.toFixed(2),
-        pendingCount,
-        pendingValue: pendingValue.toFixed(2),
-        errorCount,
-        errorValue: errorValue.toFixed(2),
-        successCount,
-        events: [...new Set(checkoutsData.map((c) => c.eventName))],
-        lastUpdated: Timestamp.fromDate(new Date()),
-      };
+      updatedMetrics.successValueGross = Number(
+        updatedMetrics.successValueGross.toFixed(2)
+      );
+      updatedMetrics.successValueNet = Number(
+        updatedMetrics.successValueNet.toFixed(2)
+      );
+      updatedMetrics.pendingValue = Number(
+        updatedMetrics.pendingValue.toFixed(2)
+      );
+      updatedMetrics.errorValue = Number(updatedMetrics.errorValue.toFixed(2));
+      updatedMetrics.lastUpdated = Timestamp.fromDate(new Date()).toMillis();
 
       await setDoc(doc(db, "dashboard_metrics", "metrics"), updatedMetrics);
+      localStorage.setItem("dashboard_metrics", JSON.stringify(updatedMetrics));
+      localStorage.setItem("dashboard_checkouts", JSON.stringify(allCheckouts));
+      localStorage.setItem(
+        "metrics_last_updated",
+        updatedMetrics.lastUpdated.toString()
+      );
 
       setMetrics(updatedMetrics);
-      setEventOptions(updatedMetrics.events);
-      await fetchCheckoutsFromFirestore();
+      setCheckouts(allCheckouts);
+      setLastUpdated(updatedMetrics.lastUpdated);
+      setEventOptions(updatedMetrics.events || []);
+      applyFilters(allCheckouts);
     } catch (error) {
       console.error("Erro ao atualizar métricas:", error);
     } finally {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     applyFilters(checkouts);
   }, [
@@ -252,7 +340,9 @@ const useDashboardData = () => {
 
   return {
     checkouts,
+    setCheckouts,
     filteredCheckouts,
+    setFilteredCheckouts,
     loading,
     statusFilter,
     setStatusFilter,
@@ -268,9 +358,12 @@ const useDashboardData = () => {
     setEventFilter,
     eventOptions,
     metrics,
+    filteredMetrics,
     qrCodeData,
     updateMetrics,
     chartData,
+    formatToBrazilianCurrency,
+    loadInitialData,
   };
 };
 

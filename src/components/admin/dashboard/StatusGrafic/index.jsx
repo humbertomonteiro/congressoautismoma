@@ -10,7 +10,7 @@ import {
 
 const StatusGrafic = ({ chartData }) => {
   return (
-    <Box item xs={12} sx={{ marginBottom: "24px" }}>
+    <Box item xs={12} sx={{ marginBottom: "24px", width: "100%" }}>
       <Card
         sx={{
           backgroundColor: "#FFFFFF",

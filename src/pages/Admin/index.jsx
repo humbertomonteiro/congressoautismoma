@@ -27,6 +27,8 @@ import EmailSection from "../../components/admin/email/EmailSection";
 import AddManualPayment from "../../components/admin/dashboard/AddManualPayment";
 import Scanner from "../../components/admin/Scanner";
 
+import { DashboardProvider } from "../../data/contexts/DashboardContext";
+
 const AdminDashboard = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -109,62 +111,64 @@ const AdminDashboard = () => {
   );
 
   return (
-    <Box className={styles.dashboardContainer}>
-      {/* Header fixo no mobile */}
-      {isMobile && (
-        <>
-          <AppBar position="fixed" className={styles.appBar}>
-            <Toolbar>
-              <Box className={styles.logoContainer}>
-                <img
-                  src={logo}
-                  alt="Congresso Autismo MA"
-                  className={styles.logo}
-                />
-              </Box>
-              <IconButton
-                edge="end"
-                color="inherit"
-                onClick={toggleDrawer}
-                sx={{ ml: "auto" }}
-              >
-                <IoMenuOutline />
-              </IconButton>
-            </Toolbar>
-          </AppBar>
-          <Drawer
-            anchor="left"
-            open={isDrawerOpen}
-            onClose={toggleDrawer}
-            PaperProps={{ sx: { width: 250 } }}
-          >
+    <DashboardProvider>
+      <Box className={styles.dashboardContainer}>
+        {/* Header fixo no mobile */}
+        {isMobile && (
+          <>
+            <AppBar position="fixed" className={styles.appBar}>
+              <Toolbar>
+                <Box className={styles.logoContainer}>
+                  <img
+                    src={logo}
+                    alt="Congresso Autismo MA"
+                    className={styles.logo}
+                  />
+                </Box>
+                <IconButton
+                  edge="end"
+                  color="inherit"
+                  onClick={toggleDrawer}
+                  sx={{ ml: "auto" }}
+                >
+                  <IoMenuOutline />
+                </IconButton>
+              </Toolbar>
+            </AppBar>
+            <Drawer
+              anchor="left"
+              open={isDrawerOpen}
+              onClose={toggleDrawer}
+              PaperProps={{ sx: { width: 250 } }}
+            >
+              {drawerContent}
+            </Drawer>
+          </>
+        )}
+
+        {/* Sidebar fixa no desktop */}
+        {!isMobile && (
+          <Box component="aside" className={styles.aside}>
+            <Box className={styles.logoContainer}>
+              <img
+                src={logo}
+                alt="Congresso Autismo MA"
+                className={styles.logo}
+              />
+            </Box>
             {drawerContent}
-          </Drawer>
-        </>
-      )}
-
-      {/* Sidebar fixa no desktop */}
-      {!isMobile && (
-        <Box component="aside" className={styles.aside}>
-          <Box className={styles.logoContainer}>
-            <img
-              src={logo}
-              alt="Congresso Autismo MA"
-              className={styles.logo}
-            />
           </Box>
-          {drawerContent}
-        </Box>
-      )}
+        )}
 
-      {/* Conteúdo principal */}
-      <Box component="main" className={styles.mainContent}>
-        {activeSection === "dashboard" && <DashboardSection />}
-        {activeSection === "emails" && <EmailSection />}
-        {activeSection === "checkout-manual" && <AddManualPayment />}
-        {activeSection === "accreditation" && <Scanner />}
+        {/* Conteúdo principal */}
+        <Box component="main" className={styles.mainContent}>
+          {activeSection === "dashboard" && <DashboardSection />}
+          {activeSection === "emails" && <EmailSection />}
+          {activeSection === "checkout-manual" && <AddManualPayment />}
+          {activeSection === "accreditation" && <Scanner />}
+        </Box>
       </Box>
-    </Box>
+    </DashboardProvider>
   );
 };
 

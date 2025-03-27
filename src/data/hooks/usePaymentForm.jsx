@@ -70,52 +70,49 @@ const usePaymentForm = () => {
     valueTicketsHalf: "0.00",
     discount: "0.00",
     total: "0.00",
-    totalInCents: 0, // Adicionado para consistência
+    totalInCents: 0,
   });
+
+  const fetchTotals = async () => {
+    if (formState.paymentMethod === "courtesy") {
+      setTotals({
+        valueTicketsAll: "0.00",
+        valueTicketsHalf: "0.00",
+        discount: "0.00",
+        total: "0.00",
+        totalInCents: 0,
+      });
+      return;
+    }
+
+    const ticketQty = Number(formState.ticketQuantity) || 0;
+    const halfQty = Number(formState.halfTickets) || 0;
+    if (isNaN(ticketQty) || isNaN(halfQty)) {
+      console.error("Valores inválidos para cálculo:", { ticketQty, halfQty });
+      return;
+    }
+
+    try {
+      const response = await PaymentService.calculateTotals({
+        ticketQuantity: ticketQty,
+        halfTickets: halfQty,
+        coupon: formState.coupon.isApplied ? formState.coupon.code : "",
+      });
+      setTotals(response);
+    } catch (error) {
+      console.error("Erro ao calcular totais:", error.message);
+      setTotals({
+        valueTicketsAll: "0.00",
+        valueTicketsHalf: "0.00",
+        discount: "0.00",
+        total: "0.00",
+        totalInCents: 0,
+      });
+    }
+  };
 
   // Calcular totais sempre que ticketQuantity, halfTickets ou coupon mudar
   useEffect(() => {
-    const fetchTotals = async () => {
-      if (formState.paymentMethod === "courtesy") {
-        setTotals({
-          valueTicketsAll: "0.00",
-          valueTicketsHalf: "0.00",
-          discount: "0.00",
-          total: "0.00",
-          totalInCents: 0,
-        });
-        return;
-      }
-
-      const ticketQty = Number(formState.ticketQuantity) || 0;
-      const halfQty = Number(formState.halfTickets) || 0;
-      if (isNaN(ticketQty) || isNaN(halfQty)) {
-        console.error("Valores inválidos para cálculo:", {
-          ticketQty,
-          halfQty,
-        });
-        return;
-      }
-
-      try {
-        const response = await PaymentService.calculateTotals({
-          ticketQuantity: ticketQty,
-          halfTickets: halfQty,
-          coupon: formState.coupon.isApplied ? formState.coupon.code : "",
-        });
-        console.log("Resposta de calculateTotals:", response); // Log para depurar
-        setTotals(response); // Agora response é diretamente { valueTicketsAll, valueTicketsHalf, discount, total, totalInCents }
-      } catch (error) {
-        console.error("Erro ao calcular totais:", error.message);
-        setTotals({
-          valueTicketsAll: "0.00",
-          valueTicketsHalf: "0.00",
-          discount: "0.00",
-          total: "0.00",
-          totalInCents: 0,
-        });
-      }
-    };
     fetchTotals();
   }, [
     formState.paymentMethod,
@@ -138,6 +135,51 @@ const usePaymentForm = () => {
       );
       return false;
     }
+    return true;
+  };
+
+  const validatePayer = (payer, paymentMethod) => {
+    // Para crédito e PIX, só precisamos de nome e documento
+    const requiredFields = ["name", "document"];
+
+    // Para boleto, precisamos de todos os campos de endereço
+    if (paymentMethod === "boleto") {
+      requiredFields.push(
+        "zipCode",
+        "street",
+        "addressNumber",
+        "district",
+        "city",
+        "state"
+      );
+    }
+
+    // Verifica campos obrigatórios
+    const missingFields = requiredFields.filter(
+      (field) => !payer[field] || payer[field].trim() === ""
+    );
+    if (missingFields.length > 0) {
+      setModalError(
+        "Dados do Pagador Incompletos",
+        `Preencha os seguintes campos: ${missingFields
+          .map((f) => (f === "state" ? "Estado" : f))
+          .join(", ")}.`
+      );
+      return false;
+    }
+
+    // Validação específica do estado (UF) para boleto
+    if (paymentMethod === "boleto") {
+      const stateRegex = /^[A-Z]{2}$/; // Apenas 2 letras maiúsculas
+      if (!stateRegex.test(payer.state)) {
+        setModalError(
+          "Estado Inválido",
+          "O estado deve ser uma sigla de 2 letras maiúsculas (ex.: SP)."
+        );
+        return false;
+      }
+    }
+
     return true;
   };
 
@@ -255,6 +297,7 @@ const usePaymentForm = () => {
     setFormState((prev) => ({ ...prev, loading: true }));
 
     if (!validateParticipants()) return;
+    if (!validatePayer(selectedPayer, formState.paymentMethod)) return;
 
     const normalizedBrand = normalizeBrand(creditCardData.brand);
 

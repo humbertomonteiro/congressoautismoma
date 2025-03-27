@@ -10,18 +10,8 @@ import {
   Button,
 } from "@mui/material";
 import { useDashboard } from "../../../../data/contexts/DashboardContext";
-
-const formatToBrazilianDate = (isoDate) => {
-  if (!isoDate) return "";
-  const [year, month, day] = isoDate.split("-");
-  return `${day}/${month}/${year}`;
-};
-
-const formatToISODate = (brazilianDate) => {
-  if (!brazilianDate) return "";
-  const [day, month, year] = brazilianDate.split("/");
-  return `${year}-${month}-${day}`;
-};
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
   const {
@@ -37,19 +27,20 @@ const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
     setEndDateFilter,
   } = useDashboard();
 
-  // Converte as datas do formato ISO (YYYY-MM-DD) para o formato brasileiro (DD/MM/YYYY) para exibição
-  const formattedStartDate = formatToBrazilianDate(startDateFilter);
-  const formattedEndDate = formatToBrazilianDate(endDateFilter);
-
-  // Funções para lidar com a mudança nos campos de data
-  const handleStartDateChange = (e) => {
-    const isoDate = e.target.value; // Valor do input no formato YYYY-MM-DD
-    setStartDateFilter(isoDate); // Mantém no formato ISO para o contexto
+  const handleStartDateChange = (date) => {
+    if (date) {
+      setStartDateFilter(date.toISOString().split("T")[0]);
+    } else {
+      setStartDateFilter("");
+    }
   };
 
-  const handleEndDateChange = (e) => {
-    const isoDate = e.target.value; // Valor do input no formato YYYY-MM-DD
-    setEndDateFilter(isoDate); // Mantém no formato ISO para o contexto
+  const handleEndDateChange = (date) => {
+    if (date) {
+      setEndDateFilter(date.toISOString().split("T")[0]);
+    } else {
+      setEndDateFilter("");
+    }
   };
 
   return (
@@ -93,6 +84,10 @@ const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
             <MenuItem value="creditCard">Cartão de Crédito</MenuItem>
             <MenuItem value="pix">PIX</MenuItem>
             <MenuItem value="boleto">Boleto</MenuItem>
+            <MenuItem value="cash">Dinheiro</MenuItem>
+            <MenuItem value="debitCard">Débito</MenuItem>
+            <MenuItem value="courtesy">Cortesia</MenuItem>
+            <MenuItem value="internal">Interno</MenuItem>
           </Select>
         </FormControl>
         <TextField
@@ -111,23 +106,31 @@ const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
           flexDirection: isMobile ? "column" : "row",
         }}
       >
-        <TextField
-          fullWidth
-          label="Data Inicial"
-          type="date"
-          value={startDateFilter} // Mantém no formato YYYY-MM-DD para o input
+        <DatePicker
+          selected={startDateFilter ? new Date(startDateFilter) : null}
           onChange={handleStartDateChange}
-          InputLabelProps={{ shrink: true }}
-          sx={{ borderRadius: "10px", backgroundColor: "#FAFAFA" }}
+          dateFormat="dd/MM/yyyy"
+          placeholderText="DD/MM/YYYY"
+          customInput={
+            <TextField
+              fullWidth
+              label="Data Inicial"
+              sx={{ borderRadius: "10px", backgroundColor: "#FAFAFA" }}
+            />
+          }
         />
-        <TextField
-          fullWidth
-          label="Data Final"
-          type="date"
-          value={endDateFilter} // Mantém no formato YYYY-MM-DD para o input
+        <DatePicker
+          selected={endDateFilter ? new Date(endDateFilter) : null}
           onChange={handleEndDateChange}
-          InputLabelProps={{ shrink: true }}
-          sx={{ borderRadius: "10px", backgroundColor: "#FAFAFA" }}
+          dateFormat="dd/MM/yyyy"
+          placeholderText="DD/MM/YYYY"
+          customInput={
+            <TextField
+              fullWidth
+              label="Data Final"
+              sx={{ borderRadius: "10px", backgroundColor: "#FAFAFA" }}
+            />
+          }
         />
       </Box>
       {isMobile && (
