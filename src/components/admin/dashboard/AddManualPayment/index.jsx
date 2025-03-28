@@ -39,7 +39,7 @@ const AddManualPayment = () => {
 
   const { updateMetrics } = useDashboard();
   const [installments, setInstallments] = useState("1");
-  const [cardBrand, setCardBrand] = useState("visa"); // Novo estado para bandeira
+  const [cardBrand, setCardBrand] = useState("Visa");
 
   const paymentMethods = [
     { value: "creditCard", label: "Cartão de Crédito" },
@@ -114,11 +114,22 @@ const AddManualPayment = () => {
 
     try {
       // Recalcular os totais antes de salvar
-      const updatedTotals = await PaymentService.calculateTotals({
+      let updatedTotals = await PaymentService.calculateTotals({
         ticketQuantity: formState.ticketQuantity,
         halfTickets: formState.halfTickets,
         coupon: formState.coupon.isApplied ? formState.coupon.code : "",
       });
+
+      // Sobrescrever os totais para cortesia
+      if (formState.paymentMethod === "courtesy") {
+        updatedTotals = {
+          valueTicketsAll: "0.00",
+          valueTicketsHalf: "0.00",
+          discount: updatedTotals.discount || "0.00",
+          total: "0.00",
+          totalInCents: 0,
+        };
+      }
 
       // Validação dos valores
       if (formState.paymentMethod !== "courtesy" && updatedTotals.total <= 0) {
@@ -126,7 +137,10 @@ const AddManualPayment = () => {
           "O valor total deve ser maior que zero para métodos pagos."
         );
       }
-      if (formState.paymentMethod === "courtesy" && updatedTotals.total !== 0) {
+      if (
+        formState.paymentMethod === "courtesy" &&
+        updatedTotals.total !== "0.00"
+      ) {
         throw new Error("O valor total deve ser zero para cortesia.");
       }
 
@@ -159,13 +173,29 @@ const AddManualPayment = () => {
         paymentDetails: {
           manual: true,
           courtesy: formState.paymentMethod === "courtesy",
-          installments:
-            formState.paymentMethod === "creditCard" ? installments : null,
-          cardBrand:
-            formState.paymentMethod === "creditCard" ||
-            formState.paymentMethod === "debitCard"
-              ? cardBrand
-              : null,
+          ...(formState.paymentMethod === "creditCard" && {
+            creditCard: {
+              installments,
+              brand: cardBrand,
+            },
+          }),
+          ...(formState.paymentMethod === "debitCard" && {
+            debitCard: {
+              brand: cardBrand,
+            },
+          }),
+          ...(formState.paymentMethod === "pix" && {
+            pix: {},
+          }),
+          ...(formState.paymentMethod === "boleto" && {
+            boleto: {},
+          }),
+          ...(formState.paymentMethod === "cash" && {
+            cash: {},
+          }),
+          ...(formState.paymentMethod === "internal" && {
+            internal: {},
+          }),
         },
         document: participants[0]?.document || "",
         sentEmails: [],
@@ -343,7 +373,6 @@ const AddManualPayment = () => {
             value={currentParticipant.name}
             onChange={(e) => handleParticipantChange("name", e.target.value)}
             className={styles.fullWidthField}
-            margin="normal"
             disabled={formState.loading}
             required
           />
@@ -352,7 +381,6 @@ const AddManualPayment = () => {
             value={currentParticipant.email}
             onChange={(e) => handleParticipantChange("email", e.target.value)}
             className={styles.fullWidthField}
-            margin="normal"
             disabled={formState.loading}
             required
           />
@@ -367,7 +395,6 @@ const AddManualPayment = () => {
                 {...inputProps}
                 label="Telefone"
                 className={styles.shortField}
-                margin="normal"
                 required
               />
             )}
@@ -385,13 +412,12 @@ const AddManualPayment = () => {
                 {...inputProps}
                 label="CPF"
                 className={styles.shortField}
-                margin="normal"
                 required
               />
             )}
           </InputMask>
           {formState.paymentMethod !== "courtesy" && (
-            <FormControl className={styles.shortField} margin="normal">
+            <FormControl className={styles.shortField}>
               <InputLabel>Tipo de Ingresso</InputLabel>
               <Select
                 value={currentParticipant.isHalfPrice ? "Meia" : "Inteira"}

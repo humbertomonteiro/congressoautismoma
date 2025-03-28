@@ -1,3 +1,15 @@
+import { useState, useMemo } from "react";
+import {
+  format,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  endOfYear,
+  parseISO,
+} from "date-fns";
+import { ptBR } from "date-fns/locale";
 import {
   Box,
   Card,
@@ -15,26 +27,14 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { useState, useMemo } from "react";
-import {
-  format,
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-  startOfYear,
-  endOfYear,
-} from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 const SalesByDayChart = ({ checkouts, formatToBrazilianCurrency }) => {
-  const [period, setPeriod] = useState("month"); // Padrão: mês
+  const [period, setPeriod] = useState("month");
 
-  // Função para filtrar e agrupar vendas por dia
+  // Processar os dados de vendas
   const salesData = useMemo(() => {
     const approvedCheckouts = checkouts.filter((c) => c.status === "approved");
 
-    // Definir o intervalo de tempo baseado no período selecionado
     const now = new Date();
     let startDate, endDate;
     switch (period) {
@@ -53,28 +53,27 @@ const SalesByDayChart = ({ checkouts, formatToBrazilianCurrency }) => {
         break;
     }
 
-    // Agrupar vendas por dia no intervalo
     const salesByDay = {};
     approvedCheckouts.forEach((checkout) => {
-      const date = new Date(checkout.timestamp);
+      const date = parseISO(checkout.timestamp); // Converte para Date corretamente
+      const dayKey = format(date, "yyyy-MM-dd", { locale: ptBR });
+
       if (date >= startDate && date <= endDate) {
-        const dayKey = format(date, "yyyy-MM-dd"); // Chave única por dia
         salesByDay[dayKey] =
           (salesByDay[dayKey] || 0) + parseFloat(checkout.totalAmount || 0);
       }
     });
 
-    // Converter para formato do Recharts
-    const data = Object.keys(salesByDay).map((day) => ({
-      name:
-        period === "year"
-          ? format(new Date(day), "MMM", { locale: ptBR })
-          : format(new Date(day), "dd/MM", { locale: ptBR }),
-      value: salesByDay[day],
-    }));
-
-    // Ordenar por data
-    return data.sort((a, b) => new Date(a.name) - new Date(b.name));
+    // Ordenar e converter para formato do Recharts
+    return Object.keys(salesByDay)
+      .map((day) => ({
+        name:
+          period === "year"
+            ? format(parseISO(day), "MMM", { locale: ptBR })
+            : format(parseISO(day), "dd/MM", { locale: ptBR }),
+        value: salesByDay[day],
+      }))
+      .sort((a, b) => new Date(a.name) - new Date(b.name));
   }, [checkouts, period]);
 
   return (

@@ -163,8 +163,8 @@ const AdminDashboard = () => {
         {/* Conteúdo principal */}
         <Box component="main" className={styles.mainContent}>
           {activeSection === "dashboard" && <DashboardSection />}
-          {activeSection === "emails" && <EmailSection />}
           {activeSection === "checkout-manual" && <AddManualPayment />}
+          {activeSection === "emails" && <EmailSection />}
           {activeSection === "accreditation" && <Scanner />}
         </Box>
       </Box>
