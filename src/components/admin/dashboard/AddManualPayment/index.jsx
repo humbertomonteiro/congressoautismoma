@@ -9,6 +9,7 @@ import {
   FormControl,
   InputLabel,
   Typography,
+  Box,
 } from "@mui/material";
 import InputMask from "react-input-mask";
 import { addDoc, collection } from "firebase/firestore";
@@ -157,6 +158,7 @@ const AddManualPayment = () => {
         timestamp: new Date().toISOString(),
         status: "approved",
         paymentMethod: formState.paymentMethod,
+        observation: formState.observation,
         totalAmount: updatedTotals.total,
         eventName: "Congresso Autismo MA 2025",
         participants: participants.map((p) => ({
@@ -310,6 +312,7 @@ const AddManualPayment = () => {
         ticketQuantity: 1,
         halfTickets: 0,
         coupon: { code: "", isApplied: false },
+        observation: "",
       });
       setParticipants([]);
       setCurrentParticipant({
@@ -343,104 +346,119 @@ const AddManualPayment = () => {
 
       {/* Seção Geral */}
       <div className={styles.headerInputs}>
-        <FormControl className={styles.shortInput}>
-          <InputLabel>Tipo de Pagamento</InputLabel>
-          <Select
-            value={formState.paymentMethod}
-            onChange={(e) =>
-              setFormState((prev) => ({
-                ...prev,
-                paymentMethod: e.target.value,
-              }))
-            }
-            disabled={formState.loading}
-          >
-            {paymentMethods.map((method) => (
-              <MenuItem key={method.value} value={method.value}>
-                {method.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        {(formState.paymentMethod === "creditCard" ||
-          formState.paymentMethod === "debitCard") && (
+        <Box sx={{ width: "100%", display: "flex", gap: 2 }}>
           <FormControl className={styles.shortInput}>
-            <InputLabel>Bandeira</InputLabel>
+            <InputLabel>Tipo de Pagamento</InputLabel>
             <Select
-              value={cardBrand}
-              onChange={(e) => setCardBrand(e.target.value)}
-              disabled={formState.loading}
-            >
-              {cardBrands.map((brand) => (
-                <MenuItem key={brand.value} value={brand.value}>
-                  {brand.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        )}
-
-        {formState.paymentMethod === "creditCard" && (
-          <FormControl className={styles.shortInput}>
-            <InputLabel>Parcelas</InputLabel>
-            <Select
-              value={installments}
-              onChange={(e) => setInstallments(e.target.value)}
-              disabled={formState.loading}
-            >
-              {Array.from({ length: 10 }, (_, i) => (
-                <MenuItem key={i + 1} value={String(i + 1)}>
-                  {i + 1} Parcela(s)
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        )}
-
-        <TextField
-          label="Quantidade de Ingressos"
-          value={formState.ticketQuantity}
-          onChange={handleTicketQuantityChange}
-          type="number"
-          className={styles.shortInput}
-          disabled={formState.loading}
-          inputProps={{ min: 1 }}
-        />
-
-        {formState.paymentMethod !== "courtesy" && (
-          <div className={styles.couponWrapper}>
-            <TextField
-              label="Cupom (opcional)"
-              value={formState.coupon.code}
+              value={formState.paymentMethod}
               onChange={(e) =>
                 setFormState((prev) => ({
                   ...prev,
-                  coupon: { ...prev.coupon, code: e.target.value },
+                  paymentMethod: e.target.value,
                 }))
               }
-              className={styles.shortInput}
               disabled={formState.loading}
-            />
-            {!formState.coupon.isApplied ? (
-              <Button
-                variant="outlined"
-                onClick={handleApplyCoupon}
-                disabled={!formState.coupon.code || formState.loading}
-              >
-                Aplicar
-              </Button>
-            ) : (
-              <Button
-                variant="outlined"
-                onClick={handleRemoveCoupon}
+            >
+              {paymentMethods.map((method) => (
+                <MenuItem key={method.value} value={method.value}>
+                  {method.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          {(formState.paymentMethod === "creditCard" ||
+            formState.paymentMethod === "debitCard") && (
+            <FormControl className={styles.shortInput}>
+              <InputLabel>Bandeira</InputLabel>
+              <Select
+                value={cardBrand}
+                onChange={(e) => setCardBrand(e.target.value)}
                 disabled={formState.loading}
               >
-                Remover
-              </Button>
-            )}
-          </div>
-        )}
+                {cardBrands.map((brand) => (
+                  <MenuItem key={brand.value} value={brand.value}>
+                    {brand.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+          {formState.paymentMethod === "creditCard" && (
+            <FormControl className={styles.shortInput}>
+              <InputLabel>Parcelas</InputLabel>
+              <Select
+                value={installments}
+                onChange={(e) => setInstallments(e.target.value)}
+                disabled={formState.loading}
+              >
+                {Array.from({ length: 10 }, (_, i) => (
+                  <MenuItem key={i + 1} value={String(i + 1)}>
+                    {i + 1} Parcela(s)
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+          <TextField
+            label="Quantidade de Ingressos"
+            value={formState.ticketQuantity}
+            onChange={handleTicketQuantityChange}
+            type="number"
+            className={styles.shortInput}
+            disabled={formState.loading}
+            inputProps={{ min: 1 }}
+          />
+          {formState.paymentMethod !== "courtesy" && (
+            <Box className={styles.couponWrapper}>
+              <TextField
+                label="Cupom (opcional)"
+                value={formState.coupon.code}
+                onChange={(e) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    coupon: { ...prev.coupon, code: e.target.value },
+                  }))
+                }
+                className={styles.shortInput}
+                disabled={formState.loading}
+              />
+              {!formState.coupon.isApplied ? (
+                <Button
+                  variant="outlined"
+                  onClick={handleApplyCoupon}
+                  disabled={!formState.coupon.code || formState.loading}
+                >
+                  Aplicar
+                </Button>
+              ) : (
+                <Button
+                  variant="outlined"
+                  onClick={handleRemoveCoupon}
+                  disabled={formState.loading}
+                >
+                  Remover
+                </Button>
+              )}
+            </Box>
+          )}
+        </Box>
+        <Box sx={{ width: "100%" }}>
+          <TextField
+            sx={{ width: "100%" }}
+            label="Observações (opcional)"
+            value={formState.observation}
+            onChange={(e) =>
+              setFormState((prev) => ({
+                ...prev,
+                observation: e.target.value,
+              }))
+            }
+            className={styles.observationField}
+            multiline
+            rows={4}
+            disabled={formState.loading}
+          />
+        </Box>
       </div>
 
       {/* Seção de Participantes */}

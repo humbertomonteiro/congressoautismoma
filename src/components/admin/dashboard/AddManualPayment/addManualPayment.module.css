@@ -25,6 +25,7 @@
 /* Seção Geral */
 .headerInputs {
   display: flex;
+  flex-direction: column;
   gap: 10px; /* Reduzido de 15px para um layout mais compacto */
   margin-bottom: 20px;
   flex-wrap: wrap; /* Permite que os campos quebrem em telas menores */
@@ -129,6 +130,10 @@
   .headerInputs {
     flex-direction: column;
     gap: 10px;
+  }
+
+  .headerInputs > div {
+    flex-direction: column;
   }
 
   .shortInput {

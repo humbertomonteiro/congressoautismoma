@@ -13,10 +13,11 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 import { IoIosArrowDown } from "react-icons/io";
 import { useState } from "react";
-import { doc, updateDoc, getDoc } from "firebase/firestore"; // Adicione getDoc
+import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "../../../../../firebaseConfig"; // Ajuste o caminho
 import PaymentService from "../../../../data/services/PaymentService"; // Ajuste o caminho
 import { toast } from "react-toastify";
+import { FaRegEdit } from "react-icons/fa";
 
 const EMAIL_FROM = import.meta.env.VITE_EMAIL_FROM;
 
@@ -26,9 +27,14 @@ const ModalCheckoutDetails = ({
   formatTimestamp,
   title,
   message,
-  updateCheckoutInContext, // Recebe a função para atualizar o contexto
+  updateCheckoutInContext,
 }) => {
   const [participants, setParticipants] = useState(checkout.participants);
+  const [observation, setObservation] = useState(
+    checkout?.observation || "Sem observações..."
+  );
+  const [isEditingObservation, setIsEditingObservation] = useState(false);
+  const [editingParticipantIndex, setEditingParticipantIndex] = useState(null);
 
   const handleInputChange = (index, field, value) => {
     const updatedParticipants = [...participants];
@@ -36,7 +42,6 @@ const ModalCheckoutDetails = ({
     setParticipants(updatedParticipants);
   };
 
-  // Função para apagar os QR codes de um participante
   const clearQrCodes = (index) => {
     const updatedParticipants = [...participants];
     delete updatedParticipants[index].qrCodes;
@@ -47,18 +52,21 @@ const ModalCheckoutDetails = ({
   const saveChanges = async () => {
     try {
       const checkoutRef = doc(db, "checkouts", checkout.id);
-      await updateDoc(checkoutRef, { participants });
+      await updateDoc(checkoutRef, {
+        participants,
+        observation, // Salva a observação atualizada
+      });
       toast.success("Alterações salvas com sucesso!");
 
       // Atualiza o contexto global
-      updateCheckoutInContext({ ...checkout, participants });
+      updateCheckoutInContext({ ...checkout, participants, observation });
+      setIsEditingObservation(false); // Sai do modo de edição após salvar
     } catch (error) {
       console.error("Erro ao salvar alterações:", error);
       toast.error("Erro ao salvar alterações");
     }
   };
 
-  // Função para enviar email de confirmação e buscar QR codes no Firebase
   const sendConfirmationEmail = async (participant, index) => {
     if (
       participant.qrRawData &&
@@ -128,34 +136,13 @@ const ModalCheckoutDetails = ({
       );
       console.log("Resposta do envio de email:", emailResponse);
 
-      // Busca os dados atualizados no Firebase
       const checkoutRef = doc(db, "checkouts", checkout.id);
       const checkoutSnap = await getDoc(checkoutRef);
       if (checkoutSnap.exists()) {
         const updatedCheckout = { id: checkout.id, ...checkoutSnap.data() };
         const updatedParticipants = updatedCheckout.participants;
-
-        // Atualiza o estado local
         setParticipants(updatedParticipants);
-
-        // Atualiza o contexto global
         updateCheckoutInContext(updatedCheckout);
-
-        // Verifica se os QR codes foram adicionados
-        if (
-          updatedParticipants[index].qrRawData &&
-          (updatedParticipants[index].qrRawData["2025-05-31"] ||
-            updatedParticipants[index].qrRawData["2025-06-01"])
-        ) {
-          console.log(
-            "QR codes encontrados no Firebase:",
-            updatedParticipants[index].qrRawData
-          );
-        } else {
-          console.warn(
-            "Nenhum QR code encontrado no Firebase após o envio do email."
-          );
-        }
       } else {
         throw new Error(
           "Checkout não encontrado no Firebase após o envio do email."
@@ -173,7 +160,6 @@ const ModalCheckoutDetails = ({
     <>
       {checkout ? (
         <Box sx={{ p: 2 }}>
-          {/* Título Principal */}
           <Typography
             variant="h5"
             sx={{ color: "#333333", fontWeight: 600, mb: 3 }}
@@ -181,7 +167,6 @@ const ModalCheckoutDetails = ({
             Detalhes do Checkout
           </Typography>
 
-          {/* Seção: Informações Gerais */}
           <Typography
             variant="h6"
             sx={{ color: "#1976D2", fontWeight: 500, mb: 2 }}
@@ -217,7 +202,6 @@ const ModalCheckoutDetails = ({
           </Grid>
           <Divider sx={{ mb: 3 }} />
 
-          {/* Seção: Participantes */}
           <Typography
             variant="h6"
             sx={{ color: "#1976D2", fontWeight: 500, mb: 2 }}
@@ -230,51 +214,97 @@ const ModalCheckoutDetails = ({
               sx={{ mb: 1, boxShadow: "none", border: "1px solid #e0e0e0" }}
             >
               <AccordionSummary expandIcon={<IoIosArrowDown />}>
-                <Typography sx={{ color: "#333333", fontWeight: 600 }}>
-                  {p.name} {p.isHalfPrice ? "(Meia)" : ""}
-                </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    width: "100%",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Typography sx={{ color: "#333333", fontWeight: 600 }}>
+                    {p.name} {p.isHalfPrice ? "(Meia)" : ""}
+                  </Typography>
+                </Box>
               </AccordionSummary>
               <AccordionDetails>
-                <TextField
-                  label="Nome"
-                  value={p.name}
-                  onChange={(e) =>
-                    handleInputChange(index, "name", e.target.value)
-                  }
-                  fullWidth
+                <Button
+                  variant="outlined"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingParticipantIndex(
+                      editingParticipantIndex === index ? null : index
+                    );
+                  }}
                   sx={{ mb: 2 }}
-                />
-                <TextField
-                  label="CPF"
-                  value={p.document || p.cpf}
-                  onChange={(e) =>
-                    handleInputChange(index, "document", e.target.value)
-                  }
-                  fullWidth
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  label="E-mail"
-                  value={p.email}
-                  onChange={(e) =>
-                    handleInputChange(index, "email", e.target.value)
-                  }
-                  fullWidth
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  label="Número"
-                  value={p.number || ""}
-                  onChange={(e) =>
-                    handleInputChange(index, "number", e.target.value)
-                  }
-                  fullWidth
-                  sx={{ mb: 2 }}
-                />
+                >
+                  {editingParticipantIndex === index ? (
+                    "Cancelar"
+                  ) : (
+                    <FaRegEdit />
+                  )}
+                </Button>
+                {editingParticipantIndex === index ? (
+                  <>
+                    <TextField
+                      label="Nome"
+                      value={p.name}
+                      onChange={(e) =>
+                        handleInputChange(index, "name", e.target.value)
+                      }
+                      fullWidth
+                      sx={{ mb: 2 }}
+                    />
+                    <TextField
+                      label="CPF"
+                      value={p.document || p.cpf}
+                      onChange={(e) =>
+                        handleInputChange(index, "document", e.target.value)
+                      }
+                      fullWidth
+                      sx={{ mb: 2 }}
+                    />
+                    <TextField
+                      label="E-mail"
+                      value={p.email}
+                      onChange={(e) =>
+                        handleInputChange(index, "email", e.target.value)
+                      }
+                      fullWidth
+                      sx={{ mb: 2 }}
+                    />
+                    <TextField
+                      label="Número"
+                      value={p.number || ""}
+                      onChange={(e) =>
+                        handleInputChange(index, "number", e.target.value)
+                      }
+                      fullWidth
+                      sx={{ mb: 2 }}
+                    />
+                  </>
+                ) : (
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 1 }}
+                  >
+                    <Typography sx={{ color: "#666666" }}>
+                      <strong>Nome:</strong> {p.name}
+                    </Typography>
+                    <Typography sx={{ color: "#666666" }}>
+                      <strong>CPF:</strong> {p.document || p.cpf}
+                    </Typography>
+                    <Typography sx={{ color: "#666666" }}>
+                      <strong>E-mail:</strong> {p.email}
+                    </Typography>
+                    <Typography sx={{ color: "#666666" }}>
+                      <strong>Número:</strong> {p.number || "Não informado"}
+                    </Typography>
+                  </Box>
+                )}
                 {p.qrRawData &&
                 p.qrRawData["2025-05-31"] &&
                 p.qrRawData["2025-06-01"] ? (
-                  <Box>
+                  <Box sx={{ mt: 2 }}>
                     <Typography sx={{ color: "#666666", fontWeight: 500 }}>
                       <strong>QR Codes:</strong>
                     </Typography>
@@ -304,7 +334,6 @@ const ModalCheckoutDetails = ({
                     QR Codes não disponíveis
                   </Typography>
                 )}
-                {/* Botões */}
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mt: 2 }}>
                   {!p.qrRawData && (
                     <Button
@@ -315,7 +344,7 @@ const ModalCheckoutDetails = ({
                       Enviar Email de Confirmação
                     </Button>
                   )}
-                  {p.qrRawData && (
+                  {p.qrRawData && editingParticipantIndex === index && (
                     <Button
                       sx={{ flex: "1 1 45%", minWidth: "150px" }}
                       variant="outlined"
@@ -325,77 +354,101 @@ const ModalCheckoutDetails = ({
                       Apagar QR Codes
                     </Button>
                   )}
+                  {editingParticipantIndex === index && (
+                    <Button
+                      variant="contained"
+                      onClick={saveChanges}
+                      sx={{ flex: "1 1 45%", minWidth: "150px" }}
+                    >
+                      Salvar Alterações
+                    </Button>
+                  )}
                 </Box>
               </AccordionDetails>
             </Accordion>
           ))}
-          <Button
-            variant="contained"
-            onClick={saveChanges}
-            sx={{ mt: 2, mb: 3 }}
-          >
-            Salvar Alterações
-          </Button>
+
           <Divider sx={{ my: 3 }} />
 
-          {/* Seção: Detalhes do Pedido */}
           <Typography
             variant="h6"
             sx={{ color: "#1976D2", fontWeight: 500, mb: 2 }}
           >
             Detalhes do Pedido
           </Typography>
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={6}>
-              <Typography sx={{ color: "#666666" }}>
-                <strong>Documento do Pagador:</strong> {checkout.document}
-              </Typography>
-            </Grid>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <Typography sx={{ color: "#666666" }}>
+              <strong>Documento do Pagador:</strong> {checkout.document}
+            </Typography>
             {checkout.orderDetails.fullTickets > 0 && (
-              <Grid item xs={6}>
-                <Typography sx={{ color: "#666666" }}>
-                  <strong>Inteiros:</strong> {checkout.orderDetails.fullTickets}{" "}
-                  (R$
-                  {checkout.orderDetails.valueTicketsAll ||
-                    checkout.orderDetails.fullTicketsValue}
-                  )
-                </Typography>
-              </Grid>
+              <Typography sx={{ color: "#666666" }}>
+                <strong>Inteiros:</strong> {checkout.orderDetails.fullTickets}{" "}
+                (R$
+                {checkout.orderDetails.valueTicketsAll ||
+                  checkout.orderDetails.fullTicketsValue}
+                )
+              </Typography>
             )}
             {checkout.orderDetails.halfTickets > 0 && (
-              <Grid item xs={6}>
-                <Typography sx={{ color: "#666666" }}>
-                  <strong>Meia:</strong> {checkout.orderDetails.halfTickets} (R$
-                  {checkout.orderDetails.valueTicketsHalf ||
-                    checkout.orderDetails.halfTicketsValue}
-                  )
-                </Typography>
-              </Grid>
+              <Typography sx={{ color: "#666666" }}>
+                <strong>Meia:</strong> {checkout.orderDetails.halfTickets} (R$
+                {checkout.orderDetails.valueTicketsHalf ||
+                  checkout.orderDetails.halfTicketsValue}
+                )
+              </Typography>
             )}
             {checkout.orderDetails.coupon && (
               <>
-                <Grid item xs={6}>
-                  <Typography sx={{ color: "#666666" }}>
-                    <strong>Desconto:</strong> R${" "}
-                    {checkout.orderDetails.discount}
-                  </Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography sx={{ color: "#666666" }}>
-                    <strong>Cupom:</strong> {checkout.orderDetails.coupon}
-                  </Typography>
-                </Grid>
+                <Typography sx={{ color: "#666666" }}>
+                  <strong>Desconto:</strong> R$ {checkout.orderDetails.discount}
+                </Typography>
+                <Typography sx={{ color: "#666666" }}>
+                  <strong>Cupom:</strong> {checkout.orderDetails.coupon}
+                </Typography>
               </>
             )}
-          </Grid>
-          <Grid item xs={12} sx={{ mb: 3 }}>
-            <Typography sx={{ color: "#333333", fontWeight: 500 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", mb: 2 }}>
+              <Typography sx={{ color: "#666666" }}>
+                <strong>Observação:</strong>
+              </Typography>
+              <Box sx={{ display: "flex", gap: 1, alignItems: "start" }}>
+                {isEditingObservation ? (
+                  <TextField
+                    value={observation}
+                    onChange={(e) => setObservation(e.target.value)}
+                    fullWidth
+                    multiline
+                    rows={2}
+                    sx={{ flexGrow: 1 }}
+                  />
+                ) : (
+                  <Typography sx={{ color: "#666666", flexGrow: 1 }}>
+                    {observation}
+                  </Typography>
+                )}
+                <Button
+                  variant="outlined"
+                  onClick={() => setIsEditingObservation(!isEditingObservation)}
+                >
+                  {isEditingObservation ? "Cancelar" : <FaRegEdit />}
+                </Button>
+              </Box>
+              {isEditingObservation && (
+                <Button
+                  variant="contained"
+                  onClick={saveChanges}
+                  sx={{ mt: 2, mb: 3 }}
+                >
+                  Salvar Alterações
+                </Button>
+              )}
+            </Box>
+            <Typography sx={{ color: "#333333", fontWeight: 500, mb: 3 }}>
               <strong>Valor Total:</strong> R$ {checkout.totalAmount}
             </Typography>
-          </Grid>
+          </Box>
           <Divider sx={{ mb: 3 }} />
 
-          {/* Seção: Informações de Pagamento */}
           <Typography
             variant="h6"
             sx={{ color: "#1976D2", fontWeight: 500, mb: 2 }}
@@ -437,7 +490,6 @@ const ModalCheckoutDetails = ({
               </Typography>
             )}
 
-          {/* Botão Fechar */}
           <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
             <Button
               variant="outlined"

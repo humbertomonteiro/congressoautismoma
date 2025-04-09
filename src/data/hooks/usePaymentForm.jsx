@@ -27,6 +27,7 @@ const usePaymentForm = () => {
     ticketQuantity: 1,
     halfTickets: 0,
     coupon: { code: "", isApplied: false },
+    observation: "",
   });
 
   const [participants, setParticipants] = useState([]);
