@@ -1,34 +1,40 @@
 import { Box, Card, Typography } from "@mui/material";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { PieChart, Pie, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 const StatusGrafic = ({ chartData }) => {
+  // Cores para cada fatia do gráfico (opcional, personalize conforme necessário)
+  const COLORS = ["#2E7D32", "#FFB300", "#D32F2F", "#FF8042", "#8884D8"];
+
   return (
     <Box item xs={12} sx={{ marginBottom: "24px", width: "100%" }}>
       <Card
         sx={{
-          backgroundColor: "#FFFFFF",
-          borderRadius: "12px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-          p: 2,
+          boxShadow: 0,
         }}
       >
-        <Typography
-          variant="h6"
-          sx={{ color: "#333333", fontWeight: 500, mb: 2 }}
-        >
+        <Typography variant="h6" sx={{ color: "#333333", fontWeight: 500 }}>
           Status dos Checkouts
         </Typography>
         <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={chartData}>
-            <XAxis dataKey="name" stroke="#666666" />
-            <YAxis stroke="#666666" />
+          <PieChart>
+            <Pie
+              data={chartData}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              innerRadius={60}
+              outerRadius={80}
+              fill="#8884d8"
+              label
+            >
+              {chartData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={COLORS[index % COLORS.length]}
+                />
+              ))}
+            </Pie>
             <Tooltip
               contentStyle={{
                 backgroundColor: "#FFFFFF",
@@ -36,8 +42,7 @@ const StatusGrafic = ({ chartData }) => {
                 boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
               }}
             />
-            <Bar dataKey="value" radius={[4, 4, 0, 0]} />
-          </BarChart>
+          </PieChart>
         </ResponsiveContainer>
       </Card>
     </Box>

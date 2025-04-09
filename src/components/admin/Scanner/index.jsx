@@ -209,7 +209,7 @@ const Scanner = () => {
                   delay={500}
                   onScan={handleScan}
                   onError={handleError}
-                  facingMode="environment"
+                  facingMode="user"
                   style={{ width: "100%", height: "auto" }}
                 />
                 <Box

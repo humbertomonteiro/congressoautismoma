@@ -19,6 +19,8 @@ import Modal from "../../../checkout/Modal";
 import PaymentService from "../../../../data/services/PaymentService";
 import { useDashboard } from "../../../../data/contexts/DashboardContext";
 
+const EMAIL_FROM = import.meta.env.VITE_EMAIL_FROM;
+
 const AddManualPayment = () => {
   const {
     formState,
@@ -49,6 +51,7 @@ const AddManualPayment = () => {
     { value: "boleto", label: "Boleto" },
     { value: "debitCard", label: "Cartão de Débito" },
     { value: "courtesy", label: "Cortesia" },
+    { value: "falha-tecnica", label: "Falha técnica" },
   ];
 
   const cardBrands = [
@@ -146,8 +149,11 @@ const AddManualPayment = () => {
 
       setTotals(updatedTotals);
 
+      // Gere o transactionId uma única vez
+      const transactionId = `MANUAL_${Date.now()}`;
+
       const checkoutData = {
-        transactionId: `MANUAL_${Date.now()}`,
+        transactionId: transactionId,
         timestamp: new Date().toISOString(),
         status: "approved",
         paymentMethod: formState.paymentMethod,
@@ -160,7 +166,7 @@ const AddManualPayment = () => {
           cpf: p.documentType === "cpf" ? p.document : undefined,
           ticketType: p.isHalfPrice ? "Meia" : "Inteira",
         })),
-        paymentId: null,
+        paymentId: transactionId,
         orderDetails: {
           ticketQuantity: formState.ticketQuantity,
           fullTickets: formState.ticketQuantity - formState.halfTickets,
@@ -199,9 +205,84 @@ const AddManualPayment = () => {
         },
         document: participants[0]?.document || "",
         sentEmails: [],
+        qrCodesSent: false,
       };
 
-      await addDoc(collection(db, "checkouts"), checkoutData);
+      // Salve o checkout no Firestore primeiro
+      const docRef = await addDoc(collection(db, "checkouts"), checkoutData);
+      console.log("Checkout salvo com ID:", docRef.id);
+
+      // Adicionar templates ao pendingEmails
+      await PaymentService.addAllTemplatesToPendingEmails(
+        docRef.id,
+        "approved"
+      );
+
+      // Enviar emails pra todos os participantes
+      const emailResponses = [];
+      for (const participant of participants) {
+        const emailData = {
+          checkoutId: docRef.id,
+          from: EMAIL_FROM,
+          to: participant.email,
+          subject: "Confirmação de Pagamento - Congresso Autismo MA 2025",
+          data: {
+            name: participant.name,
+            transactionId: transactionId,
+            fullTickets: formState.ticketQuantity - formState.halfTickets,
+            valueTicketsAll: updatedTotals.valueTicketsAll,
+            halfTickets: formState.halfTickets,
+            valueTicketsHalf: updatedTotals.valueTicketsHalf,
+            coupon: formState.coupon.isApplied ? formState.coupon.code : "",
+            discount: formState.coupon.isApplied
+              ? updatedTotals.discount
+              : "0.00",
+            total: updatedTotals.total,
+            installments:
+              formState.paymentMethod === "creditCard"
+                ? checkoutData.paymentDetails.creditCard?.installments || "1"
+                : "1",
+          },
+        };
+
+        console.log("EmailData construído para:", participant.email, emailData);
+        if (
+          !emailData.from ||
+          !emailData.to ||
+          !emailData.subject ||
+          !emailData.data ||
+          !emailData.checkoutId
+        ) {
+          console.error(
+            "Campos obrigatórios faltando no emailData:",
+            emailData
+          );
+          throw new Error(
+            "Dados insuficientes para enviar o email de confirmação."
+          );
+        }
+
+        console.log("Enviando email de confirmação para:", participant.email);
+        try {
+          const emailResponse = await PaymentService.sendConfirmationEmail(
+            emailData
+          );
+          console.log(
+            "Resposta do envio de email para",
+            participant.email,
+            ":",
+            emailResponse
+          );
+          emailResponses.push(emailResponse);
+        } catch (emailError) {
+          console.error(
+            "Erro ao enviar email de confirmação para",
+            participant.email,
+            ":",
+            emailError.message
+          );
+        }
+      }
 
       // Atualizar as métricas do dashboard
       await updateMetrics();
@@ -506,6 +587,15 @@ const AddManualPayment = () => {
         type={modalState.type}
         content={modalState.content}
       />
+
+      {formState.loading && (
+        <div className={styles.loadingOverlay}>
+          <div className={styles.loadingContent}>
+            <div className={styles.spinner}></div>
+            <p>Processando pagamento, por favor, não recarregue a página...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

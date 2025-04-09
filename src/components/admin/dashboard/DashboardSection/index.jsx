@@ -1,5 +1,13 @@
 import React from "react";
-import { Button, Card, Box, useMediaQuery, useTheme } from "@mui/material";
+import { useEffect } from "react";
+import {
+  Button,
+  Card,
+  Box,
+  useMediaQuery,
+  useTheme,
+  Typography,
+} from "@mui/material";
 import styles from "./dashboardSection.module.css";
 import Loading from "../../../shared/Loading";
 import Filters from "../Filters";
@@ -74,6 +82,7 @@ const DashboardSection = () => {
           alignItems: "flex-end",
           gap: isMobile ? 0 : 2,
           flexDirection: isMobile ? "column" : "row",
+          mb: 4,
         }}
       >
         <SalesByDayChart
@@ -81,7 +90,66 @@ const DashboardSection = () => {
           formatToBrazilianCurrency={formatToBrazilianCurrency}
         />
 
-        <StatusGrafic chartData={chartData} />
+        <Box
+          sx={{
+            width: "100%",
+            backgroundColor: "#FFFFFF",
+            borderRadius: "12px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+            display: "flex",
+            justifyContent: "center",
+            flexDirection: "column",
+            alignItems: "center",
+            p: 2,
+            mt: isMobile ? 2 : 0,
+          }}
+        >
+          <StatusGrafic chartData={chartData} />
+          <Card sx={{ width: "100%", boxShadow: "none" }}>
+            <Typography variant="subtitle">Gráfico de Status</Typography>:
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mt: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <Typography sx={{ color: "#c2c2c2", fontSize: ".8rem" }}>
+                  Aprovados:{" "}
+                </Typography>
+                <Box
+                  sx={{
+                    width: "15px",
+                    height: "15px",
+                    borderRadius: "50%",
+                    backgroundColor: "#2E7D32",
+                  }}
+                ></Box>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <Typography sx={{ color: "#c2c2c2", fontSize: ".8rem" }}>
+                  Pendentes:{" "}
+                </Typography>
+                <Box
+                  sx={{
+                    width: "15px",
+                    height: "15px",
+                    borderRadius: "50%",
+                    backgroundColor: "#FFB300",
+                  }}
+                ></Box>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <Typography sx={{ color: "#c2c2c2", fontSize: ".8rem" }}>
+                  Erros:{" "}
+                </Typography>
+                <Box
+                  sx={{
+                    width: "15px",
+                    height: "15px",
+                    borderRadius: "50%",
+                    backgroundColor: "#D32F2F",
+                  }}
+                ></Box>
+              </Box>
+            </Box>
+          </Card>
+        </Box>
       </Box>
 
       {!isMobile && (

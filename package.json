@@ -29,9 +29,12 @@
     "react-icons": "^5.4.0",
     "react-input-mask": "^2.0.4",
     "react-qr-scanner": "^1.0.0-alpha.11",
+    "react-quill": "^2.0.0",
     "react-router-dom": "^7.2.0",
+    "react-toastify": "^11.0.5",
     "recharts": "^2.15.1",
-    "swiper": "^11.2.0"
+    "swiper": "^11.2.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

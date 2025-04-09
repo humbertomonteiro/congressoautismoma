@@ -4,18 +4,32 @@ import styles from "./ThankYouPage.module.css";
 import { FaCheckCircle } from "react-icons/fa";
 import ButtonSecondary from "../../components/shared/ButtonSecondary";
 
+import { IoMdDownload } from "react-icons/io";
+import { GoHomeFill } from "react-icons/go";
+
 const ThankYouPage = ({ totalValue }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
   // Extrair dados do estado da navegação
   const rawTotal = totalValue || location.state?.total || 0;
-  const paymentMethod = location.state?.paymentMethod || "creditCard"; // Default para crédito se não especificado
+  const paymentMethod = location.state?.paymentMethod || "creditCard";
+  const boletoLink = location.state?.boletoLink || null;
+  const linhaDigitavel = location.state?.linhaDigitavel || null;
+  const qrCodePix = location.state?.qrCodePix || null;
   const purchaseTotal =
     typeof rawTotal === "string" ? parseFloat(rawTotal) : Number(rawTotal);
   const formattedTotal = isNaN(purchaseTotal)
     ? "0.00"
     : purchaseTotal.toFixed(2);
+
+  console.log("Estado completo do location:", location.state);
+  console.log("Dados extraídos:", {
+    paymentMethod,
+    boletoLink,
+    linhaDigitavel,
+    qrCodePix,
+  });
 
   useEffect(() => {
     handleAddPaymentInfo();
@@ -36,15 +50,6 @@ const ThankYouPage = ({ totalValue }) => {
     });
   };
 
-  // Redirecionar para a home após 30 segundos
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      navigate("/");
-    }, 30000); // 30 segundos
-    return () => clearTimeout(timer);
-  }, [navigate]);
-
-  // Conteúdo dinâmico baseado no método de pagamento
   const isCreditCard = paymentMethod === "creditCard";
   const title = isCreditCard
     ? "Compra Confirmada!"
@@ -61,10 +66,26 @@ const ThankYouPage = ({ totalValue }) => {
     <>
       Parabéns por dar o primeiro passo para participar do{" "}
       <strong>Congresso Autismo MA 2025</strong>! Seu boleto foi gerado com
-      sucesso. Para garantir sua vaga, efetue o pagamento até o vencimento.
-      Verifique seus downloads!
+      sucesso. Para garantir sua vaga, efetue o pagamento até o vencimento
+      usando o código de barras ou QR code abaixo. Você também pode baixar o
+      boleto novamente clicando no botão!
     </>
   );
+
+  const handleDownloadBoleto = () => {
+    if (boletoLink) {
+      window.open(boletoLink, "_blank");
+    } else {
+      console.error("Link do boleto não disponível.");
+    }
+  };
+
+  const handleCopyLinhaDigitavel = () => {
+    if (linhaDigitavel) {
+      navigator.clipboard.writeText(linhaDigitavel);
+      alert("Código de barras copiado para a área de transferência!");
+    }
+  };
 
   return (
     <div className={styles.container}>
@@ -82,20 +103,46 @@ const ThankYouPage = ({ totalValue }) => {
             <strong>Data do Evento:</strong> 31 de maio e 1º de junho de 2025
           </p>
           {!isCreditCard && (
-            <p>
-              <strong>Instrução:</strong> Pague o boleto até o vencimento para
-              confirmar sua participação.
-            </p>
+            <>
+              <p>
+                <strong>Instrução:</strong> Pague o boleto até o vencimento para
+                confirmar sua participação.
+              </p>
+              {linhaDigitavel && (
+                <div>
+                  <strong>Código de Barras:</strong>
+                  <p
+                    className={styles.clickableText}
+                    onClick={handleCopyLinhaDigitavel}
+                    title="Clique para copiar"
+                  >
+                    {linhaDigitavel}
+                  </p>
+                </div>
+              )}
+              {/* {qrCodePix && (
+                <div>
+                  <strong>QR Code:</strong>
+                  <img
+                    src={qrCodePix}
+                    alt="QR Code PIX"
+                    className={styles.qrCode}
+                  />
+                </div>
+              )} */}
+            </>
           )}
         </div>
         <div className={styles.actions}>
+          {!isCreditCard && boletoLink && (
+            <ButtonSecondary onClick={handleDownloadBoleto}>
+              Baixar Boleto <IoMdDownload style={{ fontSize: "1.5rem" }} />
+            </ButtonSecondary>
+          )}
           <ButtonSecondary onClick={() => navigate("/")}>
-            Voltar para a Home
+            Voltar para a Home <GoHomeFill style={{ fontSize: "1.5rem" }} />
           </ButtonSecondary>
         </div>
-        <p className={styles.footerNote}>
-          Você será redirecionado automaticamente em 30 segundos.
-        </p>
       </div>
     </div>
   );

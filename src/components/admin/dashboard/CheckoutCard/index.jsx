@@ -50,7 +50,6 @@ const CheckoutCard = ({ checkout, isMobile }) => {
         prev.map((c) => (c.id === checkoutId ? { ...c, status } : c))
       );
 
-      // Abrir modal com mensagem de sucesso
       setOpenDetailsModal({
         type: "success",
         title: "Verificação concluída",
@@ -58,7 +57,6 @@ const CheckoutCard = ({ checkout, isMobile }) => {
       });
     } catch (error) {
       console.error("Erro ao verificar status:", error);
-      // Abrir modal com mensagem de erro
       setOpenDetailsModal({
         type: "error",
         title: "Erro ao Verificar Pagamento",
@@ -88,6 +86,16 @@ const CheckoutCard = ({ checkout, isMobile }) => {
       console.error("Erro ao formatar timestamp:", error);
       return timestamp;
     }
+  };
+
+  // Função para atualizar o checkout no estado global após mudanças
+  const updateCheckoutInContext = (updatedCheckout) => {
+    setCheckouts((prev) =>
+      prev.map((c) => (c.id === updatedCheckout.id ? updatedCheckout : c))
+    );
+    setFilteredCheckouts((prev) =>
+      prev.map((c) => (c.id === updatedCheckout.id ? updatedCheckout : c))
+    );
   };
 
   return (
@@ -196,7 +204,7 @@ const CheckoutCard = ({ checkout, isMobile }) => {
               ? "85%"
               : typeof openDetailsModal === "string"
               ? 500
-              : 400, // Ajuste de largura
+              : 400,
             bgcolor: "#FFFFFF",
             borderRadius: "12px",
             boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
@@ -204,14 +212,13 @@ const CheckoutCard = ({ checkout, isMobile }) => {
           }}
         >
           {typeof openDetailsModal === "string" ? (
-            // Exibir detalhes do checkout
             <ModalCheckoutDetails
               checkout={checkout}
               setOpenDetailsModal={setOpenDetailsModal}
               formatTimestamp={formatTimestamp}
+              updateCheckoutInContext={updateCheckoutInContext} // Passa a função para atualizar o contexto
             />
           ) : (
-            // Exibir mensagem genérica
             <ModalCheckoutDetails
               setOpenDetailsModal={setOpenDetailsModal}
               formatTimestamp={formatTimestamp}

@@ -336,71 +336,101 @@ const usePaymentForm = () => {
           break;
         case "boleto":
           response = await PaymentService.processBoletoPayment(paymentData);
+          if (response.success) {
+            setFormState((prev) => ({ ...prev, loading: false }));
+            navigate("/thanks-you", {
+              state: {
+                total: totals.total,
+                paymentMethod: "boleto",
+                boletoLink: response.boletoLink,
+                linhaDigitavel: response.linhaDigitavel,
+                qrCodePix: response.qrCodePix,
+              },
+            });
+          } else {
+            throw new Error(response.message || "Erro ao gerar boleto");
+          }
           break;
         default:
           throw new Error("Método de pagamento inválido.");
       }
 
       console.log("Resposta do backend para pagamento:", response);
-      setFormState((prev) => ({ ...prev, loading: false }));
+      // setFormState((prev) => ({ ...prev, loading: false }));
+
+      console.log(response.paymentId);
 
       if (response.success) {
         if (formState.paymentMethod === "creditCard") {
-          const emailData = {
-            checkoutId: response.transactionId,
-            from: EMAIL_FROM,
-            to: participants[0].email,
-            subject: "Confirmação de Pagamento - Congresso Autismo MA 2025",
-            data: {
-              name: participants[0].name,
-              transactionId: response.paymentId,
-              fullTickets: formState.ticketQuantity - formState.halfTickets,
-              valueTicketsAll: totals.valueTicketsAll,
-              halfTickets: formState.halfTickets,
-              valueTicketsHalf: totals.valueTicketsHalf,
-              coupon: formState.coupon.isApplied ? formState.coupon.code : "",
-              discount: formState.coupon.isApplied ? totals.discount : "0.00",
-              total: totals.total,
-              installments: creditCardData.installments,
-            },
-          };
+          const emailResponses = [];
+          for (const participant of participants) {
+            const emailData = {
+              checkoutId: response.checkoutId,
+              from: EMAIL_FROM,
+              to: participant.email,
+              subject: "Confirmação de Pagamento - Congresso Autismo MA 2025",
+              data: {
+                name: participant.name,
+                transactionId: response.transactionId,
+                fullTickets: formState.ticketQuantity - formState.halfTickets,
+                valueTicketsAll: totals.valueTicketsAll,
+                halfTickets: formState.halfTickets,
+                valueTicketsHalf: totals.valueTicketsHalf,
+                coupon: formState.coupon.isApplied ? formState.coupon.code : "",
+                discount: formState.coupon.isApplied ? totals.discount : "0.00",
+                total: totals.total,
+                installments: creditCardData.installments,
+              },
+            };
 
-          console.log("EmailData construído:", emailData);
-          if (
-            !emailData.from ||
-            !emailData.to ||
-            !emailData.subject ||
-            !emailData.data ||
-            !emailData.checkoutId
-          ) {
-            console.error(
-              "Campos obrigatórios faltando no emailData:",
+            console.log(
+              "EmailData construído para:",
+              participant.email,
               emailData
             );
-            throw new Error(
-              "Dados insuficientes para enviar o email de confirmação."
+            if (
+              !emailData.from ||
+              !emailData.to ||
+              !emailData.subject ||
+              !emailData.data ||
+              !emailData.checkoutId
+            ) {
+              console.error(
+                "Campos obrigatórios faltando no emailData:",
+                emailData
+              );
+              throw new Error(
+                "Dados insuficientes para enviar o email de confirmação."
+              );
+            }
+
+            console.log(
+              "Enviando email de confirmação para:",
+              participant.email
             );
+            try {
+              const emailResponse = await PaymentService.sendConfirmationEmail(
+                emailData
+              );
+              console.log(
+                "Resposta do envio de email para",
+                participant.email,
+                ":",
+                emailResponse
+              );
+              emailResponses.push(emailResponse);
+            } catch (emailError) {
+              console.error(
+                "Erro ao enviar email de confirmação para",
+                participant.email,
+                ":",
+                emailError.message
+              );
+            }
           }
 
-          console.log("Enviando email de confirmação:", emailData);
-          try {
-            const emailResponse = await PaymentService.sendConfirmationEmail(
-              emailData
-            );
-            console.log("Resposta do envio de email:", emailResponse);
-          } catch (emailError) {
-            console.error(
-              "Erro ao enviar email de confirmação:",
-              emailError.message
-            );
-          }
-          // setModalState({
-          //   isOpen: true,
-          //   title: "Compra Realizada com Sucesso",
-          //   message:
-          //     "Seu pagamento foi efetuado! Confira os detalhes no seu e-mail.",
-          //   type: "success",
-          // });
+          setFormState((prev) => ({ ...prev }));
+
           navigate("/thanks-you", {
             state: { total: totals.total, paymentMethod: "creditCard" },
           });
@@ -420,16 +450,7 @@ const usePaymentForm = () => {
             ),
           });
         } else if (formState.paymentMethod === "boleto") {
-          // setModalState({
-          //   isOpen: true,
-          //   title: "Boleto Gerado",
-          //   message:
-          //     "O boleto foi baixado com sucesso. Verifique seus downloads!",
-          //   type: "success",
-          // });
-          navigate("/thanks-you", {
-            state: { total: totals.total, paymentMethod: "boleto" },
-          });
+          setFormState((prev) => ({ ...prev }));
         }
       } else {
         throw new Error(

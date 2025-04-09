@@ -26,7 +26,8 @@ const useDashboardData = () => {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [payerSearchQuery, setPayerSearchQuery] = useState(""); // Novo campo para comprador
+  const [participantSearchQuery, setParticipantSearchQuery] = useState(""); // Novo campo para participantes
   const [startDateFilter, setStartDateFilter] = useState("");
   const [endDateFilter, setEndDateFilter] = useState("");
   const [eventFilter, setEventFilter] = useState("");
@@ -75,16 +76,22 @@ const useDashboardData = () => {
 
   const applyFilters = (data) => {
     let filteredData = [...data];
+
+    // Filtro por status
     if (statusFilter) {
       filteredData = filteredData.filter(
         (checkout) => checkout.status === statusFilter
       );
     }
+
+    // Filtro por método de pagamento
     if (methodFilter) {
       filteredData = filteredData.filter(
         (checkout) => checkout.paymentMethod === methodFilter
       );
     }
+
+    // Filtro por data
     if (startDateFilter || endDateFilter) {
       filteredData = filteredData.filter((checkout) => {
         const checkoutDate = new Date(checkout.timestamp);
@@ -102,24 +109,67 @@ const useDashboardData = () => {
         return true;
       });
     }
-    if (searchQuery) {
-      const cleanSearchQuery = searchQuery.replace(/[^\d]/g, "");
+
+    const normalizeText = (text) => {
+      return text
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    };
+
+    // Filtro por busca do comprador (nome ou documento)
+    if (payerSearchQuery) {
+      const cleanPayerQuery = payerSearchQuery.toLowerCase().trim();
       filteredData = filteredData.filter((checkout) => {
         const document =
           checkout.document && typeof checkout.document === "string"
-            ? checkout.document
+            ? checkout.document.replace(/[^\d]/g, "")
             : "";
-        const cleanDocument = document.replace(/[^\d]/g, "");
-        return cleanDocument.includes(cleanSearchQuery);
+        const payerName = normalizeText(checkout.participants[0]?.name || "");
+        const isNumericQuery = /^\d+$/.test(cleanPayerQuery); // Verifica se a busca é só números
+        const match = isNumericQuery
+          ? document.includes(cleanPayerQuery) // Busca apenas no documento se for numérico
+          : payerName.includes(cleanPayerQuery); // Busca apenas no nome se for texto
+
+        return match;
       });
     }
+
+    // Filtro por busca dos participantes (nome, documento ou email)
+    if (participantSearchQuery) {
+      const cleanParticipantQuery = normalizeText(participantSearchQuery);
+      filteredData = filteredData.filter((checkout) => {
+        return checkout.participants.some((participant) => {
+          const participantName = normalizeText(participant.name || "");
+          const participantCpf = (participant.cpf || "").replace(/[^\d]/g, "");
+          const participantEmail = normalizeText(participant.email || "");
+
+          const isNumericQuery = /^\d+$/.test(cleanParticipantQuery);
+
+          if (isNumericQuery) {
+            // Busca apenas no CPF se for numérico
+            return participantCpf.includes(cleanParticipantQuery);
+          } else {
+            // Busca no nome ou email se for texto
+            return (
+              participantName.includes(cleanParticipantQuery) ||
+              participantEmail.includes(cleanParticipantQuery)
+            );
+          }
+        });
+      });
+    }
+
+    // Filtro por evento
     if (eventFilter) {
       filteredData = filteredData.filter(
         (checkout) => checkout.eventName === eventFilter
       );
     }
+
     setFilteredCheckouts(filteredData);
 
+    // Cálculo de métricas filtradas
     const approvedCheckouts = filteredData.filter(
       (c) => c.status === "approved"
     );
@@ -310,12 +360,14 @@ const useDashboardData = () => {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     applyFilters(checkouts);
   }, [
     statusFilter,
     methodFilter,
-    searchQuery,
+    payerSearchQuery, // Substituído searchQuery
+    participantSearchQuery, // Novo
     startDateFilter,
     endDateFilter,
     eventFilter,
@@ -348,8 +400,10 @@ const useDashboardData = () => {
     setStatusFilter,
     methodFilter,
     setMethodFilter,
-    searchQuery,
-    setSearchQuery,
+    payerSearchQuery, // Novo
+    setPayerSearchQuery, // Novo
+    participantSearchQuery, // Novo
+    setParticipantSearchQuery, // Novo
     startDateFilter,
     setStartDateFilter,
     endDateFilter,

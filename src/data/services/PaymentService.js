@@ -45,30 +45,20 @@ class PaymentService {
         `${baseUrl}/payments/boleto`,
         paymentData,
         {
-          responseType: "blob",
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
       );
 
-      console.log("Resposta recebida do backend:", response);
-      console.log("Tamanho do blob:", response.data.size);
-
-      const paymentId = response.headers["x-payment-id"];
-      const url = window.URL.createObjectURL(
-        new Blob([response.data], { type: "application/pdf" })
-      );
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `boleto_${paymentId || Date.now()}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      console.log("Download iniciado para:", url);
-      link.parentNode.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      console.log("Resposta recebida do backend:", response.data);
 
       return {
-        success: true,
-        message: "Boleto gerado e baixado com sucesso",
-        paymentId,
+        success: response.data.success,
+        paymentId: response.data.paymentId,
+        boletoLink: response.data.boletoUrl,
+        linhaDigitavel: response.data.linhaDigitavel,
+        qrCodePix: response.data.qrCodePix || null,
       };
     } catch (error) {
       console.error("Erro ao processar boleto:", {
@@ -161,13 +151,15 @@ class PaymentService {
 
   async sendConfirmationEmail(emailData) {
     try {
-      console.log("Dados enviados para /send-email:", emailData);
+      console.log("Dados enviados para /send-confirmation-email:", emailData);
       const response = await axios.post(
-        `${baseUrl}/email/send-email`,
+        `${baseUrl}/email/send-confirmation-email`,
         emailData
       );
       const { success, message } = response.data;
       if (!success) throw new Error(message);
+      console.log("Resposta do envio de email:", response.data);
+      console.log("Mensagem de sucesso:", message);
       return { success, message };
     } catch (error) {
       console.error("Erro ao enviar email de confirmação:", error);
@@ -181,6 +173,24 @@ class PaymentService {
     return `https://wa.me/${
       PaymentService.WHATSAPP_NUMBER
     }?text=${encodeURIComponent(errorMessage)}`;
+  }
+
+  async addAllTemplatesToPendingEmails(checkoutId, status) {
+    try {
+      const response = await axios.post(
+        `${baseUrl}/payments/add-templates-to-pending-emails`,
+        { checkoutId, status }
+      );
+      const { success, message } = response.data;
+      if (!success) throw new Error(message);
+      return { success, message };
+    } catch (error) {
+      console.error("Erro ao adicionar templates de email pendentes:", error);
+      throw new Error(
+        error.response?.data?.error ||
+          "Erro ao adicionar templates de email pendentes"
+      );
+    }
   }
 }
 

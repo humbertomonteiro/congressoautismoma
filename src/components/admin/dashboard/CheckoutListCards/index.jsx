@@ -7,27 +7,43 @@ import {
   Drawer,
   Button,
   Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from "@mui/material";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx"; // Biblioteca para exportar Excel
 import CheckoutCard from "../CheckoutCard";
 import Filters from "../Filters";
 import { useDashboard } from "../../../../data/contexts/DashboardContext";
 
 // Função para formatar data no padrão brasileiro DD/MM/YYYY (com ou sem hora)
-const formatBrazilianDate = (isoString, includeTime = false) => {
-  if (!isoString) return "N/A";
-  const date = new Date(isoString);
-  const day = date.getDate().toString().padStart(2, "0");
-  const month = (date.getMonth() + 1).toString().padStart(2, "0");
-  const year = date.getFullYear();
-  if (includeTime) {
-    const hours = date.getHours().toString().padStart(2, "0");
-    const minutes = date.getMinutes().toString().padStart(2, "0");
-    const seconds = date.getSeconds().toString().padStart(2, "0");
-    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
-  }
-  return `${day}/${month}/${year}`;
+// const formatBrazilianDate = (isoString, includeTime = false) => {
+//   if (!isoString) return "N/A";
+//   const date = new Date(isoString);
+//   const day = date.getDate().toString().padStart(2, "0");
+//   const month = (date.getMonth() + 1).toString().padStart(2, "0");
+//   const year = date.getFullYear();
+//   if (includeTime) {
+//     const hours = date.getHours().toString().padStart(2, "0");
+//     const minutes = date.getMinutes().toString().padStart(2, "0");
+//     const seconds = date.getSeconds().toString().padStart(2, "0");
+//     return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+//   }
+//   return `${day}/${month}/${year}`;
+// };
+
+// Função para formatar valores no padrão brasileiro (R$ 1.234,56)
+const formatBrazilianCurrency = (value) => {
+  if (isNaN(value)) return "R$ 0,00";
+  return `R$ ${value
+    .toFixed(2)
+    .replace(".", ",")
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
 };
 
 const CheckoutListCards = ({
@@ -40,81 +56,392 @@ const CheckoutListCards = ({
   const [page, setPage] = useState(0);
   const [rowsPerPage] = useState(6);
   const [paginatedCheckouts, setPaginatedCheckouts] = useState([]);
+  const [viewMode, setViewMode] = useState(
+    localStorage.getItem("checkoutViewMode") || "cards"
+  );
 
-  // Função para exportar para CSV com data no formato brasileiro
-  const exportToCSV = () => {
-    const headers = [
-      "ID da Transação",
-      "Data do Checkout",
-      "Status",
-      "Método",
-      "Evento",
-      "Valor Total",
-      "Participantes",
-      "Ingressos Inteiros",
-      "Ingressos Meia",
-      "Desconto",
-      "Cupom",
-      "Data de Vencimento",
-    ];
-    const rows = paginatedCheckouts.map((checkout) => [
-      checkout.transactionId || "N/A",
-      formatBrazilianDate(checkout.timestamp, true),
-      checkout.status || "N/A",
-      checkout.paymentMethod || "N/A",
-      checkout.eventName || "N/A",
-      `R$ ${checkout.totalAmount || "0.00"}`,
-      checkout.participants ? checkout.participants.length : 0,
-      checkout.orderDetails?.fullTickets || 0,
-      checkout.orderDetails?.halfTickets || 0,
-      `R$ ${checkout.orderDetails?.discount || "0.00"}`,
-      checkout.orderDetails?.coupon || "Nenhum",
-      formatBrazilianDate(checkout.paymentDetails?.boleto?.dataVencimento),
-    ]);
-    const csvContent = [
-      headers.join(","),
-      ...rows.map((row) => row.join(",")),
-    ].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute("download", "checkouts.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleToggleViewMode = () => {
+    const newMode = viewMode === "cards" ? "table" : "cards";
+    setViewMode(newMode);
+    localStorage.setItem("checkoutViewMode", newMode);
   };
 
-  // Função para exportar para PDF com data no formato brasileiro
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-    doc.text("Checkouts - Congresso Autismo MA", 10, 10);
-    autoTable(doc, {
-      head: [
-        [
-          "Status",
-          "Método",
-          "Valor Total",
-          "Participantes",
-          "Email",
-          "Data do Checkout",
-          "Data de Vencimento",
-        ],
-      ],
-      body: paginatedCheckouts.map((checkout) => [
-        checkout.status || "N/A",
-        checkout.paymentMethod || "N/A",
-        `R$ ${checkout.totalAmount || "0.00"}`,
-        checkout.participants
-          ? `${checkout.participants.length} (${
-              checkout.participants.filter((p) => p.isHalfPrice).length
-            } meia)`
-          : "0",
+  const formatBrazilianDate = (isoString, includeTime = false) => {
+    if (!isoString) return "N/A";
+    const date = new Date(isoString);
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear();
+    if (includeTime) {
+      const hours = date.getHours().toString().padStart(2, "0");
+      const minutes = date.getMinutes().toString().padStart(2, "0");
+      const seconds = date.getSeconds().toString().padStart(2, "0");
+      return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    }
+    return `${day}/${month}/${year}`;
+  };
+
+  const calculateFee = (totalAmount, paymentMethod, cardBrand = "unknown") => {
+    let fee = 0;
+    cardBrand = cardBrand.toLowerCase();
+
+    switch (paymentMethod) {
+      case "pix":
+        fee = totalAmount * 0.0099; // 0.99%
+        break;
+      case "creditCard":
+      case "debitCard":
+        if (["visa", "mastercard", "master"].includes(cardBrand)) {
+          fee = totalAmount * 0.0449; // 4.49%
+        } else if (cardBrand === "elo") {
+          fee = totalAmount * 0.0509; // 5.09%
+        } else {
+          fee = totalAmount * 0.0449; // Padrão Visa/Master se marca desconhecida
+        }
+        break;
+      case "boleto":
+        fee = 5.0; // R$ 5 fixo
+        break;
+      default:
+        fee = 0; // Sem taxa para métodos desconhecidos
+    }
+    return fee;
+  };
+
+  // Função para preparar dados da tabela (usada por PDF e Excel)
+  const prepareTableData = (checkouts) => {
+    return checkouts.map((checkout) => {
+      const totalAmount = parseFloat(checkout.totalAmount) || 0;
+      const paymentMethod = checkout.paymentMethod || "unknown";
+      const cardBrand = checkout.paymentDetails?.creditCard?.brand || "unknown";
+      const fee = calculateFee(totalAmount, paymentMethod, cardBrand);
+      const netAmount = totalAmount - fee;
+
+      let cpf = checkout.document || "N/A";
+      if (cpf === "N/A" && checkout.participants?.[0]?.document) {
+        cpf = checkout.participants[0].document;
+      }
+
+      return [
+        checkout.participants?.[0]?.name || "N/A",
+        cpf,
         checkout.participants?.[0]?.email || "N/A",
         formatBrazilianDate(checkout.timestamp, true),
-        formatBrazilianDate(checkout.paymentDetails?.boleto?.dataVencimento),
-      ]),
+        paymentMethod,
+        formatBrazilianCurrency(totalAmount),
+        formatBrazilianCurrency(fee),
+        formatBrazilianCurrency(netAmount),
+      ];
     });
-    doc.save("checkouts.pdf");
+  };
+
+  // Função para exportar para Excel
+  const exportToExcel = () => {
+    const validCheckouts = (allFilteredCheckouts || []).filter(
+      (checkout) =>
+        checkout &&
+        checkout.id &&
+        Array.isArray(checkout.participants) &&
+        checkout.timestamp &&
+        checkout.orderDetails
+    );
+
+    const approvedCheckouts = validCheckouts.filter(
+      (c) => c.status === "approved"
+    );
+    const pendingCheckouts = validCheckouts.filter(
+      (c) => c.status === "pending"
+    );
+    const errorCheckouts = validCheckouts.filter((c) => c.status === "error");
+
+    const sortByDate = (a, b) => new Date(b.timestamp) - new Date(a.timestamp);
+    const sortedApproved = [...approvedCheckouts].sort(sortByDate);
+    const sortedPending = [...pendingCheckouts].sort(sortByDate);
+    const sortedErrors = [...errorCheckouts].sort(sortByDate);
+
+    const approvedData = prepareTableData(sortedApproved).map((row) => ({
+      "Nome do Pagador": row[0],
+      CPF: row[1],
+      Email: row[2],
+      "Data da Compra": row[3],
+      Método: row[4],
+      "Valor Bruto": row[5],
+      Taxa: row[6],
+      "Valor Líquido": row[7],
+    }));
+    const pendingData = prepareTableData(sortedPending).map((row) => ({
+      "Nome do Pagador": row[0],
+      CPF: row[1],
+      Email: row[2],
+      "Data da Compra": row[3],
+      Método: row[4],
+      "Valor Bruto": row[5],
+      Taxa: row[6],
+      "Valor Líquido": row[7],
+    }));
+    const errorData = prepareTableData(sortedErrors).map((row) => ({
+      "Nome do Pagador": row[0],
+      CPF: row[1],
+      Email: row[2],
+      "Data da Compra": row[3],
+      Método: row[4],
+      "Valor Bruto": row[5],
+      Taxa: row[6],
+      "Valor Líquido": row[7],
+    }));
+
+    const totalGross = sortedApproved.reduce(
+      (sum, checkout) => sum + (parseFloat(checkout.totalAmount) || 0),
+      0
+    );
+    const totalFees = sortedApproved.reduce(
+      (sum, checkout) =>
+        sum +
+        calculateFee(
+          parseFloat(checkout.totalAmount) || 0,
+          checkout.paymentMethod,
+          checkout.paymentDetails?.creditCard?.brand
+        ),
+      0
+    );
+    const totalNet = totalGross - totalFees;
+
+    const approvedWithTotals = [
+      ...approvedData,
+      {},
+      {
+        "Nome do Pagador": "Total Bruto (Aprovados)",
+        CPF: "",
+        Email: "",
+        "Data da Compra": "",
+        Método: "",
+        "Valor Bruto": formatBrazilianCurrency(totalGross),
+        Taxa: formatBrazilianCurrency(totalFees),
+        "Valor Líquido": formatBrazilianCurrency(totalNet),
+      },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    const wsApproved = XLSX.utils.json_to_sheet(approvedWithTotals);
+    const wsPending = XLSX.utils.json_to_sheet(pendingData);
+    const wsErrors = XLSX.utils.json_to_sheet(errorData);
+
+    XLSX.utils.book_append_sheet(wb, wsApproved, "Aprovados");
+    if (pendingData.length > 0) {
+      XLSX.utils.book_append_sheet(wb, wsPending, "Pendentes");
+    }
+    if (errorData.length > 0) {
+      XLSX.utils.book_append_sheet(wb, wsErrors, "Erros");
+    }
+
+    XLSX.writeFile(wb, "relatorio_checkouts_completo.xlsx");
+  };
+
+  // Função para exportar para PDF
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const currentDate = formatBrazilianDate(new Date()); // Data atual no formato DD/MM/AAAA
+    doc.setFontSize(16);
+    doc.text(
+      `Relatório de Checkouts até dia ${currentDate} - Congresso Autismo MA`,
+      10,
+      10
+    );
+
+    const validCheckouts = (allFilteredCheckouts || []).filter(
+      (checkout) =>
+        checkout &&
+        checkout.id &&
+        Array.isArray(checkout.participants) &&
+        checkout.timestamp &&
+        checkout.orderDetails
+    );
+
+    const approvedCheckouts = validCheckouts.filter(
+      (c) => c.status === "approved"
+    );
+    const pendingCheckouts = validCheckouts.filter(
+      (c) => c.status === "pending"
+    );
+    const errorCheckouts = validCheckouts.filter((c) => c.status === "error");
+
+    const sortByDate = (a, b) => new Date(b.timestamp) - new Date(a.timestamp);
+    const sortedApproved = [...approvedCheckouts].sort(sortByDate);
+    const sortedPending = [...pendingCheckouts].sort(sortByDate);
+    const sortedErrors = [...errorCheckouts].sort(sortByDate);
+
+    // Seção Aprovados
+    doc.setFontSize(12);
+    doc.text("Checkouts Aprovados", 10, 20);
+    const approvedTableData = prepareTableData(sortedApproved);
+
+    autoTable(doc, {
+      startY: 25,
+      head: [
+        [
+          "Nome do Pagador",
+          "CPF",
+          "Email",
+          "Data da Compra",
+          "Método",
+          "Valor Bruto",
+          "Taxa",
+          "Valor Líquido",
+        ],
+      ],
+      body: approvedTableData,
+      theme: "grid",
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [22, 160, 133], textColor: [255, 255, 255] },
+      columnStyles: {
+        5: { halign: "right" },
+        6: { halign: "right" },
+        7: { halign: "right" },
+      },
+    });
+
+    // Calcular totais apenas para aprovados
+    const totalGross = sortedApproved.reduce(
+      (sum, checkout) => sum + (parseFloat(checkout.totalAmount) || 0),
+      0
+    );
+    const totalFees = sortedApproved.reduce(
+      (sum, checkout) =>
+        sum +
+        calculateFee(
+          parseFloat(checkout.totalAmount) || 0,
+          checkout.paymentMethod,
+          checkout.paymentDetails?.creditCard?.brand
+        ),
+      0
+    );
+    const totalNet = totalGross - totalFees;
+
+    // Calcular quantidade de ingressos por tipo
+    const totalFullTickets = sortedApproved.reduce(
+      (sum, checkout) =>
+        sum + (parseInt(checkout.orderDetails?.fullTickets) || 0),
+      0
+    );
+    const totalHalfTickets = sortedApproved.reduce(
+      (sum, checkout) =>
+        sum + (parseInt(checkout.orderDetails?.halfTickets) || 0),
+      0
+    );
+    const totalCourtesyTickets = sortedApproved.reduce(
+      (sum, checkout) =>
+        sum + (parseInt(checkout.orderDetails?.courtesyTickets) || 0),
+      0
+    );
+
+    // Verificar espaço disponível e ajustar posição dos totais
+    let finalY = doc.lastAutoTable.finalY + 10;
+    const pageHeight = doc.internal.pageSize.height;
+    const spaceNeeded = 50; // Aumentado para acomodar mais linhas (valores + ingressos)
+    if (finalY + spaceNeeded > pageHeight - 10) {
+      doc.addPage(); // Adiciona uma nova página se não houver espaço
+      finalY = 20; // Reinicia a posição Y na nova página
+    }
+
+    // Adicionar totais e ingressos em uma tabela estilizada
+    doc.setFontSize(12);
+    doc.text("Totais (Aprovados)", 10, finalY);
+    autoTable(doc, {
+      startY: finalY + 5,
+      head: [["Descrição", "Valor"]],
+      body: [
+        ["Total Bruto", formatBrazilianCurrency(totalGross)],
+        ["Total Taxas", formatBrazilianCurrency(totalFees)],
+        ["Total Líquido", formatBrazilianCurrency(totalNet)],
+        ["Ingressos Inteiros", totalFullTickets.toString()],
+        ["Ingressos Meia", totalHalfTickets.toString()],
+        ["Ingressos Cortesias", totalCourtesyTickets.toString()],
+      ],
+      theme: "grid",
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [22, 160, 133], textColor: [255, 255, 255] },
+      columnStyles: {
+        1: { halign: "right" }, // Alinhar valores à direita
+      },
+      margin: { left: 10, right: 10 },
+    });
+
+    // Seção Pendentes
+    finalY = doc.lastAutoTable.finalY + 10;
+    if (sortedPending.length > 0) {
+      if (finalY + 20 > pageHeight - 10) {
+        doc.addPage();
+        finalY = 20;
+      }
+      doc.setFontSize(12);
+      doc.text("Checkouts Pendentes", 10, finalY);
+      const pendingTableData = prepareTableData(sortedPending);
+
+      autoTable(doc, {
+        startY: finalY + 5,
+        head: [
+          [
+            "Nome do Pagador",
+            "CPF",
+            "Email",
+            "Data da Compra",
+            "Método",
+            "Valor Bruto",
+            "Taxa",
+            "Valor Líquido",
+          ],
+        ],
+        body: pendingTableData,
+        theme: "grid",
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [255, 179, 0], textColor: [255, 255, 255] },
+        columnStyles: {
+          5: { halign: "right" },
+          6: { halign: "right" },
+          7: { halign: "right" },
+        },
+      });
+      finalY = doc.lastAutoTable.finalY;
+    }
+
+    // Seção Erros
+    if (sortedErrors.length > 0) {
+      finalY += 10;
+      if (finalY + 20 > pageHeight - 10) {
+        doc.addPage();
+        finalY = 20;
+      }
+      doc.setFontSize(12);
+      doc.text("Checkouts com Erro", 10, finalY);
+      const errorTableData = prepareTableData(sortedErrors);
+
+      autoTable(doc, {
+        startY: finalY + 5,
+        head: [
+          [
+            "Nome do Pagador",
+            "CPF",
+            "Email",
+            "Data da Compra",
+            "Método",
+            "Valor Bruto",
+            "Taxa",
+            "Valor Líquido",
+          ],
+        ],
+        body: errorTableData,
+        theme: "grid",
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [211, 47, 47], textColor: [255, 255, 255] },
+        columnStyles: {
+          5: { halign: "right" },
+          6: { halign: "right" },
+          7: { halign: "right" },
+        },
+      });
+    }
+
+    doc.save("relatorio_checkouts_completo.pdf");
   };
 
   // Aplicar paginação localmente
@@ -138,12 +465,10 @@ const CheckoutListCards = ({
     setPaginatedCheckouts(newPaginatedCheckouts);
   }, [page, allFilteredCheckouts, rowsPerPage]);
 
-  // Função para mudar a página
   const handleChangePage = (newPage) => {
     setPage(newPage);
   };
 
-  // Calcular número total de páginas com base nos checkouts válidos
   const validCheckoutsCount = (allFilteredCheckouts || []).filter(
     (checkout) =>
       checkout &&
@@ -179,7 +504,7 @@ const CheckoutListCards = ({
                 width: "100%",
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "center",
+                alignItems: "flex-start",
               }}
             >
               <Typography
@@ -187,6 +512,53 @@ const CheckoutListCards = ({
                 sx={{ color: "#333333", fontWeight: 500 }}
               >
                 {validCheckoutsCount} - Checkouts
+                <Box
+                  sx={{
+                    width: "100%",
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 2,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      flex: "1 1 30%",
+                      color: "#666666",
+                      borderRadius: "8px",
+                      display: "flex",
+                      alignItems: isMobile ? "flex-start" : "center",
+                      gap: isMobile ? 0 : 2,
+                      flexDirection: isMobile ? "column" : "row",
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 500, fontSize: ".80rem" }}
+                    >
+                      Aprovados: {filteredMetrics?.approvedCount || 0} -{" "}
+                      {filteredMetrics?.approvedValue || 0}
+                    </Typography>
+
+                    {!isMobile && <Typography>|</Typography>}
+
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 500, fontSize: ".80rem" }}
+                    >
+                      Pendentes: {filteredMetrics?.pendingCount || 0} -{" "}
+                      {filteredMetrics?.pendingValue || 0}
+                    </Typography>
+
+                    {!isMobile && <Typography>|</Typography>}
+
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 500, fontSize: ".80rem" }}
+                    >
+                      Erros: {filteredMetrics?.errorCount || 0}
+                    </Typography>
+                  </Box>
+                </Box>
               </Typography>
               {isMobile && (
                 <>
@@ -222,12 +594,18 @@ const CheckoutListCards = ({
                 </>
               )}
             </Box>
-            <Box sx={{ display: "flex", gap: 1 }}>
+            <Box
+              sx={{
+                display: "flex",
+                gap: 1,
+                flexWrap: "wrap",
+                mb: 1,
+              }}
+            >
               <Button
                 variant="outlined"
-                onClick={exportToCSV}
+                onClick={exportToExcel}
                 sx={{
-                  mr: 1,
                   borderColor: "#1976D2",
                   color: "#1976D2",
                   borderRadius: "8px",
@@ -235,7 +613,7 @@ const CheckoutListCards = ({
                   "&:hover": { borderColor: "#1565C0", color: "#1565C0" },
                 }}
               >
-                Exportar CSV
+                Exportar Excel
               </Button>
               <Button
                 variant="outlined"
@@ -250,127 +628,145 @@ const CheckoutListCards = ({
               >
                 Exportar PDF
               </Button>
-            </Box>
-            {/* Métricas em mini-cards */}
-            <Box
-              sx={{
-                width: "100%",
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 2,
-                mb: 2,
-              }}
-            >
-              <Paper
-                elevation={1}
+              <Button
+                variant="contained"
+                onClick={handleToggleViewMode}
                 sx={{
-                  p: 1,
-                  flex: "1 1 30%",
-                  border: "1px solid #c2c2c2",
-                  borderLeft: "6px solid #2E7D32",
-                  color: "#333333",
+                  borderColor: "#1976D2",
+                  color: "Fff",
                   borderRadius: "8px",
-                  textAlign: "center",
+                  textTransform: "none",
                 }}
               >
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  Aprovados
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: 1,
-                  }}
-                >
-                  <Typography variant="h6">
-                    {filteredMetrics?.approvedCount || 0}
-                  </Typography>
-                  <Typography variant="body2">
-                    {filteredMetrics?.approvedValue || "R$ 0,00"}
-                  </Typography>
-                </Box>
-              </Paper>
-              <Paper
-                elevation={1}
-                sx={{
-                  p: 1,
-                  flex: "1 1 30%",
-                  border: "1px solid #c2c2c2",
-                  borderLeft: "6px solid #FFB300",
-                  color: "#333333",
-                  borderRadius: "8px",
-                  textAlign: "center",
-                }}
-              >
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  Pendentes
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: 1,
-                  }}
-                >
-                  <Typography variant="h6">
-                    {filteredMetrics?.pendingCount || 0}
-                  </Typography>
-                  <Typography variant="body2">
-                    {filteredMetrics?.pendingValue || "R$ 0,00"}
-                  </Typography>
-                </Box>
-              </Paper>
-              <Paper
-                elevation={1}
-                sx={{
-                  p: 1,
-                  flex: "1 1 30%",
-                  border: "1px solid #c2c2c2",
-                  borderLeft: "6px solid #D32F2F",
-                  color: "#333333",
-                  borderRadius: "8px",
-                  textAlign: "center",
-                }}
-              >
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  Erros
-                </Typography>{" "}
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: 1,
-                  }}
-                >
-                  <Typography variant="h6">
-                    {filteredMetrics?.errorCount || 0}
-                  </Typography>
-                </Box>
-              </Paper>
+                {viewMode === "cards" ? "Ver como Tabela" : "Ver como Cards"}
+              </Button>
             </Box>
           </Box>
 
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 2,
-              flexWrap: "wrap",
-            }}
-          >
-            {paginatedCheckouts.map((checkout) => (
-              <Box
-                sx={{ flex: "1 1 29%", minWidth: "250px" }}
-                key={checkout.id}
-              >
-                <CheckoutCard checkout={checkout} isMobile={isMobile} />
-              </Box>
-            ))}
-          </Box>
+          {viewMode === "cards" ? (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 2,
+                flexWrap: "wrap",
+              }}
+            >
+              {paginatedCheckouts.map((checkout) => (
+                <Box
+                  sx={{ flex: "1 1 29%", minWidth: "250px" }}
+                  key={checkout.id}
+                >
+                  <CheckoutCard checkout={checkout} isMobile={isMobile} />
+                </Box>
+              ))}
+            </Box>
+          ) : (
+            <TableContainer
+              component={Paper}
+              sx={{ maxHeight: 400, overflowX: "auto" }}
+            >
+              <Table stickyHeader sx={{ minWidth: isMobile ? 600 : "auto" }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell
+                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
+                    >
+                      Nome do Pagador
+                    </TableCell>
+                    <TableCell
+                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
+                    >
+                      CPF
+                    </TableCell>
+                    <TableCell
+                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
+                    >
+                      Email
+                    </TableCell>
+                    <TableCell
+                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
+                    >
+                      Data e Hora
+                    </TableCell>
+                    <TableCell
+                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
+                    >
+                      Método
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        backgroundColor: "#F5F5F5",
+                        fontWeight: "bold",
+                        textAlign: "right",
+                      }}
+                    >
+                      Valor Bruto
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        backgroundColor: "#F5F5F5",
+                        fontWeight: "bold",
+                        textAlign: "right",
+                      }}
+                    >
+                      Taxa
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        backgroundColor: "#F5F5F5",
+                        fontWeight: "bold",
+                        textAlign: "right",
+                      }}
+                    >
+                      Valor Líquido
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {paginatedCheckouts.map((checkout) => {
+                    const totalAmount = parseFloat(checkout.totalAmount) || 0;
+                    const paymentMethod = checkout.paymentMethod || "unknown";
+                    const cardBrand =
+                      checkout.paymentDetails?.creditCard?.brand || "unknown";
+                    const fee = calculateFee(
+                      totalAmount,
+                      paymentMethod,
+                      cardBrand
+                    );
+                    const netAmount = totalAmount - fee;
+
+                    return (
+                      <TableRow key={checkout.id}>
+                        <TableCell>
+                          {checkout.participants[0]?.name || "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          {checkout.participants[0]?.document || "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          {checkout.participants[0]?.email || "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          {formatBrazilianDate(checkout.timestamp, true)}
+                        </TableCell>
+                        <TableCell>{paymentMethod}</TableCell>
+                        <TableCell sx={{ textAlign: "right" }}>
+                          {formatBrazilianCurrency(totalAmount)}
+                        </TableCell>
+                        <TableCell sx={{ textAlign: "right" }}>
+                          {formatBrazilianCurrency(fee)}
+                        </TableCell>
+                        <TableCell sx={{ textAlign: "right" }}>
+                          {formatBrazilianCurrency(netAmount)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
 
           <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
             <Button
@@ -399,7 +795,7 @@ const CheckoutListCards = ({
               onClick={() => handleChangePage(page + 1)}
               sx={{
                 color: "#1976D2",
-                "&:hover": { color: "#1565C0" },
+                вместо: { color: "#1565C0" },
                 "&:disabled": { color: "#B0BEC5" },
               }}
             >

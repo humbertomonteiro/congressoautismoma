@@ -910,6 +910,14 @@ const PaymentForm = () => {
         type={modalState.type}
         content={modalState.content}
       />
+      {formState.loading && (
+        <div className={styles.loadingOverlay}>
+          <div className={styles.loadingContent}>
+            <div className={styles.spinner}></div>
+            <p>Processando pagamento, por favor, não recarregue a página...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

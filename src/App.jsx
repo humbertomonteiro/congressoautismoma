@@ -12,6 +12,8 @@ import { Toaster } from "react-hot-toast";
 import RoutesApp from "./routes/RoutesApp";
 import AuthProvider from "./data/contexts/AuthContext";
 
+import { ToastContainer } from "react-toastify";
+
 function App() {
   useEffect(() => {
     Aos.init({ duration: 800 });
@@ -21,6 +23,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <ScrollToTop />
+        <ToastContainer />
         <Toaster position="top-right" reverseOrder={false} />
         <Main>
           <RoutesApp />

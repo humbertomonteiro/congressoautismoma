@@ -1,3 +1,4 @@
+import styles from "./modalCheckoutDetails.module.css";
 import {
   Typography,
   Box,
@@ -7,9 +8,17 @@ import {
   AccordionDetails,
   Divider,
   Grid,
+  TextField,
 } from "@mui/material";
 import { QRCodeSVG } from "qrcode.react";
 import { IoIosArrowDown } from "react-icons/io";
+import { useState } from "react";
+import { doc, updateDoc, getDoc } from "firebase/firestore"; // Adicione getDoc
+import { db } from "../../../../../firebaseConfig"; // Ajuste o caminho
+import PaymentService from "../../../../data/services/PaymentService"; // Ajuste o caminho
+import { toast } from "react-toastify";
+
+const EMAIL_FROM = import.meta.env.VITE_EMAIL_FROM;
 
 const ModalCheckoutDetails = ({
   checkout,
@@ -17,8 +26,149 @@ const ModalCheckoutDetails = ({
   formatTimestamp,
   title,
   message,
-  openDetailsModal,
+  updateCheckoutInContext, // Recebe a função para atualizar o contexto
 }) => {
+  const [participants, setParticipants] = useState(checkout.participants);
+
+  const handleInputChange = (index, field, value) => {
+    const updatedParticipants = [...participants];
+    updatedParticipants[index][field] = value;
+    setParticipants(updatedParticipants);
+  };
+
+  // Função para apagar os QR codes de um participante
+  const clearQrCodes = (index) => {
+    const updatedParticipants = [...participants];
+    delete updatedParticipants[index].qrCodes;
+    delete updatedParticipants[index].qrRawData;
+    setParticipants(updatedParticipants);
+  };
+
+  const saveChanges = async () => {
+    try {
+      const checkoutRef = doc(db, "checkouts", checkout.id);
+      await updateDoc(checkoutRef, { participants });
+      toast.success("Alterações salvas com sucesso!");
+
+      // Atualiza o contexto global
+      updateCheckoutInContext({ ...checkout, participants });
+    } catch (error) {
+      console.error("Erro ao salvar alterações:", error);
+      toast.error("Erro ao salvar alterações");
+    }
+  };
+
+  // Função para enviar email de confirmação e buscar QR codes no Firebase
+  const sendConfirmationEmail = async (participant, index) => {
+    if (
+      participant.qrRawData &&
+      (participant.qrRawData["2025-05-31"] ||
+        participant.qrRawData["2025-06-01"])
+    ) {
+      toast.error(
+        "Este participante já possui QR Codes. Apague-os antes de enviar o email de confirmação."
+      );
+      return;
+    }
+
+    try {
+      const emailData = {
+        checkoutId: checkout.id,
+        from: EMAIL_FROM,
+        to: participant.email,
+        subject: "Confirmação de Pagamento - Congresso Autismo MA 2025",
+        data: {
+          name: participant.name,
+          transactionId: checkout.transactionId,
+          fullTickets: checkout.orderDetails.fullTickets,
+          valueTicketsAll:
+            checkout.orderDetails.valueTicketsAll ||
+            checkout.orderDetails.fullTicketsValue,
+          halfTickets: checkout.orderDetails.halfTickets,
+          valueTicketsHalf:
+            checkout.orderDetails.valueTicketsHalf ||
+            checkout.orderDetails.halfTicketsValue,
+          coupon: checkout.orderDetails.coupon || "",
+          discount: checkout.orderDetails.discount || "0.00",
+          total: checkout.totalAmount,
+          installments:
+            checkout.paymentMethod === "creditCard"
+              ? checkout.paymentDetails.creditCard?.installments || "1"
+              : "1",
+        },
+      };
+
+      console.log(
+        "Enviando email de confirmação para:",
+        participant.email,
+        emailData
+      );
+
+      if (
+        !emailData.from ||
+        !emailData.to ||
+        !emailData.subject ||
+        !emailData.data ||
+        !emailData.checkoutId
+      ) {
+        console.error("Campos obrigatórios faltando no emailData:", emailData);
+        toast.error("Erro ao enviar email: Campos obrigatórios faltando.");
+        throw new Error(
+          "Dados insuficientes para enviar o email de confirmação."
+        );
+      }
+
+      const emailResponse = await toast.promise(
+        PaymentService.sendConfirmationEmail(emailData),
+        {
+          pending: "Enviando email...",
+          success: "Email enviado com sucesso!",
+          error: "Verifique o email, caso não tenha recebido, tente novamente.",
+        }
+      );
+      console.log("Resposta do envio de email:", emailResponse);
+
+      // Busca os dados atualizados no Firebase
+      const checkoutRef = doc(db, "checkouts", checkout.id);
+      const checkoutSnap = await getDoc(checkoutRef);
+      if (checkoutSnap.exists()) {
+        const updatedCheckout = { id: checkout.id, ...checkoutSnap.data() };
+        const updatedParticipants = updatedCheckout.participants;
+
+        // Atualiza o estado local
+        setParticipants(updatedParticipants);
+
+        // Atualiza o contexto global
+        updateCheckoutInContext(updatedCheckout);
+
+        // Verifica se os QR codes foram adicionados
+        if (
+          updatedParticipants[index].qrRawData &&
+          (updatedParticipants[index].qrRawData["2025-05-31"] ||
+            updatedParticipants[index].qrRawData["2025-06-01"])
+        ) {
+          console.log(
+            "QR codes encontrados no Firebase:",
+            updatedParticipants[index].qrRawData
+          );
+        } else {
+          console.warn(
+            "Nenhum QR code encontrado no Firebase após o envio do email."
+          );
+        }
+      } else {
+        throw new Error(
+          "Checkout não encontrado no Firebase após o envio do email."
+        );
+      }
+    } catch (error) {
+      console.error("Erro ao enviar email ou buscar dados:", error);
+      toast.error(
+        "Aguarde um momento e verifique seu email, caso não tenha recebido, tente novamente."
+      );
+    }
+  };
+
   return (
     <>
       {checkout ? (
@@ -74,26 +224,59 @@ const ModalCheckoutDetails = ({
           >
             Participantes
           </Typography>
-          {checkout.participants.map((p, index) => (
+          {participants.map((p, index) => (
             <Accordion
               key={index}
               sx={{ mb: 1, boxShadow: "none", border: "1px solid #e0e0e0" }}
             >
               <AccordionSummary expandIcon={<IoIosArrowDown />}>
-                <Typography sx={{ color: "#333333", fontWeight: 500 }}>
+                <Typography sx={{ color: "#333333", fontWeight: 600 }}>
                   {p.name} {p.isHalfPrice ? "(Meia)" : ""}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
-                <Typography sx={{ color: "#666666" }}>
-                  <strong>CPF:</strong> {p.cpf}
-                </Typography>
+                <TextField
+                  label="Nome"
+                  value={p.name}
+                  onChange={(e) =>
+                    handleInputChange(index, "name", e.target.value)
+                  }
+                  fullWidth
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  label="CPF"
+                  value={p.document || p.cpf}
+                  onChange={(e) =>
+                    handleInputChange(index, "document", e.target.value)
+                  }
+                  fullWidth
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  label="E-mail"
+                  value={p.email}
+                  onChange={(e) =>
+                    handleInputChange(index, "email", e.target.value)
+                  }
+                  fullWidth
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  label="Número"
+                  value={p.number || ""}
+                  onChange={(e) =>
+                    handleInputChange(index, "number", e.target.value)
+                  }
+                  fullWidth
+                  sx={{ mb: 2 }}
+                />
                 {p.qrRawData &&
                 p.qrRawData["2025-05-31"] &&
                 p.qrRawData["2025-06-01"] ? (
-                  <Box sx={{ mt: 1 }}>
+                  <Box>
                     <Typography sx={{ color: "#666666", fontWeight: 500 }}>
-                      QR Codes:
+                      <strong>QR Codes:</strong>
                     </Typography>
                     <Box sx={{ display: "flex", gap: 2, mt: 1 }}>
                       <Box>
@@ -121,9 +304,38 @@ const ModalCheckoutDetails = ({
                     QR Codes não disponíveis
                   </Typography>
                 )}
+                {/* Botões */}
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mt: 2 }}>
+                  {!p.qrRawData && (
+                    <Button
+                      sx={{ flex: "1 1 45%", minWidth: "150px" }}
+                      variant="outlined"
+                      onClick={() => sendConfirmationEmail(p, index)}
+                    >
+                      Enviar Email de Confirmação
+                    </Button>
+                  )}
+                  {p.qrRawData && (
+                    <Button
+                      sx={{ flex: "1 1 45%", minWidth: "150px" }}
+                      variant="outlined"
+                      color="error"
+                      onClick={() => clearQrCodes(index)}
+                    >
+                      Apagar QR Codes
+                    </Button>
+                  )}
+                </Box>
               </AccordionDetails>
             </Accordion>
           ))}
+          <Button
+            variant="contained"
+            onClick={saveChanges}
+            sx={{ mt: 2, mb: 3 }}
+          >
+            Salvar Alterações
+          </Button>
           <Divider sx={{ my: 3 }} />
 
           {/* Seção: Detalhes do Pedido */}
@@ -144,16 +356,19 @@ const ModalCheckoutDetails = ({
                 <Typography sx={{ color: "#666666" }}>
                   <strong>Inteiros:</strong> {checkout.orderDetails.fullTickets}{" "}
                   (R$
-                  {checkout.orderDetails.valueTicketsAll})
+                  {checkout.orderDetails.valueTicketsAll ||
+                    checkout.orderDetails.fullTicketsValue}
+                  )
                 </Typography>
               </Grid>
             )}
-
             {checkout.orderDetails.halfTickets > 0 && (
               <Grid item xs={6}>
                 <Typography sx={{ color: "#666666" }}>
-                  <strong>Meia:</strong> {checkout.orderDetails.halfTickets} (R${" "}
-                  {checkout.orderDetails.valueTicketsHalf})
+                  <strong>Meia:</strong> {checkout.orderDetails.halfTickets} (R$
+                  {checkout.orderDetails.valueTicketsHalf ||
+                    checkout.orderDetails.halfTicketsValue}
+                  )
                 </Typography>
               </Grid>
             )}

@@ -77,7 +77,7 @@ const SalesByDayChart = ({ checkouts, formatToBrazilianCurrency }) => {
   }, [checkouts, period]);
 
   return (
-    <Box sx={{ marginBottom: "24px", width: "100%" }}>
+    <Box sx={{ width: "100%" }}>
       <Card
         sx={{
           backgroundColor: "#FFFFFF",
