@@ -17,7 +17,7 @@ import Footer from "../../components/templates/Footer";
 import { useState, useEffect } from "react";
 // import ButtonWhatsapp from "../../components/sections/ButtonWhatsapp";
 
-const Home = () => {
+const HomeWhastsapp = () => {
   const [visibleItems, setVisibleItems] = useState(4);
 
   const updateVisibleItems = () => {
@@ -43,7 +43,7 @@ const Home = () => {
       />
       <Header />
       <OurMission />
-      <Tickets />
+      <Tickets wpp={true} />
       <CarouselSimple
         slides={itemsSpeakers}
         numberSlidesView={visibleItems - 1}
@@ -63,4 +63,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default HomeWhastsapp;

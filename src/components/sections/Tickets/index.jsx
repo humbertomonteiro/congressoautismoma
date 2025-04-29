@@ -7,8 +7,8 @@ import FormGetData from "../../shared/FormGetData";
 import { useNavigate } from "react-router-dom";
 
 import { IoTicketOutline } from "react-icons/io5";
+import { FaWhatsapp } from "react-icons/fa";
 
-import { useState } from "react";
 import CountdownTimer from "../../shared/CountdownTimer";
 
 const handleAddToCart = (itemId, itemName, price) => {
@@ -26,7 +26,7 @@ const handleAddToCart = (itemId, itemName, price) => {
   });
 };
 
-const Item1 = () => {
+const Item1 = ({ wpp }) => {
   const navigate = useNavigate();
   return (
     <div className={styles.box} data-active="true">
@@ -39,11 +39,12 @@ const Item1 = () => {
       </div>
       <div className={styles.boxValue}>
         <h4>
-          <span>de:</span>{" "}
+          {/* <span>de:</span>{" "}
           <s>
             R$ 839,90 <br />
           </s>{" "}
-          <span>por:</span> <strong>10X de </strong>R$ 49,90
+          <span>por:</span>  */}
+          <strong>10X de </strong>R$ 49,90
         </h4>
         <h5>Valor do ingresso: R$ 499,00</h5>
         <ul>
@@ -60,17 +61,30 @@ const Item1 = () => {
         </ul>
         <div className={styles.buttons}>
           <div className={styles.button}>
-            <ButtonSecondary
-              style={{ width: "100%" }}
-              action="button"
-              onClick={() => {
-                navigate("/checkout");
-                handleAddToCart();
-              }}
-            >
-              Comprar Ingresso{" "}
-              <IoTicketOutline style={{ fontSize: "1.2rem" }} />
-            </ButtonSecondary>
+            {!wpp ? (
+              <ButtonSecondary
+                style={{ width: "100%" }}
+                action="button"
+                onClick={() => {
+                  navigate("/checkout");
+                  handleAddToCart();
+                }}
+              >
+                Comprar Ingresso{" "}
+                <IoTicketOutline style={{ fontSize: "1.2rem" }} />
+              </ButtonSecondary>
+            ) : (
+              <ButtonSecondary
+                styleButton={{ width: "100%" }}
+                action={"link"}
+                link="https://api.whatsapp.com/send?phone=5598988259214&text=Olá!%20Gostaria%20de%20falar%20com%20vocês.%20"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Comprar pelo Whatsapp{" "}
+                <FaWhatsapp style={{ fontSize: "1.2rem" }} />
+              </ButtonSecondary>
+            )}
           </div>
         </div>
       </div>
@@ -78,7 +92,7 @@ const Item1 = () => {
   );
 };
 
-const Item2 = () => {
+const Item2 = ({ wpp }) => {
   const navigate = useNavigate();
 
   return (
@@ -93,11 +107,12 @@ const Item2 = () => {
       </div>
       <div className={styles.boxValue}>
         <h4>
-          <span>de:</span>{" "}
+          {/* <span>de:</span>{" "}
           <s>
             R$ 839,90 <br />
           </s>{" "}
-          <span>por:</span> <strong>10X de </strong>R$ 44,90
+          <span>por:</span> */}
+          <strong>10X de </strong>R$ 44,90
           <span>/ por unidade</span>
         </h4>
         <h5>Valor do ingresso: R$ 449,00</h5>
@@ -120,17 +135,30 @@ const Item2 = () => {
               ingresso Grupo.
             </span>
 
-            <ButtonSecondary
-              style={{ width: "100%" }}
-              action="button"
-              onClick={() => {
-                navigate("/checkout?tickets=5&coupon=grupo");
-                handleAddToCart();
-              }}
-            >
-              Comprar Ingresso{" "}
-              <IoTicketOutline style={{ fontSize: "1.2rem" }} />
-            </ButtonSecondary>
+            {!wpp ? (
+              <ButtonSecondary
+                style={{ width: "100%" }}
+                action="button"
+                onClick={() => {
+                  navigate("/checkout?tickets=5&coupon=grupo");
+                  handleAddToCart();
+                }}
+              >
+                Comprar Ingresso{" "}
+                <IoTicketOutline style={{ fontSize: "1.2rem" }} />
+              </ButtonSecondary>
+            ) : (
+              <ButtonSecondary
+                styleButton={{ width: "100%" }}
+                action={"link"}
+                link="https://api.whatsapp.com/send?phone=5598988259214&text=Olá!%20Gostaria%20de%20falar%20com%20vocês.%20"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Comprar pelo Whatsapp{" "}
+                <FaWhatsapp style={{ fontSize: "1.2rem" }} />
+              </ButtonSecondary>
+            )}
           </div>
         </div>
       </div>
@@ -138,7 +166,7 @@ const Item2 = () => {
   );
 };
 
-const ItemHalf = () => {
+const ItemHalf = ({ wpp }) => {
   const navigate = useNavigate();
 
   return (
@@ -156,11 +184,12 @@ const ItemHalf = () => {
       </div>
       <div className={styles.boxValue}>
         <h4>
-          <span>de:</span>{" "}
+          {/* <span>de:</span>{" "}
           <s>
             R$ 839,90 <br />
           </s>{" "}
-          <span>por:</span> <strong>10X de </strong>R$ 39,90
+          <span>por:</span>  */}
+          <strong>10X de </strong>R$ 39,90
           <span>/ por unidade</span>
         </h4>
         <h5>Valor do ingresso: R$ 399,00</h5>
@@ -194,17 +223,31 @@ const ItemHalf = () => {
               A meia entrada é um direito que promove a inclusão e o acesso, e
               sua colaboração na apresentação dos documentos é necessário.
             </span>
-            <ButtonSecondary
-              style={{ width: "100%" }}
-              action="button"
-              onClick={() => {
-                navigate("/checkout?type=half");
-                handleAddToCart();
-              }}
-            >
-              Comprar Ingresso{" "}
-              <IoTicketOutline style={{ fontSize: "1.2rem" }} />
-            </ButtonSecondary>
+
+            {!wpp ? (
+              <ButtonSecondary
+                style={{ width: "100%" }}
+                action="button"
+                onClick={() => {
+                  navigate("/checkout?type=half");
+                  handleAddToCart();
+                }}
+              >
+                Comprar Ingresso{" "}
+                <IoTicketOutline style={{ fontSize: "1.2rem" }} />
+              </ButtonSecondary>
+            ) : (
+              <ButtonSecondary
+                styleButton={{ width: "100%" }}
+                action={"link"}
+                link="https://api.whatsapp.com/send?phone=5598988259214&text=Olá!%20Gostaria%20de%20falar%20com%20vocês.%20"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Comprar pelo Whatsapp{" "}
+                <FaWhatsapp style={{ fontSize: "1.2rem" }} />
+              </ButtonSecondary>
+            )}
           </div>
         </div>
       </div>
@@ -212,74 +255,7 @@ const ItemHalf = () => {
   );
 };
 
-const Item3 = () => {
-  return (
-    <div className={styles.box}>
-      <strong className={styles.sale}>30% OFF</strong>
-      <div className={styles.boxContent}>
-        <span>Ingresso</span>
-        <h4>Lote 1</h4>
-        <h5>Disponível até:</h5>
-        <p>01/04 ou enquanto durar</p>
-      </div>
-
-      <div className={styles.boxValue}>
-        <h4>
-          <span>de:</span>{" "}
-          <s>
-            R$ 839,90 <br />
-          </s>{" "}
-          <span>por:</span> <strong>10X de </strong>R$ 58,90
-        </h4>
-        <ul>
-          <li>Economize até 30% no valor do ingresso!</li>
-          <li>Garanta sua vaga em um evento único com especialistas em TEA.</li>
-          <li>
-            Participe do networking com profissionais e familiares engajados no
-            tema.
-          </li>
-        </ul>
-      </div>
-    </div>
-  );
-};
-
-const Item4 = () => {
-  return (
-    <div className={styles.box}>
-      <strong className={styles.sale}>20% OFF</strong>
-      <div className={styles.boxContent}>
-        <span>Ingresso</span>
-        <h4>Lote 2</h4>
-        <h5>Disponível até:</h5>
-        <p>15/05 ou enquanto durar</p>
-      </div>
-      <div className={styles.boxValue}>
-        <h4>
-          <span>de:</span>{" "}
-          <s>
-            R$ 839,90 <br />
-          </s>{" "}
-          <span>por:</span> <strong>10X de </strong>R$ 67,90
-        </h4>
-        <ul>
-          <li>Economize até 20% no valor do ingresso!</li>
-          <li>Garanta sua vaga em um evento único com especialistas em TEA.</li>
-          <li>
-            Participe do networking com profissionais e familiares engajados no
-            tema.
-          </li>
-        </ul>
-      </div>
-    </div>
-  );
-};
-
-const Tickets = () => {
-  const [formGetData, setFormGetData] = useState(false);
-  const [group, setGroup] = useState(false);
-  const [link, setLink] = useState("");
-
+const Tickets = (wpp = false) => {
   return (
     <Section>
       <Title text="Ingressos " align="center" />
@@ -295,30 +271,10 @@ const Tickets = () => {
           <CountdownTimer targetDate="2025-03-31T23:59:59" />
         </div>
         <div className={styles.boxes}>
-          <Item1
-            setFormGetData={setFormGetData}
-            setLink={setLink}
-            setGroup={setGroup}
-          />
-          <Item2
-          // setFormGetData={setFormGetData}
-          // setLink={setLink}
-          // setGroup={setGroup}
-          />
-          <ItemHalf
-            setFormGetData={setFormGetData}
-            setLink={setLink}
-            setGroup={setGroup}
-          />
-          {/* <Item4 /> */}
+          <Item1 wpp={wpp} />
+          <Item2 wpp={wpp} />
+          <ItemHalf wpp={wpp} />
         </div>
-        {formGetData && (
-          <FormGetData
-            setFormGetData={setFormGetData}
-            link={link}
-            group={group}
-          />
-        )}
       </div>
     </Section>
   );
