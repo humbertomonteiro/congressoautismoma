@@ -6,7 +6,7 @@ const ButtonWhatsapp = () => {
     <a
       //   data-aos="zoom-in"
       className={styles.button}
-      href="https://api.whatsapp.com/send?phone=5511941234567&text=Olá!%20Gostaria%20de%20falar%20com%20vocês.%20"
+      href="https://api.whatsapp.com/send?phone=5598988259214&text=Olá!%20Gostaria%20de%20falar%20com%20vocês.%20"
       target="_blank"
       rel="noopener noreferrer"
     >

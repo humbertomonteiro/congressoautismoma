@@ -13,7 +13,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TextField,
 } from "@mui/material";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -23,22 +22,26 @@ import Filters from "../Filters";
 import { useDashboard } from "../../../../data/contexts/DashboardContext";
 
 const formatBrazilianCurrency = (value) => {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
+  if (isNaN(value)) return "R$ 0,00";
+  return `R$ ${value
+    .toFixed(2)
+    .replace(".", ",")
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
 };
 
-const formatBrazilianDate = (date, includeTime = false) => {
-  const options = {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: includeTime ? "2-digit" : undefined,
-    minute: includeTime ? "2-digit" : undefined,
-    timeZone: "America/Sao_Paulo",
-  };
-  return new Date(date).toLocaleString("pt-BR", options);
+const formatBrazilianDate = (isoString, includeTime = false) => {
+  if (!isoString) return "N/A";
+  const date = new Date(isoString);
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const year = date.getFullYear();
+  if (includeTime) {
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const seconds = date.getSeconds().toString().padStart(2, "0");
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+  }
+  return `${day}/${month}/${year}`;
 };
 
 const calculateFee = (
@@ -50,6 +53,7 @@ const calculateFee = (
   let totalFee = 0;
   cardBrand = cardBrand.toLowerCase();
 
+  // Log para depuração
   console.log(
     `Calculando taxa: totalAmount=${totalAmount}, paymentMethod=${paymentMethod}, cardBrand=${cardBrand}, numParticipants=${numParticipants}`
   );
@@ -65,20 +69,21 @@ const calculateFee = (
       } else if (cardBrand === "elo") {
         totalFee = totalAmount * 0.0509; // 5.09%
       } else {
-        totalFee = totalAmount * 0.0449; // Default Visa/Master
+        totalFee = totalAmount * 0.0449; // Padrão Visa/Master
       }
       break;
     case "boleto":
-      totalFee = 5.0; // R$ 5 per checkout
+      totalFee = 5.0; // R$ 5 por checkout
       break;
     case "courtesy":
-      totalFee = 0; // No fee for courtesies
+      totalFee = 0; // Sem taxa para cortesias
       break;
     default:
       totalFee = 0;
-      console.warn(`Unknown payment method: ${paymentMethod}`);
+      console.warn(`Método de pagamento desconhecido: ${paymentMethod}`);
   }
 
+  // Divide a taxa total pelo número de participantes
   const feePerParticipant =
     numParticipants > 0 ? totalFee / numParticipants : 0;
   console.log(
@@ -92,16 +97,15 @@ const calculateParticipantValue = (checkout, participantIndex) => {
   if (paymentMethod === "courtesy") return 0;
   const { fullTickets, halfTickets } = orderDetails || {};
   const isGroupCoupon = coupon === "grupo" && fullTickets + halfTickets >= 5;
-  const isTherapistCoupon = coupon === "terapeuta";
 
   let value;
   if (participantIndex < fullTickets) {
-    value = 499; // Full ticket
-    if (isGroupCoupon || isTherapistCoupon) {
-      value -= 50; // R$50 discount
+    value = 499; // Inteira
+    if (isGroupCoupon) {
+      value -= 50; // Desconto de R$50
     }
   } else {
-    value = 399; // Half ticket
+    value = 399; // Meia
   }
   return value;
 };
@@ -114,7 +118,7 @@ const CheckoutListCards = ({
   const { filteredCheckouts: allFilteredCheckouts, filteredMetrics } =
     useDashboard();
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(6);
+  const [rowsPerPage] = useState(6);
   const [paginatedCheckouts, setPaginatedCheckouts] = useState([]);
   const [viewMode, setViewMode] = useState(
     localStorage.getItem("checkoutViewMode") || "cards"
@@ -122,32 +126,31 @@ const CheckoutListCards = ({
 
   const handleToggleViewMode = () => {
     const newMode = viewMode === "cards" ? "table" : "cards";
-    if (newMode === "cards") {
-      setRowsPerPage(6);
-    }
     setViewMode(newMode);
     localStorage.setItem("checkoutViewMode", newMode);
   };
 
-  const prepareTableData = (checkouts, forPDF = false) => {
-    const tableData = [];
+  const prepareTableData = (checkouts) => {
+    const participantData = [];
     checkouts.forEach((checkout) => {
-      const { paymentMethod, timestamp, id, participants, orderDetails } =
-        checkout;
+      const { paymentMethod, timestamp, participants, orderDetails } = checkout;
       const isCourtesy = paymentMethod === "courtesy";
       const totalAmount = isCourtesy
         ? 0
         : parseFloat(checkout.totalAmount) || 0;
-      const numParticipants = participants?.length || 1;
       const cardBrand = checkout.paymentDetails?.creditCard?.brand || "unknown";
+      const numParticipants = participants?.length || 1;
 
+      // Log para depuração de cortesias e taxas
       console.log(
-        `Processando checkout: id=${id}, paymentMethod=${paymentMethod}, courtesyTickets=${
+        `Processando checkout: id=${
+          checkout.id
+        }, paymentMethod=${paymentMethod}, courtesyTickets=${
           orderDetails?.courtesyTickets || 0
         }, numParticipants=${numParticipants}`
       );
 
-      participants.forEach((participant, index) => {
+      participants?.forEach((participant, index) => {
         const participantValue = calculateParticipantValue(checkout, index);
         const fee = isCourtesy
           ? 0
@@ -158,53 +161,30 @@ const CheckoutListCards = ({
               numParticipants
             );
         const netAmount = participantValue - fee;
-        const ticketType = isCourtesy
-          ? "Cortesia"
-          : index < orderDetails.fullTickets
-          ? "Inteira"
-          : "Meia";
 
-        const row = forPDF
-          ? [
-              participant.name || "N/A",
-              participant.document || participant.cpf || "N/A",
-              participant.email || "N/A",
-              formatBrazilianDate(timestamp, true),
-              paymentMethod,
-              formatBrazilianCurrency(participantValue),
-              // formatBrazilianCurrency(fee),
-              formatBrazilianCurrency(netAmount),
-            ]
-          : [
-              id,
-              participant.name || "N/A",
-              participant.document || participant.cpf || "N/A",
-              participant.email || "N/A",
-              ticketType,
-              formatBrazilianDate(timestamp, true),
-              paymentMethod,
-              formatBrazilianCurrency(participantValue),
-              formatBrazilianCurrency(fee),
-              formatBrazilianCurrency(netAmount),
-            ];
-
-        tableData.push(row);
+        participantData.push([
+          participant.name || "N/A",
+          participant.document || participant.cpf || "N/A",
+          participant.email || "N/A",
+          formatBrazilianDate(timestamp, true),
+          paymentMethod,
+          formatBrazilianCurrency(participantValue),
+          formatBrazilianCurrency(fee),
+          formatBrazilianCurrency(netAmount),
+        ]);
       });
     });
-    return tableData;
+    return participantData;
   };
 
   const exportToExcel = () => {
-    if (!allFilteredCheckouts || !Array.isArray(allFilteredCheckouts)) {
-      console.error(
-        "allFilteredCheckouts is not an array:",
-        allFilteredCheckouts
-      );
+    if (!allFilteredCheckouts) {
+      console.error("allFilteredCheckouts não está definido");
       alert("Erro: Dados de checkouts não disponíveis. Tente novamente.");
       return;
     }
 
-    const validCheckouts = allFilteredCheckouts.filter(
+    const validCheckouts = (allFilteredCheckouts || []).filter(
       (checkout) =>
         checkout &&
         checkout.id &&
@@ -226,56 +206,44 @@ const CheckoutListCards = ({
     const sortedPending = [...pendingCheckouts].sort(sortByDate);
     const sortedErrors = [...errorCheckouts].sort(sortByDate);
 
-    const approvedData = prepareTableData(sortedApproved).map((row, index) => ({
-      "ID do Checkout": row[0],
-      "Nome do Participante": row[1],
-      CPF: row[2],
-      Email: row[3],
-      "Tipo de Ingresso": row[4],
-      "Data da Compra": row[5],
-      Método: row[6],
-      "Valor Pago": row[7],
-      Taxa: row[8],
-      "Valor Líquido": row[9],
-      __style: { fillColor: index % 2 === 0 ? "#E6F4EA" : "#FFFFFF" }, // Verde claro alternado
+    const approvedData = prepareTableData(sortedApproved).map((row) => ({
+      "Nome do Participante": row[0],
+      CPF: row[1],
+      Email: row[2],
+      "Data da Compra": row[3],
+      Método: row[4],
+      "Valor Bruto": row[5],
+      Taxa: row[6],
+      "Valor Líquido": row[7],
+    }));
+    const pendingData = prepareTableData(sortedPending).map((row) => ({
+      "Nome do Participante": row[0],
+      CPF: row[1],
+      Email: row[2],
+      "Data da Compra": row[3],
+      Método: row[4],
+      "Valor Bruto": row[5],
+      Taxa: row[6],
+      "Valor Líquido": row[7],
+    }));
+    const errorData = prepareTableData(sortedErrors).map((row) => ({
+      "Nome do Participante": row[0],
+      CPF: row[1],
+      Email: row[2],
+      "Data da Compra": row[3],
+      Método: row[4],
+      "Valor Bruto": row[5],
+      Taxa: row[6],
+      "Valor Líquido": row[7],
     }));
 
-    const pendingData = prepareTableData(sortedPending).map((row, index) => ({
-      "ID do Checkout": row[0],
-      "Nome do Participante": row[1],
-      CPF: row[2],
-      Email: row[3],
-      "Tipo de Ingresso": row[4],
-      "Data da Compra": row[5],
-      Método: row[6],
-      "Valor Pago": row[7],
-      Taxa: row[8],
-      "Valor Líquido": row[9],
-      __style: { fillColor: index % 2 === 0 ? "#FFF4E6" : "#FFFFFF" }, // Amarelo claro alternado
-    }));
-
-    const errorData = prepareTableData(sortedErrors).map((row, index) => ({
-      "ID do Checkout": row[0],
-      "Nome do Participante": row[1],
-      CPF: row[2],
-      Email: row[3],
-      "Tipo de Ingresso": row[4],
-      "Data da Compra": row[5],
-      Método: row[6],
-      "Valor Pago": row[7],
-      Taxa: row[8],
-      "Valor Líquido": row[9],
-      __style: { fillColor: index % 2 === 0 ? "#FFE6E6" : "#FFFFFF" }, // Vermelho claro alternado
-    }));
-
-    const totalGross = sortedApproved.reduce(
-      (sum, checkout) =>
-        sum +
-        (checkout.paymentMethod === "courtesy"
+    const totalGross = sortedApproved.reduce((sum, checkout) => {
+      const total =
+        checkout.paymentMethod === "courtesy"
           ? 0
-          : parseFloat(checkout.totalAmount) || 0),
-      0
-    );
+          : parseFloat(checkout.totalAmount) || 0;
+      return sum + total;
+    }, 0);
     const totalFees = sortedApproved.reduce((sum, checkout) => {
       const total =
         checkout.paymentMethod === "courtesy"
@@ -319,111 +287,51 @@ const CheckoutListCards = ({
       ...approvedData,
       {},
       {
-        "ID do Checkout": "",
         "Nome do Participante": "Total Bruto (Aprovados)",
         CPF: "",
         Email: "",
-        "Tipo de Ingresso": "",
         "Data da Compra": "",
         Método: "",
-        "Valor Pago": formatBrazilianCurrency(totalGross),
+        "Valor Bruto": formatBrazilianCurrency(totalGross),
         Taxa: formatBrazilianCurrency(totalFees),
         "Valor Líquido": formatBrazilianCurrency(totalNet),
-        __style: { fillColor: "#D3D3D3" }, // Cinza para totais
       },
       {
-        "ID do Checkout": "",
         "Nome do Participante": "Ingressos Inteiros",
         CPF: "",
         Email: "",
-        "Tipo de Ingresso": "",
         "Data da Compra": "",
         Método: "",
-        "Valor Pago": totalFullTickets.toString(),
+        "Valor Bruto": totalFullTickets.toString(),
         Taxa: "",
         "Valor Líquido": "",
-        __style: { fillColor: "#D3D3D3" },
       },
       {
-        "ID do Checkout": "",
         "Nome do Participante": "Ingressos Meia",
         CPF: "",
         Email: "",
-        "Tipo de Ingresso": "",
         "Data da Compra": "",
         Método: "",
-        "Valor Pago": totalHalfTickets.toString(),
+        "Valor Bruto": totalHalfTickets.toString(),
         Taxa: "",
         "Valor Líquido": "",
-        __style: { fillColor: "#D3D3D3" },
       },
       {
-        "ID do Checkout": "",
         "Nome do Participante": "Ingressos Cortesias",
         CPF: "",
         Email: "",
-        "Tipo de Ingresso": "",
         "Data da Compra": "",
         Método: "",
-        "Valor Pago": totalCourtesyTickets.toString(),
+        "Valor Bruto": totalCourtesyTickets.toString(),
         Taxa: "",
         "Valor Líquido": "",
-        __style: { fillColor: "#D3D3D3" },
       },
     ];
 
     const wb = XLSX.utils.book_new();
-
-    // Função para ajustar largura das colunas
-    const adjustColumnWidths = (data) => {
-      const columnWidths = [];
-      const headers = Object.keys(data[0]).filter((key) => key !== "__style");
-      headers.forEach((header, colIndex) => {
-        let maxLength = header.length;
-        data.forEach((row) => {
-          const value = row[header] ? row[header].toString() : "";
-          maxLength = Math.max(maxLength, value.length);
-        });
-        columnWidths.push({ wch: Math.min(Math.max(maxLength + 2, 10), 50) });
-      });
-      return columnWidths;
-    };
-
-    // Aplicar estilos e larguras
-    const wsApproved = XLSX.utils.json_to_sheet(approvedWithTotals, {
-      skipHeader: false,
-    });
-    wsApproved["!cols"] = adjustColumnWidths(approvedWithTotals);
-    Object.keys(wsApproved).forEach((cell) => {
-      if (!cell.startsWith("!")) {
-        const rowIndex = parseInt(cell.match(/\d+/)[0]) - 1;
-        if (approvedWithTotals[rowIndex]?.__style) {
-          wsApproved[cell].s = approvedWithTotals[rowIndex].__style;
-        }
-      }
-    });
-
+    const wsApproved = XLSX.utils.json_to_sheet(approvedWithTotals);
     const wsPending = XLSX.utils.json_to_sheet(pendingData);
-    wsPending["!cols"] = adjustColumnWidths(pendingData);
-    Object.keys(wsPending).forEach((cell) => {
-      if (!cell.startsWith("!")) {
-        const rowIndex = parseInt(cell.match(/\d+/)[0]) - 1;
-        if (pendingData[rowIndex]?.__style) {
-          wsPending[cell].s = pendingData[rowIndex].__style;
-        }
-      }
-    });
-
     const wsErrors = XLSX.utils.json_to_sheet(errorData);
-    wsErrors["!cols"] = adjustColumnWidths(errorData);
-    Object.keys(wsErrors).forEach((cell) => {
-      if (!cell.startsWith("!")) {
-        const rowIndex = parseInt(cell.match(/\d+/)[0]) - 1;
-        if (errorData[rowIndex]?.__style) {
-          wsErrors[cell].s = errorData[rowIndex].__style;
-        }
-      }
-    });
 
     XLSX.utils.book_append_sheet(wb, wsApproved, "Aprovados");
     if (pendingData.length > 0) {
@@ -437,11 +345,8 @@ const CheckoutListCards = ({
   };
 
   const exportToPDF = () => {
-    if (!allFilteredCheckouts || !Array.isArray(allFilteredCheckouts)) {
-      console.error(
-        "allFilteredCheckouts is not an array:",
-        allFilteredCheckouts
-      );
+    if (!allFilteredCheckouts) {
+      console.error("allFilteredCheckouts não está definido");
       alert("Erro: Dados de checkouts não disponíveis. Tente novamente.");
       return;
     }
@@ -455,7 +360,7 @@ const CheckoutListCards = ({
       10
     );
 
-    const validCheckouts = allFilteredCheckouts.filter(
+    const validCheckouts = (allFilteredCheckouts || []).filter(
       (checkout) =>
         checkout &&
         checkout.id &&
@@ -477,14 +382,13 @@ const CheckoutListCards = ({
     const sortedPending = [...pendingCheckouts].sort(sortByDate);
     const sortedErrors = [...errorCheckouts].sort(sortByDate);
 
-    const totalGross = sortedApproved.reduce(
-      (sum, checkout) =>
-        sum +
-        (checkout.paymentMethod === "courtesy"
+    const totalGross = sortedApproved.reduce((sum, checkout) => {
+      const total =
+        checkout.paymentMethod === "courtesy"
           ? 0
-          : parseFloat(checkout.totalAmount) || 0),
-      0
-    );
+          : parseFloat(checkout.totalAmount) || 0;
+      return sum + total;
+    }, 0);
     const totalFees = sortedApproved.reduce((sum, checkout) => {
       const total =
         checkout.paymentMethod === "courtesy"
@@ -547,7 +451,7 @@ const CheckoutListCards = ({
     let finalY = doc.lastAutoTable.finalY + 10;
     doc.setFontSize(12);
     doc.text("Participantes Aprovados", 10, finalY);
-    const approvedTableData = prepareTableData(sortedApproved, true);
+    const approvedTableData = prepareTableData(sortedApproved);
 
     autoTable(doc, {
       startY: finalY + 5,
@@ -558,8 +462,8 @@ const CheckoutListCards = ({
           "Email",
           "Data da Compra",
           "Método",
-          "Valor Pago",
-          // "Taxa",
+          "Valor Bruto",
+          "Taxa",
           "Valor Líquido",
         ],
       ],
@@ -576,7 +480,6 @@ const CheckoutListCards = ({
 
     finalY = doc.lastAutoTable.finalY + 10;
     const pageHeight = doc.internal.pageSize.height;
-
     if (sortedPending.length > 0) {
       if (finalY + 20 > pageHeight - 10) {
         doc.addPage();
@@ -584,7 +487,7 @@ const CheckoutListCards = ({
       }
       doc.setFontSize(12);
       doc.text("Participantes Pendentes", 10, finalY);
-      const pendingTableData = prepareTableData(sortedPending, true);
+      const pendingTableData = prepareTableData(sortedPending);
 
       autoTable(doc, {
         startY: finalY + 5,
@@ -595,9 +498,9 @@ const CheckoutListCards = ({
             "Email",
             "Data da Compra",
             "Método",
-            // "Valor Pago",
-            // "Taxa",
-            // "Valor Líquido",
+            "Valor Bruto",
+            "Taxa",
+            "Valor Líquido",
           ],
         ],
         body: pendingTableData,
@@ -621,7 +524,7 @@ const CheckoutListCards = ({
       }
       doc.setFontSize(12);
       doc.text("Participantes com Erro", 10, finalY);
-      const errorTableData = prepareTableData(sortedErrors, true);
+      const errorTableData = prepareTableData(sortedErrors);
 
       autoTable(doc, {
         startY: finalY + 5,
@@ -632,9 +535,9 @@ const CheckoutListCards = ({
             "Email",
             "Data da Compra",
             "Método",
-            // "Valor Pago",
-            // "Taxa",
-            // "Valor Líquido",
+            "Valor Bruto",
+            "Taxa",
+            "Valor Líquido",
           ],
         ],
         body: errorTableData,
@@ -653,16 +556,13 @@ const CheckoutListCards = ({
   };
 
   useEffect(() => {
-    if (!allFilteredCheckouts || !Array.isArray(allFilteredCheckouts)) {
-      console.warn(
-        "allFilteredCheckouts is not an array:",
-        allFilteredCheckouts
-      );
+    if (!allFilteredCheckouts) {
+      console.warn("allFilteredCheckouts está indefinido no useEffect");
       setPaginatedCheckouts([]);
       return;
     }
 
-    const validCheckouts = allFilteredCheckouts.filter(
+    const validCheckouts = (allFilteredCheckouts || []).filter(
       (checkout) =>
         checkout &&
         checkout.id &&
@@ -685,30 +585,15 @@ const CheckoutListCards = ({
     setPage(newPage);
   };
 
-  const validCheckoutsCount = Array.isArray(allFilteredCheckouts)
-    ? allFilteredCheckouts.filter(
-        (checkout) =>
-          checkout &&
-          checkout.id &&
-          Array.isArray(checkout.participants) &&
-          checkout.timestamp &&
-          checkout.orderDetails
-      ).length
-    : 0;
+  const validCheckoutsCount = (allFilteredCheckouts || []).filter(
+    (checkout) =>
+      checkout &&
+      checkout.id &&
+      Array.isArray(checkout.participants) &&
+      checkout.timestamp &&
+      checkout.orderDetails
+  ).length;
   const totalPages = Math.ceil(validCheckoutsCount / rowsPerPage);
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "approved":
-        return { borderLeft: "3px solid #2E7D32" };
-      case "pending":
-        return { borderLeft: "3px solid #FFB300" };
-      case "error":
-        return { borderLeft: "3px solid #D32F2F" };
-      default:
-        return { borderLeft: "3px solid #B0BEC5" };
-    }
-  };
 
   return (
     <Card
@@ -889,149 +774,114 @@ const CheckoutListCards = ({
               ))}
             </Box>
           ) : (
-            <>
-              <Box sx={{ mb: 2 }}>
-                <TextField
-                  label="Quantidade de linhas por página"
-                  value={rowsPerPage}
-                  onChange={(e) => setRowsPerPage(e.target.value)}
-                  type="number"
-                  // className={styles.shortInput}
-                />
-              </Box>
-              <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
-                <Table stickyHeader sx={{ minWidth: isMobile ? 600 : "auto" }}>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell
-                        sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                      >
-                        ID do Checkout
-                      </TableCell>
-                      <TableCell
-                        sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                      >
-                        Nome do Participante
-                      </TableCell>
-                      <TableCell
-                        sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                      >
-                        CPF
-                      </TableCell>
-                      <TableCell
-                        sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                      >
-                        Email
-                      </TableCell>
-                      <TableCell
-                        sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                      >
-                        Tipo de Ingresso
-                      </TableCell>
-                      <TableCell
-                        sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                      >
-                        Data e Hora
-                      </TableCell>
-                      <TableCell
-                        sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                      >
-                        Método
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          backgroundColor: "#F5F5F5",
-                          fontWeight: "bold",
-                          textAlign: "right",
-                        }}
-                      >
-                        Valor Pago
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          backgroundColor: "#F5F5F5",
-                          fontWeight: "bold",
-                          textAlign: "right",
-                        }}
-                      >
-                        Taxa
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          backgroundColor: "#F5F5F5",
-                          fontWeight: "bold",
-                          textAlign: "right",
-                        }}
-                      >
-                        Valor Líquido
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {paginatedCheckouts.map((checkout) => {
-                      const totalAmount =
-                        checkout.paymentMethod === "courtesy"
-                          ? 0
-                          : parseFloat(checkout.totalAmount) || 0;
-                      const paymentMethod = checkout.paymentMethod || "unknown";
-                      const cardBrand =
-                        checkout.paymentDetails?.creditCard?.brand || "unknown";
-                      const numParticipants =
-                        checkout.participants?.length || 1;
-                      return checkout.participants.map((participant, index) => {
-                        const participantValue = calculateParticipantValue(
-                          checkout,
-                          index
-                        );
-                        const fee = calculateFee(
-                          totalAmount,
-                          paymentMethod,
-                          cardBrand,
-                          numParticipants
-                        );
-                        const netAmount = participantValue - fee;
-                        const ticketType =
-                          checkout.paymentMethod === "courtesy"
-                            ? "Cortesia"
-                            : index < checkout.orderDetails.fullTickets
-                            ? "Inteira"
-                            : "Meia";
-                        return (
-                          <TableRow key={`${checkout.id}-${index}`}>
-                            <TableCell
-                              sx={{
-                                border: getStatusColor(checkout.status),
-                              }}
-                            >
-                              {checkout.id}
-                            </TableCell>
-                            <TableCell>{participant.name || "N/A"}</TableCell>
-                            <TableCell>
-                              {participant.document || participant.cpf || "N/A"}
-                            </TableCell>
-                            <TableCell>{participant.email || "N/A"}</TableCell>
-                            <TableCell>{ticketType}</TableCell>
-                            <TableCell>
-                              {formatBrazilianDate(checkout.timestamp, true)}
-                            </TableCell>
-                            <TableCell>{paymentMethod}</TableCell>
-                            <TableCell sx={{ textAlign: "right" }}>
-                              {formatBrazilianCurrency(participantValue)}
-                            </TableCell>
-                            <TableCell sx={{ textAlign: "right" }}>
-                              {formatBrazilianCurrency(fee)}
-                            </TableCell>
-                            <TableCell sx={{ textAlign: "right" }}>
-                              {formatBrazilianCurrency(netAmount)}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      });
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </>
+            <TableContainer
+              component={Paper}
+              sx={{ maxHeight: 400, overflowX: "auto" }}
+            >
+              <Table stickyHeader sx={{ minWidth: isMobile ? 600 : "auto" }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell
+                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
+                    >
+                      Nome do Participante
+                    </TableCell>
+                    <TableCell
+                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
+                    >
+                      CPF
+                    </TableCell>
+                    <TableCell
+                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
+                    >
+                      Email
+                    </TableCell>
+                    <TableCell
+                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
+                    >
+                      Data e Hora
+                    </TableCell>
+                    <TableCell
+                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
+                    >
+                      Método
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        backgroundColor: "#F5F5F5",
+                        fontWeight: "bold",
+                        textAlign: "right",
+                      }}
+                    >
+                      Valor Bruto
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        backgroundColor: "#F5F5F5",
+                        fontWeight: "bold",
+                        textAlign: "right",
+                      }}
+                    >
+                      Taxa
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        backgroundColor: "#F5F5F5",
+                        fontWeight: "bold",
+                        textAlign: "right",
+                      }}
+                    >
+                      Valor Líquido
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {paginatedCheckouts.map((checkout) => {
+                    const totalAmount =
+                      checkout.paymentMethod === "courtesy"
+                        ? 0
+                        : parseFloat(checkout.totalAmount) || 0;
+                    const paymentMethod = checkout.paymentMethod || "unknown";
+                    const cardBrand =
+                      checkout.paymentDetails?.creditCard?.brand || "unknown";
+                    const numParticipants = checkout.participants?.length || 1;
+                    return checkout.participants.map((participant, index) => {
+                      const participantValue = calculateParticipantValue(
+                        checkout,
+                        index
+                      );
+                      const fee = calculateFee(
+                        totalAmount,
+                        paymentMethod,
+                        cardBrand,
+                        numParticipants
+                      );
+                      const netAmount = participantValue - fee;
+                      return (
+                        <TableRow key={`${checkout.id}-${index}`}>
+                          <TableCell>{participant.name || "N/A"}</TableCell>
+                          <TableCell>{participant.document || "N/A"}</TableCell>
+                          <TableCell>{participant.email || "N/A"}</TableCell>
+                          <TableCell>
+                            {formatBrazilianDate(checkout.timestamp, true)}
+                          </TableCell>
+                          <TableCell>{paymentMethod}</TableCell>
+                          <TableCell sx={{ textAlign: "right" }}>
+                            {formatBrazilianCurrency(participantValue)}
+                          </TableCell>
+                          <TableCell sx={{ textAlign: "right" }}>
+                            {formatBrazilianCurrency(fee)}
+                          </TableCell>
+                          <TableCell sx={{ textAlign: "right" }}>
+                            {formatBrazilianCurrency(netAmount)}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    });
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
           )}
 
           <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
