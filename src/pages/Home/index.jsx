@@ -15,6 +15,7 @@ import Politic from "../../components/sections/Politic";
 import Footer from "../../components/templates/Footer";
 
 import { useState, useEffect } from "react";
+import ButtonWhatsapp from "../../components/sections/ButtonWhatsapp";
 
 const Home = () => {
   const [visibleItems, setVisibleItems] = useState(4);
@@ -57,6 +58,7 @@ const Home = () => {
       <Questions />
       <Politic />
       <Footer />
+      <ButtonWhatsapp />
     </div>
   );
 };

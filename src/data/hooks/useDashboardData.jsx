@@ -39,33 +39,42 @@ const useDashboardData = () => {
 
   const loadInitialData = async (forceUpdate = false) => {
     setLoading(true);
-    try {
-      const cachedMetrics = localStorage.getItem("dashboard_metrics");
-      const cachedCheckouts = localStorage.getItem("dashboard_checkouts");
-      const cachedLastUpdated = localStorage.getItem("metrics_last_updated");
 
-      if (
-        !cachedMetrics ||
-        !cachedCheckouts ||
-        forceUpdate ||
-        !cachedLastUpdated ||
-        (cachedMetrics && !JSON.parse(cachedMetrics).totalTicketsPix)
-      ) {
-        await updateMetrics(true);
-      } else {
-        const metricsData = JSON.parse(cachedMetrics);
-        setMetrics(metricsData);
-        setCheckouts(JSON.parse(cachedCheckouts));
-        setLastUpdated(parseInt(cachedLastUpdated, 10));
-        setEventOptions(metricsData.events || []);
-        applyFilters(JSON.parse(cachedCheckouts));
-      }
+    try {
+      await updateMetrics(true);
     } catch (error) {
       console.error("Erro ao carregar dados iniciais:", error);
-      await updateMetrics(true);
     } finally {
       setLoading(false);
     }
+    // try {
+    // const cachedMetrics = localStorage.getItem("dashboard_metrics");
+    // const cachedCheckouts = localStorage.getItem("dashboard_checkouts");
+    // const cachedLastUpdated = localStorage.getItem("metrics_last_updated");
+
+    // if (
+    //   !cachedMetrics ||
+    //   !cachedCheckouts ||
+    //   forceUpdate ||
+    //   !cachedLastUpdated ||
+    //   (cachedMetrics && !JSON.parse(cachedMetrics).totalTicketsPix)
+    // ) {
+    //   await updateMetrics(true);
+    // } else {
+    //   const metricsData = JSON.parse(cachedMetrics);
+    //   setMetrics(metricsData);
+    //   setCheckouts(JSON.parse(cachedCheckouts));
+    //   setLastUpdated(parseInt(cachedLastUpdated, 10));
+    //   setEventOptions(metricsData.events || []);
+    //   applyFilters(JSON.parse(cachedCheckouts));
+    // }
+
+    // } catch (error) {
+    //   console.error("Erro ao carregar dados iniciais:", error);
+    //   await updateMetrics(true);
+    // } finally {
+    //   setLoading(false);
+    // }
   };
 
   useEffect(() => {
@@ -343,7 +352,6 @@ const useDashboardData = () => {
 
       await setDoc(doc(db, "dashboard_metrics", "metrics"), updatedMetrics);
       localStorage.setItem("dashboard_metrics", JSON.stringify(updatedMetrics));
-      localStorage.setItem("dashboard_checkouts", JSON.stringify(allCheckouts));
       localStorage.setItem(
         "metrics_last_updated",
         updatedMetrics.lastUpdated.toString()

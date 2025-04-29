@@ -45,6 +45,7 @@ const Item1 = () => {
           </s>{" "}
           <span>por:</span> <strong>10X de </strong>R$ 49,90
         </h4>
+        <h5>Valor do ingresso: R$ 499,00</h5>
         <ul>
           <li>Garanta o seu ingresso com o menor valor!</li>
           <li>Economize mais 40% no valor do ingresso!</li>
@@ -99,6 +100,7 @@ const Item2 = () => {
           <span>por:</span> <strong>10X de </strong>R$ 44,90
           <span>/ por unidade</span>
         </h4>
+        <h5>Valor do ingresso: R$ 449,00</h5>
         <ul>
           <li>Garanta o seu ingresso com o menor valor!</li>
           <li>Economize mais 40% no valor do ingresso!</li>
@@ -161,6 +163,7 @@ const ItemHalf = () => {
           <span>por:</span> <strong>10X de </strong>R$ 39,90
           <span>/ por unidade</span>
         </h4>
+        <h5>Valor do ingresso: R$ 399,00</h5>
         <h3>Veja se você se encaixa na meia entrada:</h3>
         <ul>
           <li>

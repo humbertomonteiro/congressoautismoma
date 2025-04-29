@@ -212,6 +212,22 @@ const usePaymentForm = () => {
 
   const handleAddParticipant = (e) => {
     e.preventDefault();
+
+    // Validação adicional para chamadas automáticas
+    const requiredFields = ["name", "email", "number", "document"];
+    const missingFields = requiredFields.filter(
+      (field) =>
+        !currentParticipant[field] || currentParticipant[field].trim() === ""
+    );
+
+    if (missingFields.length > 0) {
+      setModalError(
+        "Campos Incompletos",
+        `Preencha os seguintes campos: ${missingFields.join(", ")}.`
+      );
+      return;
+    }
+
     if (participants.length >= formState.ticketQuantity) {
       setModalError(
         "Limite Atingido",

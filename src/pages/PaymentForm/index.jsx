@@ -195,16 +195,78 @@ const PaymentForm = () => {
   };
 
   const nextStep = () => {
-    if (step === 2 && participants.length < formState.ticketQuantity) {
-      setModalState({
-        isOpen: true,
-        title: "Participantes Insuficientes",
-        message: `Você adicionou ${participants.length} participante(s), mas selecionou ${formState.ticketQuantity} ingresso(s). Adicione todos os participantes antes de continuar.`,
-        type: "error",
-      });
-      return;
+    let automaticallyAddedParticipant = false;
+    if (step === 2) {
+      // Verifica se é um único participante e nenhum foi adicionado
+      if (formState.ticketQuantity === 1 && participants.length === 0) {
+        // Valida os campos obrigatórios do currentParticipant
+        automaticallyAddedParticipant = true;
+        const requiredFields = ["name", "email", "number", "document"];
+        const missingFields = requiredFields.filter(
+          (field) =>
+            !currentParticipant[field] ||
+            currentParticipant[field].trim() === ""
+        );
+
+        if (missingFields.length > 0) {
+          setModalState({
+            isOpen: true,
+            title: "Campos Incompletos",
+            message: `Preencha os seguintes campos: ${missingFields.join(
+              ", "
+            )}.`,
+            type: "error",
+          });
+          return;
+        }
+
+        // Valida o documento (CPF ou CNPJ)
+        const cleanDoc = currentParticipant.document.replace(/\D/g, "");
+        if (
+          currentParticipant.documentType === "cpf" &&
+          cleanDoc.length !== 11
+        ) {
+          setModalState({
+            isOpen: true,
+            title: "CPF Inválido",
+            message: "O CPF deve ter 11 dígitos.",
+            type: "error",
+          });
+          return;
+        }
+        if (
+          currentParticipant.documentType === "cnpj" &&
+          cleanDoc.length !== 14
+        ) {
+          setModalState({
+            isOpen: true,
+            title: "CNPJ Inválido",
+            message: "O CNPJ deve ter 14 dígitos.",
+            type: "error",
+          });
+          return;
+        }
+
+        // Adiciona o participante automaticamente
+        handleAddParticipant({ preventDefault: () => {} });
+      }
+
+      // Verifica se todos os participantes foram adicionados
+      if (
+        participants.length < formState.ticketQuantity &&
+        !automaticallyAddedParticipant
+      ) {
+        setModalState({
+          isOpen: true,
+          title: "Participantes Insuficientes",
+          message: `Você adicionou ${participants.length} participante(s), mas selecionou ${formState.ticketQuantity} ingresso(s). Adicione todos os participantes antes de continuar.`,
+          type: "error",
+        });
+        return;
+      }
     }
-    // Avança para a próxima etapa (Pagamento) sem redirecionar
+
+    // Avança para a próxima etapa
     setStep((prev) => prev + 1);
   };
 
@@ -510,7 +572,7 @@ const PaymentForm = () => {
                             }}
                             required
                           >
-                            <option value="">Selecione um participante</option>
+                            {/* <option value="">Selecione um participante</option> */}
                             {participants.map((participant) => (
                               <option
                                 key={participant.document}

@@ -13,6 +13,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
 } from "@mui/material";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -113,7 +114,7 @@ const CheckoutListCards = ({
   const { filteredCheckouts: allFilteredCheckouts, filteredMetrics } =
     useDashboard();
   const [page, setPage] = useState(0);
-  const [rowsPerPage] = useState(6);
+  const [rowsPerPage, setRowsPerPage] = useState(6);
   const [paginatedCheckouts, setPaginatedCheckouts] = useState([]);
   const [viewMode, setViewMode] = useState(
     localStorage.getItem("checkoutViewMode") || "cards"
@@ -121,6 +122,9 @@ const CheckoutListCards = ({
 
   const handleToggleViewMode = () => {
     const newMode = viewMode === "cards" ? "table" : "cards";
+    if (newMode === "cards") {
+      setRowsPerPage(6);
+    }
     setViewMode(newMode);
     localStorage.setItem("checkoutViewMode", newMode);
   };
@@ -693,6 +697,19 @@ const CheckoutListCards = ({
     : 0;
   const totalPages = Math.ceil(validCheckoutsCount / rowsPerPage);
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "approved":
+        return { borderLeft: "3px solid #2E7D32" };
+      case "pending":
+        return { borderLeft: "3px solid #FFB300" };
+      case "error":
+        return { borderLeft: "3px solid #D32F2F" };
+      default:
+        return { borderLeft: "3px solid #B0BEC5" };
+    }
+  };
+
   return (
     <Card
       sx={{
@@ -872,134 +889,149 @@ const CheckoutListCards = ({
               ))}
             </Box>
           ) : (
-            <TableContainer
-              component={Paper}
-              sx={{ maxHeight: 400, overflowX: "auto" }}
-            >
-              <Table stickyHeader sx={{ minWidth: isMobile ? 600 : "auto" }}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell
-                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                    >
-                      ID do Checkout
-                    </TableCell>
-                    <TableCell
-                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                    >
-                      Nome do Participante
-                    </TableCell>
-                    <TableCell
-                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                    >
-                      CPF
-                    </TableCell>
-                    <TableCell
-                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                    >
-                      Email
-                    </TableCell>
-                    <TableCell
-                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                    >
-                      Tipo de Ingresso
-                    </TableCell>
-                    <TableCell
-                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                    >
-                      Data e Hora
-                    </TableCell>
-                    <TableCell
-                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                    >
-                      Método
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        backgroundColor: "#F5F5F5",
-                        fontWeight: "bold",
-                        textAlign: "right",
-                      }}
-                    >
-                      Valor Pago
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        backgroundColor: "#F5F5F5",
-                        fontWeight: "bold",
-                        textAlign: "right",
-                      }}
-                    >
-                      Taxa
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        backgroundColor: "#F5F5F5",
-                        fontWeight: "bold",
-                        textAlign: "right",
-                      }}
-                    >
-                      Valor Líquido
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {paginatedCheckouts.map((checkout) => {
-                    const totalAmount =
-                      checkout.paymentMethod === "courtesy"
-                        ? 0
-                        : parseFloat(checkout.totalAmount) || 0;
-                    const paymentMethod = checkout.paymentMethod || "unknown";
-                    const cardBrand =
-                      checkout.paymentDetails?.creditCard?.brand || "unknown";
-                    const numParticipants = checkout.participants?.length || 1;
-                    return checkout.participants.map((participant, index) => {
-                      const participantValue = calculateParticipantValue(
-                        checkout,
-                        index
-                      );
-                      const fee = calculateFee(
-                        totalAmount,
-                        paymentMethod,
-                        cardBrand,
-                        numParticipants
-                      );
-                      const netAmount = participantValue - fee;
-                      const ticketType =
+            <>
+              <Box sx={{ mb: 2 }}>
+                <TextField
+                  label="Quantidade de linhas por página"
+                  value={rowsPerPage}
+                  onChange={(e) => setRowsPerPage(e.target.value)}
+                  type="number"
+                  // className={styles.shortInput}
+                />
+              </Box>
+              <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
+                <Table stickyHeader sx={{ minWidth: isMobile ? 600 : "auto" }}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell
+                        sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
+                      >
+                        ID do Checkout
+                      </TableCell>
+                      <TableCell
+                        sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
+                      >
+                        Nome do Participante
+                      </TableCell>
+                      <TableCell
+                        sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
+                      >
+                        CPF
+                      </TableCell>
+                      <TableCell
+                        sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
+                      >
+                        Email
+                      </TableCell>
+                      <TableCell
+                        sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
+                      >
+                        Tipo de Ingresso
+                      </TableCell>
+                      <TableCell
+                        sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
+                      >
+                        Data e Hora
+                      </TableCell>
+                      <TableCell
+                        sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
+                      >
+                        Método
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          backgroundColor: "#F5F5F5",
+                          fontWeight: "bold",
+                          textAlign: "right",
+                        }}
+                      >
+                        Valor Pago
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          backgroundColor: "#F5F5F5",
+                          fontWeight: "bold",
+                          textAlign: "right",
+                        }}
+                      >
+                        Taxa
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          backgroundColor: "#F5F5F5",
+                          fontWeight: "bold",
+                          textAlign: "right",
+                        }}
+                      >
+                        Valor Líquido
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {paginatedCheckouts.map((checkout) => {
+                      const totalAmount =
                         checkout.paymentMethod === "courtesy"
-                          ? "Cortesia"
-                          : index < checkout.orderDetails.fullTickets
-                          ? "Inteira"
-                          : "Meia";
-                      return (
-                        <TableRow key={`${checkout.id}-${index}`}>
-                          <TableCell>{checkout.id}</TableCell>
-                          <TableCell>{participant.name || "N/A"}</TableCell>
-                          <TableCell>
-                            {participant.document || participant.cpf || "N/A"}
-                          </TableCell>
-                          <TableCell>{participant.email || "N/A"}</TableCell>
-                          <TableCell>{ticketType}</TableCell>
-                          <TableCell>
-                            {formatBrazilianDate(checkout.timestamp, true)}
-                          </TableCell>
-                          <TableCell>{paymentMethod}</TableCell>
-                          <TableCell sx={{ textAlign: "right" }}>
-                            {formatBrazilianCurrency(participantValue)}
-                          </TableCell>
-                          <TableCell sx={{ textAlign: "right" }}>
-                            {formatBrazilianCurrency(fee)}
-                          </TableCell>
-                          <TableCell sx={{ textAlign: "right" }}>
-                            {formatBrazilianCurrency(netAmount)}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    });
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                          ? 0
+                          : parseFloat(checkout.totalAmount) || 0;
+                      const paymentMethod = checkout.paymentMethod || "unknown";
+                      const cardBrand =
+                        checkout.paymentDetails?.creditCard?.brand || "unknown";
+                      const numParticipants =
+                        checkout.participants?.length || 1;
+                      return checkout.participants.map((participant, index) => {
+                        const participantValue = calculateParticipantValue(
+                          checkout,
+                          index
+                        );
+                        const fee = calculateFee(
+                          totalAmount,
+                          paymentMethod,
+                          cardBrand,
+                          numParticipants
+                        );
+                        const netAmount = participantValue - fee;
+                        const ticketType =
+                          checkout.paymentMethod === "courtesy"
+                            ? "Cortesia"
+                            : index < checkout.orderDetails.fullTickets
+                            ? "Inteira"
+                            : "Meia";
+                        return (
+                          <TableRow key={`${checkout.id}-${index}`}>
+                            <TableCell
+                              sx={{
+                                border: getStatusColor(checkout.status),
+                              }}
+                            >
+                              {checkout.id}
+                            </TableCell>
+                            <TableCell>{participant.name || "N/A"}</TableCell>
+                            <TableCell>
+                              {participant.document || participant.cpf || "N/A"}
+                            </TableCell>
+                            <TableCell>{participant.email || "N/A"}</TableCell>
+                            <TableCell>{ticketType}</TableCell>
+                            <TableCell>
+                              {formatBrazilianDate(checkout.timestamp, true)}
+                            </TableCell>
+                            <TableCell>{paymentMethod}</TableCell>
+                            <TableCell sx={{ textAlign: "right" }}>
+                              {formatBrazilianCurrency(participantValue)}
+                            </TableCell>
+                            <TableCell sx={{ textAlign: "right" }}>
+                              {formatBrazilianCurrency(fee)}
+                            </TableCell>
+                            <TableCell sx={{ textAlign: "right" }}>
+                              {formatBrazilianCurrency(netAmount)}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      });
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
           )}
 
           <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
