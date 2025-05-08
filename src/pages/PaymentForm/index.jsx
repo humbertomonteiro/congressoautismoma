@@ -15,6 +15,7 @@ import usePaymentForm from "../../data/hooks/usePaymentForm";
 import AnimatedButton from "../../components/shared/AnimatedButton";
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import ButtonWhatsapp from "../../components/sections/ButtonWhatsapp";
 
 const PaymentForm = () => {
   const {
@@ -41,16 +42,27 @@ const PaymentForm = () => {
   const [documentError, setDocumentError] = useState("");
   const [payerType, setPayerType] = useState("participant");
   const [selectedPayer, setSelectedPayer] = useState(null);
-
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [isCouponAppliedInitially, setIsCouponAppliedInitially] =
     useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasShownHalfPriceModal, setHasShownHalfPriceModal] = useState(false);
+  const [typeTicket, setTypeTicket] = useState("full");
 
   const brands = ["Visa", "Mastercard", "Amex", "Elo"];
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Inicializar selectedPayer com o primeiro participante quando participants mudar
+  useEffect(() => {
+    if (
+      payerType === "participant" &&
+      participants.length > 0 &&
+      !selectedPayer
+    ) {
+      setSelectedPayer(participants[0]);
+    }
+  }, [participants, payerType, selectedPayer]);
 
   // useEffect para tickets e coupon
   useEffect(() => {
@@ -58,16 +70,13 @@ const PaymentForm = () => {
     const tickets = searchParams.get("tickets");
     const coupon = searchParams.get("coupon");
 
-    // Executar apenas na primeira carga
     if (!isInitialized) {
-      // Ajustar quantidade de ingressos inicial
       if (tickets && formState.ticketQuantity !== parseInt(tickets, 10)) {
         handleTicketQuantityChange({
           target: { value: parseInt(tickets, 10) },
         });
       }
 
-      // Aplicar cupom automaticamente apenas na primeira vez
       if (coupon && !isCouponAppliedInitially) {
         setFormState((prev) => ({
           ...prev,
@@ -77,7 +86,6 @@ const PaymentForm = () => {
         setIsCouponAppliedInitially(true);
       }
 
-      // Marcar como inicializado
       setIsInitialized(true);
     }
   }, [
@@ -94,6 +102,7 @@ const PaymentForm = () => {
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const type = searchParams.get("type");
+    setTypeTicket(type);
 
     if (
       type === "half" &&
@@ -117,6 +126,7 @@ const PaymentForm = () => {
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const type = searchParams.get("type");
+    setTypeTicket(type);
 
     if (type === "half" && step === 2 && !hasShownHalfPriceModal) {
       setModalState({
@@ -197,9 +207,7 @@ const PaymentForm = () => {
   const nextStep = () => {
     let automaticallyAddedParticipant = false;
     if (step === 2) {
-      // Verifica se é um único participante e nenhum foi adicionado
       if (formState.ticketQuantity === 1 && participants.length === 0) {
-        // Valida os campos obrigatórios do currentParticipant
         automaticallyAddedParticipant = true;
         const requiredFields = ["name", "email", "number", "document"];
         const missingFields = requiredFields.filter(
@@ -220,7 +228,6 @@ const PaymentForm = () => {
           return;
         }
 
-        // Valida o documento (CPF ou CNPJ)
         const cleanDoc = currentParticipant.document.replace(/\D/g, "");
         if (
           currentParticipant.documentType === "cpf" &&
@@ -247,11 +254,9 @@ const PaymentForm = () => {
           return;
         }
 
-        // Adiciona o participante automaticamente
         handleAddParticipant({ preventDefault: () => {} });
       }
 
-      // Verifica se todos os participantes foram adicionados
       if (
         participants.length < formState.ticketQuantity &&
         !automaticallyAddedParticipant
@@ -266,11 +271,25 @@ const PaymentForm = () => {
       }
     }
 
-    // Avança para a próxima etapa
     setStep((prev) => prev + 1);
   };
 
   const prevStep = () => setStep((prev) => prev - 1);
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    if (!selectedPayer) {
+      setModalState({
+        isOpen: true,
+        title: "Pagador Não Selecionado",
+        message:
+          "Por favor, selecione ou adicione um pagador antes de prosseguir.",
+        type: "error",
+      });
+      return;
+    }
+    handlePayment(e, selectedPayer, navigate);
+  };
 
   return (
     <div className={styles.container}>
@@ -317,46 +336,19 @@ const PaymentForm = () => {
                   ))}
                 </select>
               </label>
-              {!formState.coupon.isApplied ? (
-                <label>
-                  <p>Cupom de desconto</p>
-                  <div className={styles.couponInputWrapper}>
-                    <input
-                      type="text"
-                      placeholder="Digite seu cupom"
-                      value={formState.coupon.code}
-                      onChange={(e) =>
-                        setFormState((prev) => ({
-                          ...prev,
-                          coupon: { ...prev.coupon, code: e.target.value },
-                        }))
-                      }
-                    />
-                    <button
-                      onClick={handleApplyCoupon}
-                      disabled={!formState.coupon.code}
-                      className={styles.applyButton}
-                    >
-                      Aplicar
-                    </button>
-                  </div>
-                </label>
-              ) : (
-                <label>
+              <p className={styles.total}>
+                <strong>
+                  Total: R${" "}
+                  {typeTicket === "half" && formState.ticketQuantity <= 1
+                    ? "399,00"
+                    : totals.total}
+                </strong>
+                {formState.coupon.isApplied && (
                   <p>
-                    Cupom aplicado: {formState.coupon.code} - Desconto: R${" "}
+                    Cupom {formState.coupon.code} aplicado - Desconto: R${" "}
                     {totals.discount}
                   </p>
-                  <button
-                    onClick={handleRemoveCoupon}
-                    className={styles.removeCouponButton}
-                  >
-                    Remover <MdDelete />
-                  </button>
-                </label>
-              )}
-              <p className={styles.total}>
-                <strong>Total: R$ {totals.total}</strong>
+                )}
               </p>
               <button
                 onClick={nextStep}
@@ -463,12 +455,14 @@ const PaymentForm = () => {
                         </span>
                       </div>
                     </label>
-                    <button
-                      type="submit"
-                      className={`${styles.addButton} ${styles.primaryButton}`}
-                    >
-                      Adicionar
-                    </button>
+                    {formState.ticketQuantity > 1 && (
+                      <button
+                        type="submit"
+                        className={`${styles.addButton} ${styles.primaryButton}`}
+                      >
+                        Adicionar
+                      </button>
+                    )}
                   </form>
                 </div>
               ) : (
@@ -511,7 +505,6 @@ const PaymentForm = () => {
                   setFormState((prev) => ({ ...prev, paymentMethod: value }))
                 }
               />
-              {/* Discriminação dos valores acima dos dados de pagamento */}
               <div className={`${styles.paymentSummary} ${styles.card}`}>
                 <h2>Resumo do Pedido</h2>
                 <p>
@@ -534,13 +527,9 @@ const PaymentForm = () => {
                   <strong>Total: R$ {totals.total}</strong>
                 </p>
               </div>
-              <form
-                className={styles.payment}
-                onSubmit={(e) => handlePayment(e, selectedPayer, navigate)}
-              >
+              <form className={styles.payment} onSubmit={handleFormSubmit}>
                 {formState.paymentMethod === "creditCard" ? (
                   <>
-                    {/* Seção do Pagador */}
                     <div className={styles.paymentDetails}>
                       <h2>Dados do Pagador</h2>
                       <label>
@@ -572,7 +561,9 @@ const PaymentForm = () => {
                             }}
                             required
                           >
-                            {/* <option value="">Selecione um participante</option> */}
+                            <option value="" disabled>
+                              Selecione um participante
+                            </option>
                             {participants.map((participant) => (
                               <option
                                 key={participant.document}
@@ -620,7 +611,6 @@ const PaymentForm = () => {
                         </>
                       )}
                     </div>
-                    {/* Dados do Cartão */}
                     <div className={styles.paymentDetails}>
                       <h2>Pagamento com Cartão de Crédito</h2>
                       <label>
@@ -724,8 +714,6 @@ const PaymentForm = () => {
                 ) : (
                   <div className={styles.paymentDetails}>
                     <h2>Pagamento com Boleto</h2>
-
-                    {/* Seleção do tipo de pagador */}
                     <label>
                       <p>Tipo de Pagador</p>
                       <select
@@ -741,7 +729,6 @@ const PaymentForm = () => {
                         <option value="new">Adicionar pagador</option>
                       </select>
                     </label>
-                    {/* Dados do pagador */}
                     {payerType === "participant" ? (
                       <label>
                         <p>Selecione o Pagador</p>
@@ -756,7 +743,6 @@ const PaymentForm = () => {
                               name: payer?.name || "",
                               document: payer?.document || "",
                               documentType: payer?.documentType || "cpf",
-                              // Endereço começa vazio
                               zipCode: "",
                               street: "",
                               addressNumber: "",
@@ -767,7 +753,9 @@ const PaymentForm = () => {
                           }}
                           required
                         >
-                          <option value="">Selecione um participante</option>
+                          <option value="" disabled>
+                            Selecione um participante
+                          </option>
                           {participants.map((participant) => (
                             <option
                               key={participant.document}
@@ -838,7 +826,7 @@ const PaymentForm = () => {
                         </label>
                       </>
                     )}
-                    <label>
+                    {/* <label>
                       <p>CEP</p>
                       <InputMask
                         mask="99999-999"
@@ -935,7 +923,7 @@ const PaymentForm = () => {
                       >
                         {(inputProps) => <input {...inputProps} type="text" />}
                       </InputMask>
-                    </label>
+                    </label> */}
                   </div>
                 )}
                 <div className={styles.navigation}>
@@ -980,6 +968,7 @@ const PaymentForm = () => {
           </div>
         </div>
       )}
+      <ButtonWhatsapp text="" hover="Precisa de ajuda com o pagamento?" />
     </div>
   );
 };

@@ -19,7 +19,7 @@ const Footer = () => {
               Instagram <FaInstagram />
             </a>
             <a
-              href="https://wa.me/5598988830200?text=Ol%C3%A1,%20vim%20do%20site%20e%20gostaria%20de%20mais%20informa%C3%A7%C3%B5es."
+              href="https://wa.me/5598991058908?text=Ol%C3%A1,%20vim%20do%20site%20e%20gostaria%20de%20mais%20informa%C3%A7%C3%B5es."
               target="_blank"
             >
               Whatsapp <FaWhatsapp />

@@ -1,0 +1,140 @@
+.modal {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 350px;
+  max-height: 80vh;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.chatbot {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.header {
+  background: #25d366;
+  color: white;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.messages {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  background: #f5f5f5;
+}
+
+.botMessage {
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+.userMessage {
+  margin-bottom: 15px;
+  text-align: right;
+}
+
+.botMessage p,
+.userMessage p {
+  display: inline-block;
+  padding: 10px 15px;
+  border-radius: 18px;
+  max-width: 80%;
+}
+
+.botMessage p {
+  background: white;
+  color: #333;
+  border-top-left-radius: 5px;
+}
+
+.userMessage p {
+  background: #dcf8c6;
+  color: #333;
+  border-top-right-radius: 5px;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+  gap: 8px;
+}
+
+.optionButton {
+  background: #25d366;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 18px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s;
+}
+
+.optionButton:hover {
+  background: #128c7e;
+}
+
+.inputContainer {
+  display: flex;
+  padding: 15px;
+  border-top: 1px solid #ddd;
+  background: white;
+  gap: 8px;
+}
+
+.input {
+  flex: 1;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  outline: none;
+}
+
+.input:disabled {
+  background: #f5f5f5;
+}
+
+.sendButton {
+  background: #25d366;
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sendButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.sendButton:hover:not(:disabled) {
+  background: #128c7e;
+}

@@ -12,15 +12,17 @@ import { FaWhatsapp } from "react-icons/fa";
 import { useState } from "react";
 import ModalCheckoutDetails from "../ModalCheckoutDetails";
 import PaymentService from "../../../../data/services/PaymentService";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../../../../../firebaseConfig";
 import { useDashboard } from "../../../../data/contexts/DashboardContext";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import toast from "react-hot-toast";
 
 const CheckoutCard = ({ checkout, isMobile }) => {
   const [openDetailsModal, setOpenDetailsModal] = useState(null);
   const { setCheckouts, setFilteredCheckouts } = useDashboard();
+  const [showModalDelete, setShowModalDelete] = useState(false);
 
   const handleContactParticipant = (participantPhone, paymentMethod) => {
     const cleanPhone = participantPhone.replace(/\D/g, "");
@@ -65,6 +67,29 @@ const CheckoutCard = ({ checkout, isMobile }) => {
     }
   };
 
+  const handleDelete = async (id) => {
+    const docRef = doc(db, "checkouts", id);
+
+    try {
+      await deleteDoc(docRef);
+      toast.success(`Checkout com o id: ${id} foi deletado.`);
+      setCheckouts((prev) => prev.filter((c) => c.id !== id));
+      setFilteredCheckouts((prev) => prev.filter((c) => c.id !== id));
+      setShowModalDelete(false);
+    } catch (error) {
+      toast.error(`Erro ao apagar checkout: ${error}`);
+      setShowModalDelete(false);
+    }
+  };
+
+  const handleShowModalDelete = () => {
+    setShowModalDelete(true);
+  };
+
+  const handleCloseModalDelete = () => {
+    setShowModalDelete(false);
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case "approved":
@@ -88,7 +113,6 @@ const CheckoutCard = ({ checkout, isMobile }) => {
     }
   };
 
-  // Função para atualizar o checkout no estado global após mudanças
   const updateCheckoutInContext = (updatedCheckout) => {
     setCheckouts((prev) =>
       prev.map((c) => (c.id === updatedCheckout.id ? updatedCheckout : c))
@@ -142,7 +166,7 @@ const CheckoutCard = ({ checkout, isMobile }) => {
         <CardActions
           sx={{ justifyContent: "space-between", gap: 1, padding: 0 }}
         >
-          <Box sx={{ display: "flex" }}>
+          <Box sx={{ display: "flex", gap: 1 }}>
             <Button
               color="primary"
               size="small"
@@ -151,7 +175,7 @@ const CheckoutCard = ({ checkout, isMobile }) => {
             >
               Detalhes
             </Button>
-            {checkout.paymentId &&
+            {/* {checkout.paymentId &&
               checkout.status === "pending" &&
               ["pix", "boleto"].includes(checkout.paymentMethod) && (
                 <Button
@@ -169,7 +193,15 @@ const CheckoutCard = ({ checkout, isMobile }) => {
                 >
                   Verificar Pagamento
                 </Button>
-              )}
+              )} */}
+            <Button
+              color="error"
+              size="small"
+              sx={{ textTransform: "none", fontSize: "0.7rem", p: ".2rem" }}
+              onClick={handleShowModalDelete}
+            >
+              Excluir
+            </Button>
           </Box>
           {checkout.participants[0]?.number && (
             <IconButton
@@ -187,7 +219,6 @@ const CheckoutCard = ({ checkout, isMobile }) => {
         </CardActions>
       </Card>
 
-      {/* Modal Único */}
       <Modal
         open={!!openDetailsModal}
         onClose={() => setOpenDetailsModal(null)}
@@ -216,7 +247,7 @@ const CheckoutCard = ({ checkout, isMobile }) => {
               checkout={checkout}
               setOpenDetailsModal={setOpenDetailsModal}
               formatTimestamp={formatTimestamp}
-              updateCheckoutInContext={updateCheckoutInContext} // Passa a função para atualizar o contexto
+              updateCheckoutInContext={updateCheckoutInContext}
             />
           ) : (
             <ModalCheckoutDetails
@@ -227,6 +258,49 @@ const CheckoutCard = ({ checkout, isMobile }) => {
               openDetailsModal={openDetailsModal?.type}
             />
           )}
+        </Box>
+      </Modal>
+
+      <Modal open={showModalDelete} onClose={handleCloseModalDelete}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: isMobile ? "85%" : 400,
+            bgcolor: "#FFFFFF",
+            borderRadius: "12px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            p: 3,
+            textAlign: "center",
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 2, color: "#333333" }}>
+            Confirmar Exclusão
+          </Typography>
+          <Typography sx={{ mb: 3, color: "#666666" }}>
+            Tem certeza que deseja excluir este checkout? Os dados serão
+            perdidos permanentemente.
+          </Typography>
+          <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => handleDelete(checkout.id)}
+              sx={{ textTransform: "none" }}
+            >
+              Confirmar
+            </Button>
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={handleCloseModalDelete}
+              sx={{ textTransform: "none" }}
+            >
+              Cancelar
+            </Button>
+          </Box>
         </Box>
       </Modal>
     </>

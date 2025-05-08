@@ -290,21 +290,21 @@ const AddManualPayment = () => {
       await updateMetrics();
 
       // Atualizar localStorage localmente
-      const cachedCheckouts = JSON.parse(
-        localStorage.getItem("dashboard_checkouts") || "[]"
-      );
-      cachedCheckouts.push(checkoutData);
-      localStorage.setItem(
-        "dashboard_checkouts",
-        JSON.stringify(cachedCheckouts)
-      );
+      // const cachedCheckouts = JSON.parse(
+      //   localStorage.getItem("dashboard_checkouts") || "[]"
+      // );
+      // cachedCheckouts.push(checkoutData);
+      // localStorage.setItem(
+      //   "dashboard_checkouts",
+      //   JSON.stringify(cachedCheckouts)
+      // );
 
-      setModalState({
-        isOpen: true,
-        title: "Checkout Adicionado",
-        message: "Checkout manual adicionado com sucesso!",
-        type: "success",
-      });
+      // setModalState({
+      //   isOpen: true,
+      //   title: "Checkout Adicionado",
+      //   message: "Checkout manual adicionado com sucesso!",
+      //   type: "success",
+      // });
 
       setFormState({
         paymentMethod: "creditCard",

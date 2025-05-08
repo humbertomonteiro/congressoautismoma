@@ -1,5 +1,7 @@
 import styles from "./speakers.module.css";
 
+import grazyGadia from "../../../assets/speakers/grazy-gadia.png";
+import olzeniRibeiro from "../../../assets/speakers/dra-olzeni-ribeiro.jpg";
 import jessicaAmorim from "../../../assets/speakers/jessica-amorim.jpeg";
 import camilaLeon from "../../../assets/speakers/camila-leon.jpeg";
 import kaduLins from "../../../assets/speakers/kadu-lins.png";
@@ -29,7 +31,7 @@ const speakersImages = [
       "Neurologia Pediátrica pela University of Miami School of Medicine, humanitário comprometido ativamente e pioneiro em terapias.",
   },
   {
-    url: "https://media.licdn.com/dms/image/v2/C5603AQELCUJ0eji87g/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1516930082943?e=1743033600&v=beta&t=wsEP29z1Yg2NJ0c2w5CNvqoPSChzb1elf5j1Gm6AW_I",
+    url: grazyGadia,
     name: "Graziella Gadia",
     experience:
       "Talento e Pedagogia: Uma fusão inspiradora de habilidades artísticas e ensino. Uma dedicação tangível ao progresso terapêutico no espectro autista.",
@@ -47,7 +49,7 @@ const speakersImages = [
       "Fotógrafo, escritor, artista plástico, atendente terapêutico e tenho autismo.",
   },
   {
-    url: "https://olzeniribeiro.com.br/wp-content/uploads/2024/06/olzenir-ribeiro.png",
+    url: olzeniRibeiro,
     name: "Dra. Olzeni Ribeiro",
     experience:
       "Phd em Educação, Neuropsicopedagoga Clínica | Neurodivergente, Especialista em Avaliação AHSD e 2E",

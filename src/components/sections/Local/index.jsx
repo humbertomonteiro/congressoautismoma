@@ -29,6 +29,7 @@ const Local = () => {
 
           <div className={styles.boxLocal}>
             <div className={styles.list}>
+              <span>Dia 31/05 e 01/06 em São Luís - MA</span>
               <h3>Centro de Convenções Multicenter</h3>
               <h4>AUDITÓRIO DARCY RIBEIRO</h4>
               <ul>

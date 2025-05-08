@@ -1,4 +1,3 @@
-// src/components/Scanner.jsx
 import React, { useState, useEffect } from "react";
 import Reader from "react-qr-scanner";
 import styles from "./scanner.module.css";
@@ -24,6 +23,8 @@ const Scanner = () => {
   const [validatedQRs, setValidatedQRs] = useState([]);
   const [searchEmail, setSearchEmail] = useState("");
   const [expandedCard, setExpandedCard] = useState(null);
+  const [facingMode, setFacingMode] = useState("environment");
+  const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
 
   useEffect(() => {
     const fetchValidatedQRs = async () => {
@@ -61,6 +62,20 @@ const Scanner = () => {
       }
     };
     fetchValidatedQRs();
+
+    // Verificar se há múltiplas câmeras disponíveis
+    const checkCameras = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(
+          (device) => device.kind === "videoinput"
+        );
+        setHasMultipleCameras(videoDevices.length > 1);
+      } catch (err) {
+        console.error("Erro ao verificar dispositivos de câmera:", err);
+      }
+    };
+    checkCameras();
   }, []);
 
   const handleScan = async (data) => {
@@ -98,7 +113,9 @@ const Scanner = () => {
 
       console.log("Enviando qrData para validação:", qrText);
       const response = await axios.post(
-        "http://localhost:5000/api/credentials/validate-qr-code",
+        `${
+          import.meta.env.VITE_BASE_URL_PRODUCTION
+        }/credentials/validate-qr-code`,
         { qrData: qrText },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -149,6 +166,16 @@ const Scanner = () => {
     console.log("Escaneamento parado.");
   };
 
+  const handleToggleCamera = () => {
+    setFacingMode((prev) => (prev === "environment" ? "user" : "environment"));
+    setIsScanning(false); // Para o escaneamento para reiniciar o stream
+    setTimeout(() => setIsScanning(true), 100); // Reinicia após um pequeno delay
+    console.log(
+      "Câmera alternada para:",
+      facingMode === "environment" ? "frente" : "trás"
+    );
+  };
+
   const getStatusStyle = (status) => {
     switch (status) {
       case "Válido":
@@ -162,6 +189,12 @@ const Scanner = () => {
           ? { bgcolor: "#fff3e0", borderLeft: "4px solid #ff9800" }
           : {};
     }
+  };
+
+  const videoConstraints = {
+    facingMode: facingMode,
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
   };
 
   const filteredValidatedQRs = validatedQRs.filter((qr) =>
@@ -178,12 +211,11 @@ const Scanner = () => {
           boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
           p: "20px",
           width: "100%",
-          maxWidth: "1200px", // Ajuste conforme o layout do dashboard
+          maxWidth: "1200px",
           mx: "auto",
           mb: 3,
         }}
       >
-        {/* Scanner e Botões */}
         <Box sx={{ mb: 3 }}>
           {!isScanning ? (
             <Button
@@ -202,14 +234,14 @@ const Scanner = () => {
                   border: "2px dashed #ccc",
                   borderRadius: 2,
                   overflow: "hidden",
-                  width: { xs: "100%", sm: "400px" }, // Limita o tamanho do scanner
+                  width: { xs: "100%", sm: "400px" },
                 }}
               >
                 <Reader
                   delay={500}
                   onScan={handleScan}
                   onError={handleError}
-                  facingMode="user"
+                  constraints={{ video: videoConstraints }}
                   style={{ width: "100%", height: "auto" }}
                 />
                 <Box
@@ -224,18 +256,29 @@ const Scanner = () => {
                   }}
                 />
               </Box>
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={handleStopScanning}
-                sx={{ width: { xs: "100%", sm: "auto" }, py: 1.5 }}
-              >
-                Parar Escaneamento
-              </Button>
+              <Box sx={{ display: "flex", gap: 2 }}>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleStopScanning}
+                  sx={{ width: { xs: "100%", sm: "auto" }, py: 1.5 }}
+                >
+                  Parar Escaneamento
+                </Button>
+                {hasMultipleCameras && (
+                  <Button
+                    variant="outlined"
+                    onClick={handleToggleCamera}
+                    sx={{ width: { xs: "100%", sm: "auto" }, py: 1.5 }}
+                  >
+                    Alternar para Câmera{" "}
+                    {facingMode === "environment" ? "Frontal" : "Traseira"}
+                  </Button>
+                )}
+              </Box>
             </Box>
           )}
         </Box>
-        {/* Resultado */}
         {result && (
           <Box
             sx={{
@@ -280,7 +323,6 @@ const Scanner = () => {
             )}
           </Box>
         )}
-        {/* Busca e Lista de Validados */}
         <Box sx={{ mb: 2 }}>
           <TextField
             label="Buscar por Email"

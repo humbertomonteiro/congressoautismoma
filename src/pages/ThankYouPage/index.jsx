@@ -67,8 +67,12 @@ const ThankYouPage = ({ totalValue }) => {
       Parabéns por dar o primeiro passo para participar do{" "}
       <strong>Congresso Autismo MA 2025</strong>! Seu boleto foi gerado com
       sucesso. Para garantir sua vaga, efetue o pagamento até o vencimento
-      usando o código de barras ou QR code abaixo. Você também pode baixar o
-      boleto novamente clicando no botão!
+      usando o código de barras abaixo. Você também pode baixar o boleto
+      novamente clicando no botão!{" "}
+      <strong>
+        Após pagamento, receberá um email com os detalhes da sua compra em até 6
+        horas.
+      </strong>
     </>
   );
 

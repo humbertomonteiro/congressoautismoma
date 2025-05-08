@@ -15,9 +15,9 @@ import Politic from "../../components/sections/Politic";
 import Footer from "../../components/templates/Footer";
 
 import { useState, useEffect } from "react";
-// import ButtonWhatsapp from "../../components/sections/ButtonWhatsapp";
+import ButtonWhatsapp from "../../components/sections/ButtonWhatsapp";
 
-const Home = () => {
+const Home = ({ wpp }) => {
   const [visibleItems, setVisibleItems] = useState(4);
 
   const updateVisibleItems = () => {
@@ -43,7 +43,7 @@ const Home = () => {
       />
       <Header />
       <OurMission />
-      <Tickets />
+      <Tickets wpp={wpp} />
       <CarouselSimple
         slides={itemsSpeakers}
         numberSlidesView={visibleItems - 1}
@@ -52,13 +52,13 @@ const Home = () => {
       <PrivilegeOfParticipating />
       <Testimonials />
       <CarouselScrollInfinit />
-      <HalfiPrice />
+      <HalfiPrice wpp={wpp} />
       <BeSupport />
       <Local />
       <Questions />
       <Politic />
       <Footer />
-      {/* <ButtonWhatsapp /> */}
+      {!wpp && <ButtonWhatsapp />}
     </div>
   );
 };

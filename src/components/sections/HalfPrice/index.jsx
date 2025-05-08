@@ -4,10 +4,27 @@ import Section from "../../shared/Section";
 import Title from "../../shared/Title";
 import ButtonSecondary from "../../shared/ButtonSecondary";
 
+import { FaWhatsapp } from "react-icons/fa";
+
 import { useNavigate } from "react-router-dom";
 
-export default function HalfiPrice() {
+export default function HalfiPrice({ wpp }) {
   const navigate = useNavigate();
+
+  const handleViewContent = (itemId, itemName, price) => {
+    window.dataLayer.push({
+      event: "view_content",
+      items: [
+        {
+          item_id: itemId,
+          item_name: itemName,
+          price: price,
+          quantity: 1,
+        },
+      ],
+      timestamp: new Date().toISOString(),
+    });
+  };
 
   return (
     <Section>
@@ -68,14 +85,29 @@ export default function HalfiPrice() {
             <strong>
               <span>10X de</span>R$ 39,90
             </strong>
-            <ButtonSecondary
-              action="button"
-              onClick={() => {
-                navigate("/checkout?type=half");
-              }}
-            >
-              COMPRAR INGRESSO
-            </ButtonSecondary>
+            {!wpp ? (
+              <ButtonSecondary
+                action="button"
+                onClick={() => {
+                  navigate("/checkout?type=half");
+                }}
+              >
+                COMPRAR INGRESSO
+              </ButtonSecondary>
+            ) : (
+              <ButtonSecondary
+                action={"link"}
+                link={
+                  "https://api.whatsapp.com/send?phone=5598988259214&text=Olá!%20Gostaria%20de%20falar%20com%20vocês.%20"
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleViewContent}
+              >
+                Comprar pelo Whatsapp{" "}
+                <FaWhatsapp style={{ fontSize: "1.2rem" }} />
+              </ButtonSecondary>
+            )}
           </div>
         </div>
       </div>

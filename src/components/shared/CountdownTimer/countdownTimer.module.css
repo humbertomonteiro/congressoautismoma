@@ -6,14 +6,15 @@
     display: flex;
     flex-direction: column;
     text-align: center;
-    background-color: var(--color-3);
-    padding: 1rem;
+    background-color: white;
+    padding: 1.5rem 2.2rem;
     border-radius: 1.5rem;
+    /* width: 390px; */
     max-width: 90%;
     border: 1px solid var(--border-color);
 
     & h3 {
-      font-size: 0.8rem;
+      font-size: 0.9rem;
     }
 
     & .boxes {
@@ -34,5 +35,11 @@
         }
       }
     }
+  }
+}
+
+@media (max-width: 480px) {
+  .container .timer {
+    padding: 1rem;
   }
 }

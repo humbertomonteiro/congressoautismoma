@@ -65,9 +65,10 @@
   }
 
   & .date {
-    font-size: 1.8rem;
+    font-size: 1.5rem;
     margin-bottom: 0;
     color: var(--text-light);
+    margin-bottom: 0.5rem;
   }
 
   & h1 {
@@ -115,7 +116,7 @@
     }
 
     & .date {
-      font-size: 1.5rem;
+      font-size: 1.1rem;
     }
   }
 }

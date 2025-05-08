@@ -1,15 +1,309 @@
-import styles from "./tickets.module.css";
+// import styles from "./tickets.module.css";
 
+// import Section from "../../shared/Section";
+// import Title from "../../shared/Title";
+// import ButtonSecondary from "../../shared/ButtonSecondary";
+// import FormGetData from "../../shared/FormGetData";
+// import { useNavigate } from "react-router-dom";
+
+// import { IoTicketOutline } from "react-icons/io5";
+// import { FaWhatsapp } from "react-icons/fa";
+
+// import { useState } from "react";
+// import CountdownTimer from "../../shared/CountdownTimer";
+
+// const handleAddToCart = (itemId, itemName, price) => {
+//   window.dataLayer.push({
+//     event: "add_to_cart",
+//     items: [
+//       {
+//         item_id: itemId,
+//         item_name: itemName,
+//         price: price,
+//         quantity: 1,
+//       },
+//     ],
+//     timestamp: new Date().toISOString(),
+//   });
+// };
+
+// const handleViewContent = (itemId, itemName, price) => {
+//   window.dataLayer.push({
+//     event: "view_content",
+//     items: [
+//       {
+//         item_id: itemId,
+//         item_name: itemName,
+//         price: price,
+//         quantity: 1,
+//       },
+//     ],
+//     timestamp: new Date().toISOString(),
+//   });
+// };
+
+// const Item1 = ({ wpp }) => {
+//   const navigate = useNavigate();
+//   return (
+//     <div className={styles.box} data-active="true">
+//       {/* <strong className={styles.sale}>40% OFF</strong> */}
+//       <div className={styles.boxContent}>
+//         <span>Ingresso</span>
+//         <h4>Ingresso INDIVIDUAL</h4>
+//         <h5>Disponível até:</h5>
+//         <p>31/03 ou enquanto durar</p>
+//       </div>
+//       <div className={styles.boxValue}>
+//         <span>De R$ 799,80 por:</span>
+//         <h4>R$ 499,90</h4>
+//         <h3>
+//           ou <strong>10X de </strong>R$ 49,90
+//         </h3>
+
+//         <ul>
+//           <li>Garanta o seu ingresso com o menor valor!</li>
+//           <li>Economize mais 40% no valor do ingresso!</li>
+//           <li>
+//             Garanta sua vaga em um evento único com grandes referências da
+//             Neurodiversidade.
+//           </li>
+//           <li>
+//             Participe do networking com profissionais e familiares engajados no
+//             tema.
+//           </li>
+//         </ul>
+//         <div className={styles.buttons}>
+//           <div className={styles.button}>
+//             {!wpp ? (
+//               <ButtonSecondary
+//                 style={{ width: "100%" }}
+//                 action="button"
+//                 onClick={() => {
+//                   navigate("/checkout");
+//                   handleAddToCart();
+//                 }}
+//               >
+//                 Comprar Ingresso{" "}
+//                 <IoTicketOutline style={{ fontSize: "1.2rem" }} />
+//               </ButtonSecondary>
+//             ) : (
+//               <ButtonSecondary
+//                 styleButton={{ width: "100%" }}
+//                 action={"link"}
+//                 link={
+//                   "https://api.whatsapp.com/send?phone=5598988259214&text=Olá!%20Gostaria%20de%20falar%20com%20vocês.%20"
+//                 }
+//                 target="_blank"
+//                 rel="noopener noreferrer"
+//                 onClick={handleViewContent}
+//               >
+//                 Comprar pelo Whatsapp{" "}
+//                 <FaWhatsapp style={{ fontSize: "1.2rem" }} />
+//               </ButtonSecondary>
+//             )}
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// const Item2 = ({ wpp }) => {
+//   const navigate = useNavigate();
+
+//   return (
+//     <div className={styles.box} data-active="true">
+//       {/* <strong className={styles.sale}>40% OFF</strong> */}
+//       <div className={styles.boxContent}>
+//         <span>Ingresso</span>
+//         <h4>Ingresso GRUPO</h4>
+//         <h5>Disponível até:</h5>
+//         <p>31/03 ou enquanto durar</p>
+//         <p>Compre no mínimo 5 ingressos para ter desconto.</p>
+//       </div>
+//       <div className={styles.boxValue}>
+//         <span>De R$ 799,80 por: </span>
+//         <h4>R$ 449,90</h4>
+
+//         <h3>
+//           ou <strong>10X de R$ 44,90</strong>
+//         </h3>
+//         <ul>
+//           <li>Garanta o seu ingresso com o menor valor!</li>
+//           <li>Economize mais 40% no valor do ingresso!</li>
+//           <li>
+//             Garanta sua vaga em um evento único com grandes referências da
+//             Neurodiversidade.
+//           </li>
+//           <li>
+//             Participe do networking com profissionais e familiares engajados no
+//             tema.
+//           </li>
+//         </ul>
+//         <div className={styles.buttons}>
+//           <div className={styles.button}>
+//             <span>
+//               Clique no botão abaixo e fale com nosso suporte para comprar o
+//               ingresso Grupo.
+//             </span>
+
+//             {!wpp ? (
+//               <ButtonSecondary
+//                 style={{ width: "100%" }}
+//                 action="button"
+//                 onClick={() => {
+//                   navigate("/checkout?tickets=5&coupon=grupo");
+//                   handleAddToCart();
+//                 }}
+//               >
+//                 Comprar Ingresso{" "}
+//                 <IoTicketOutline style={{ fontSize: "1.2rem" }} />
+//               </ButtonSecondary>
+//             ) : (
+//               <ButtonSecondary
+//                 styleButton={{ width: "100%" }}
+//                 action={"link"}
+//                 link={
+//                   "https://api.whatsapp.com/send?phone=5598988259214&text=Olá!%20Gostaria%20de%20falar%20com%20vocês.%20"
+//                 }
+//                 target="_blank"
+//                 rel="noopener noreferrer"
+//                 onClick={handleViewContent}
+//               >
+//                 Comprar pelo Whatsapp{" "}
+//                 <FaWhatsapp style={{ fontSize: "1.2rem" }} />
+//               </ButtonSecondary>
+//             )}
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// const ItemHalf = ({ wpp }) => {
+//   const navigate = useNavigate();
+
+//   return (
+//     <div className={styles.box} data-active="true">
+//       {/* <strong className={styles.sale}>40% OFF</strong> */}
+//       <div className={styles.boxContent}>
+//         <span>Ingresso</span>
+//         <h4>Ingresso MEIA-ENTRADA</h4>
+//         <h5>Disponível até:</h5>
+//         <p>31/03 ou enquanto durar</p>
+//         <p>
+//           Lembre-se: os documentos comprobatórios devem ser apresentados na
+//           entrada do evento.
+//         </p>
+//       </div>
+//       <div className={styles.boxValue}>
+//         <span>50% de R$ 799,80: </span>
+//         <h4>R$ 399,90</h4>
+//         <h3>
+//           ou <strong>10X de R$ 39,90</strong>
+//         </h3>
+//         <h5>Veja se você se encaixa na meia entrada:</h5>
+//         <ul>
+//           <li>
+//             Pessoas com Deficiência (PcD), incluindo autistas: Apresentar
+//             documento comprovativo da condição.
+//           </li>
+
+//           <li>Idosos (60 anos ou mais): Documento de identidade com foto.</li>
+
+//           <li>
+//             Estudantes (de qualquer curso): Carteira de Identificação Estudantil
+//             (CIE), Comprovante de Matrícula ou Mensalidade.
+//           </li>
+
+//           <li>
+//             Professores de redes públicas e privadas: Comprovante de vínculo com
+//             instituição de ensino.
+//           </li>
+
+//           <li>
+//             Pais de autistas: Documento que comprove a condição de responsável
+//             legal.
+//           </li>
+//         </ul>
+//         <div className={styles.buttons}>
+//           <div className={styles.button}>
+//             <span>
+//               A meia entrada é um direito que promove a inclusão e o acesso, e
+//               sua colaboração na apresentação dos documentos é necessário.
+//             </span>
+//             {!wpp ? (
+//               <ButtonSecondary
+//                 style={{ width: "100%" }}
+//                 action="button"
+//                 onClick={() => {
+//                   navigate("/checkout?type=half");
+//                   handleAddToCart();
+//                 }}
+//               >
+//                 Comprar Ingresso{" "}
+//                 <IoTicketOutline style={{ fontSize: "1.2rem" }} />
+//               </ButtonSecondary>
+//             ) : (
+//               <ButtonSecondary
+//                 styleButton={{ width: "100%" }}
+//                 action={"link"}
+//                 link={
+//                   "https://api.whatsapp.com/send?phone=5598988259214&text=Olá!%20Gostaria%20de%20falar%20com%20vocês.%20"
+//                 }
+//                 target="_blank"
+//                 rel="noopener noreferrer"
+//                 onClick={handleViewContent}
+//               >
+//                 Comprar pelo Whatsapp{" "}
+//                 <FaWhatsapp style={{ fontSize: "1.2rem" }} />
+//               </ButtonSecondary>
+//             )}
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// const Tickets = ({ wpp }) => {
+//   return (
+//     <Section>
+//       <Title text="Ingressos " align="center" />
+//       <div id="tickets" data-aos="zoom-in" className={styles.container}>
+//         <div className={styles.content}>
+//           <h3>Ingressos Limitados – Garanta já sua participação!</h3>
+//           <p>
+//             Não perca o maior congresso sobre TEA do ano! Os ingressos estão
+//             divididos em lotes, com preços promocionais para quem comprar
+//             antecipado.
+//           </p>
+//           <strong>⚡ Confira os valores e garanta o melhor preço:</strong>
+//           <CountdownTimer targetDate="2025-05-15T23:59:59" />
+//         </div>
+//         <div className={styles.boxes}>
+//           <Item1 wpp={wpp} />
+//           <Item2 wpp={wpp} />
+//           <ItemHalf wpp={wpp} />
+//         </div>
+//       </div>
+//     </Section>
+//   );
+// };
+
+// export default Tickets;
+
+import React, { useState } from "react";
+import styles from "./Tickets.module.css";
 import Section from "../../shared/Section";
 import Title from "../../shared/Title";
 import ButtonSecondary from "../../shared/ButtonSecondary";
-import FormGetData from "../../shared/FormGetData";
-import { useNavigate } from "react-router-dom";
-
+import CountdownTimer from "../../shared/CountdownTimer";
+import Chatbot from "../Chatbot";
 import { IoTicketOutline } from "react-icons/io5";
 import { FaWhatsapp } from "react-icons/fa";
-
-import CountdownTimer from "../../shared/CountdownTimer";
+import { useNavigate } from "react-router-dom";
 
 const handleAddToCart = (itemId, itemName, price) => {
   window.dataLayer.push({
@@ -26,28 +320,41 @@ const handleAddToCart = (itemId, itemName, price) => {
   });
 };
 
-const Item1 = ({ wpp }) => {
+const handleViewContent = (itemId, itemName, price) => {
+  window.dataLayer.push({
+    event: "view_content",
+    items: [
+      {
+        item_id: itemId,
+        item_name: itemName,
+        price: price,
+        quantity: 1,
+      },
+    ],
+    timestamp: new Date().toISOString(),
+  });
+};
+
+const Item1 = ({ wpp, openChatbot }) => {
   const navigate = useNavigate();
   return (
     <div className={styles.box} data-active="true">
-      <strong className={styles.sale}>40% OFF</strong>
       <div className={styles.boxContent}>
         <span>Ingresso</span>
-        <h4>Pré-venda - Ingresso INDIVIDUAL</h4>
+        <h4>Ingresso INDIVIDUAL</h4>
         <h5>Disponível até:</h5>
-        <p>31/03 ou enquanto durar</p>
+        <p>25/05 ou enquanto durar</p>
       </div>
       <div className={styles.boxValue}>
-        <h4>
-          {/* <span>de:</span>{" "}
-          <s>
-            R$ 839,90 <br />
-          </s>{" "}
-          <span>por:</span>  */}
-          <strong>10X de </strong>R$ 49,90
-        </h4>
-        <h5>Valor do ingresso: R$ 499,00</h5>
+        {/* <span>
+          De <s>R$ 799,80</s> por:
+        </span> */}
+        <h4>R$ 499,90</h4>
+        <h3>
+          ou <strong>10X de </strong>R$ 49,90
+        </h3>
         <ul>
+          <li>Evento com Certificado de 20 horas.</li>
           <li>Garanta o seu ingresso com o menor valor!</li>
           <li>Economize mais 40% no valor do ingresso!</li>
           <li>
@@ -67,7 +374,7 @@ const Item1 = ({ wpp }) => {
                 action="button"
                 onClick={() => {
                   navigate("/checkout");
-                  handleAddToCart();
+                  handleAddToCart("individual", "Ingresso Individual", 499.9);
                 }}
               >
                 Comprar Ingresso{" "}
@@ -75,11 +382,12 @@ const Item1 = ({ wpp }) => {
               </ButtonSecondary>
             ) : (
               <ButtonSecondary
-                styleButton={{ width: "100%" }}
-                action={"link"}
-                link="https://api.whatsapp.com/send?phone=5598988259214&text=Olá!%20Gostaria%20de%20falar%20com%20vocês.%20"
-                target="_blank"
-                rel="noopener noreferrer"
+                style={{ width: "100%" }}
+                action="button"
+                onClick={() => {
+                  openChatbot("full");
+                  handleViewContent("individual", "Ingresso Individual", 499.9);
+                }}
               >
                 Comprar pelo Whatsapp{" "}
                 <FaWhatsapp style={{ fontSize: "1.2rem" }} />
@@ -92,31 +400,27 @@ const Item1 = ({ wpp }) => {
   );
 };
 
-const Item2 = ({ wpp }) => {
+const Item2 = ({ wpp, openChatbot }) => {
   const navigate = useNavigate();
-
   return (
     <div className={styles.box} data-active="true">
-      <strong className={styles.sale}>40% OFF</strong>
       <div className={styles.boxContent}>
         <span>Ingresso</span>
-        <h4>Pré-venda - Ingresso GRUPO</h4>
+        <h4>Ingresso GRUPO</h4>
         <h5>Disponível até:</h5>
-        <p>31/03 ou enquanto durar</p>
+        <p>25/05 ou enquanto durar</p>
         <p>Compre no mínimo 5 ingressos para ter desconto.</p>
       </div>
       <div className={styles.boxValue}>
-        <h4>
-          {/* <span>de:</span>{" "}
-          <s>
-            R$ 839,90 <br />
-          </s>{" "}
-          <span>por:</span> */}
-          <strong>10X de </strong>R$ 44,90
-          <span>/ por unidade</span>
-        </h4>
-        <h5>Valor do ingresso: R$ 449,00</h5>
+        {/* <span>
+          De <s>R$ 799,80</s> por:
+        </span> */}
+        <h4>R$ 449,90</h4>
+        <h3>
+          ou <strong>10X de R$ 44,90</strong>
+        </h3>
         <ul>
+          <li>Evento com Certificado de 20 horas.</li>
           <li>Garanta o seu ingresso com o menor valor!</li>
           <li>Economize mais 40% no valor do ingresso!</li>
           <li>
@@ -130,18 +434,17 @@ const Item2 = ({ wpp }) => {
         </ul>
         <div className={styles.buttons}>
           <div className={styles.button}>
-            <span>
+            {/* <span>
               Clique no botão abaixo e fale com nosso suporte para comprar o
               ingresso Grupo.
-            </span>
-
+            </span> */}
             {!wpp ? (
               <ButtonSecondary
                 style={{ width: "100%" }}
                 action="button"
                 onClick={() => {
                   navigate("/checkout?tickets=5&coupon=grupo");
-                  handleAddToCart();
+                  handleAddToCart("group", "Ingresso Grupo", 449.9);
                 }}
               >
                 Comprar Ingresso{" "}
@@ -149,11 +452,12 @@ const Item2 = ({ wpp }) => {
               </ButtonSecondary>
             ) : (
               <ButtonSecondary
-                styleButton={{ width: "100%" }}
-                action={"link"}
-                link="https://api.whatsapp.com/send?phone=5598988259214&text=Olá!%20Gostaria%20de%20falar%20com%20vocês.%20"
-                target="_blank"
-                rel="noopener noreferrer"
+                style={{ width: "100%" }}
+                action="button"
+                onClick={() => {
+                  openChatbot("group");
+                  handleViewContent("group", "Ingresso Grupo", 449.9);
+                }}
               >
                 Comprar pelo Whatsapp{" "}
                 <FaWhatsapp style={{ fontSize: "1.2rem" }} />
@@ -166,56 +470,46 @@ const Item2 = ({ wpp }) => {
   );
 };
 
-const ItemHalf = ({ wpp }) => {
+const ItemHalf = ({ wpp, openChatbot }) => {
   const navigate = useNavigate();
-
   return (
     <div className={styles.box} data-active="true">
-      <strong className={styles.sale}>40% OFF</strong>
       <div className={styles.boxContent}>
         <span>Ingresso</span>
-        <h4>Pré-venda - Ingresso MEIA-ENTRADA</h4>
+        <h4>Ingresso MEIA-ENTRADA</h4>
         <h5>Disponível até:</h5>
-        <p>31/03 ou enquanto durar</p>
+        <p>25/05 ou enquanto durar</p>
         <p>
           Lembre-se: os documentos comprobatórios devem ser apresentados na
           entrada do evento.
         </p>
       </div>
       <div className={styles.boxValue}>
-        <h4>
-          {/* <span>de:</span>{" "}
-          <s>
-            R$ 839,90 <br />
-          </s>{" "}
-          <span>por:</span>  */}
-          <strong>10X de </strong>R$ 39,90
-          <span>/ por unidade</span>
-        </h4>
-        <h5>Valor do ingresso: R$ 399,00</h5>
-        <h3>Veja se você se encaixa na meia entrada:</h3>
+        <span>50% de R$ 799,80:</span>
+        <h4>R$ 399,90</h4>
+        <h3>
+          ou <strong>10X de R$ 39,90</strong>
+        </h3>
+        <h5>Veja se você se encaixa na meia entrada:</h5>
         <ul>
           <li>
             Pessoas com Deficiência (PcD), incluindo autistas: Apresentar
             documento comprovativo da condição.
           </li>
-
           <li>Idosos (60 anos ou mais): Documento de identidade com foto.</li>
-
           <li>
             Estudantes (de qualquer curso): Carteira de Identificação Estudantil
             (CIE), Comprovante de Matrícula ou Mensalidade.
           </li>
-
           <li>
             Professores de redes públicas e privadas: Comprovante de vínculo com
             instituição de ensino.
           </li>
-
           <li>
             Pais de autistas: Documento que comprove a condição de responsável
             legal.
           </li>
+          <li>Evento com Certificado de 20 horas.</li>
         </ul>
         <div className={styles.buttons}>
           <div className={styles.button}>
@@ -223,14 +517,13 @@ const ItemHalf = ({ wpp }) => {
               A meia entrada é um direito que promove a inclusão e o acesso, e
               sua colaboração na apresentação dos documentos é necessário.
             </span>
-
             {!wpp ? (
               <ButtonSecondary
                 style={{ width: "100%" }}
                 action="button"
                 onClick={() => {
                   navigate("/checkout?type=half");
-                  handleAddToCart();
+                  handleAddToCart("half", "Ingresso Meia-Entrada", 399.9);
                 }}
               >
                 Comprar Ingresso{" "}
@@ -238,11 +531,12 @@ const ItemHalf = ({ wpp }) => {
               </ButtonSecondary>
             ) : (
               <ButtonSecondary
-                styleButton={{ width: "100%" }}
-                action={"link"}
-                link="https://api.whatsapp.com/send?phone=5598988259214&text=Olá!%20Gostaria%20de%20falar%20com%20vocês.%20"
-                target="_blank"
-                rel="noopener noreferrer"
+                style={{ width: "100%" }}
+                action="button"
+                onClick={() => {
+                  openChatbot("half");
+                  handleViewContent("half", "Ingresso Meia-Entrada", 399.9);
+                }}
               >
                 Comprar pelo Whatsapp{" "}
                 <FaWhatsapp style={{ fontSize: "1.2rem" }} />
@@ -255,10 +549,18 @@ const ItemHalf = ({ wpp }) => {
   );
 };
 
-const Tickets = (wpp = false) => {
+const Tickets = ({ wpp }) => {
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [initialTicketType, setInitialTicketType] = useState("");
+
+  const openChatbot = (ticketType) => {
+    setInitialTicketType(ticketType);
+    setIsChatbotOpen(true);
+  };
+
   return (
     <Section>
-      <Title text="Ingressos " align="center" />
+      <Title text="Ingressos" align="center" />
       <div id="tickets" data-aos="zoom-in" className={styles.container}>
         <div className={styles.content}>
           <h3>Ingressos Limitados – Garanta já sua participação!</h3>
@@ -268,14 +570,19 @@ const Tickets = (wpp = false) => {
             antecipado.
           </p>
           <strong>⚡ Confira os valores e garanta o melhor preço:</strong>
-          <CountdownTimer targetDate="2025-03-31T23:59:59" />
+          <CountdownTimer targetDate="2025-05-25T23:59:59" />
         </div>
         <div className={styles.boxes}>
-          <Item1 wpp={wpp} />
-          <Item2 wpp={wpp} />
-          <ItemHalf wpp={wpp} />
+          <Item1 wpp={wpp} openChatbot={openChatbot} />
+          <Item2 wpp={wpp} openChatbot={openChatbot} />
+          <ItemHalf wpp={wpp} openChatbot={openChatbot} />
         </div>
       </div>
+      <Chatbot
+        isOpen={isChatbotOpen}
+        onClose={() => setIsChatbotOpen(false)}
+        initialTicketType={initialTicketType}
+      />
     </Section>
   );
 };

@@ -141,45 +141,54 @@ const usePaymentForm = () => {
 
   const validatePayer = (payer, paymentMethod) => {
     // Para crédito e PIX, só precisamos de nome e documento
-    const requiredFields = ["name", "document"];
 
-    // Para boleto, precisamos de todos os campos de endereço
-    if (paymentMethod === "boleto") {
-      requiredFields.push(
-        "zipCode",
-        "street",
-        "addressNumber",
-        "district",
-        "city",
-        "state"
-      );
-    }
-
-    // Verifica campos obrigatórios
-    const missingFields = requiredFields.filter(
-      (field) => !payer[field] || payer[field].trim() === ""
-    );
-    if (missingFields.length > 0) {
+    if (!payer) {
       setModalError(
-        "Dados do Pagador Incompletos",
-        `Preencha os seguintes campos: ${missingFields
-          .map((f) => (f === "state" ? "Estado" : f))
-          .join(", ")}.`
+        "Pagador Não Selecionado",
+        "Por favor, selecione ou adicione um pagador antes de prosseguir."
       );
       return false;
     }
 
+    const requiredFields = ["name", "document"];
+
+    // Para boleto, precisamos de todos os campos de endereço
+    // if (paymentMethod === "boleto") {
+    //   requiredFields.push(
+    //     "zipCode",
+    //     "street",
+    //     "addressNumber",
+    //     "district",
+    //     "city",
+    //     "state"
+    //   );
+    // }
+
+    // Verifica campos obrigatórios
+    // const missingFields = requiredFields.filter(
+    //   (field) => !payer[field] || payer[field].trim() === ""
+    // );
+    // if (missingFields.length > 0) {
+    //   setModalError(
+    //     "Dados do Pagador Incompletos",
+    //     `Preencha os seguintes campos: ${missingFields
+    //       .map((f) => (f === "state" ? "Estado" : f))
+    //       .join(", ")}.`
+    //   );
+    //   return false;
+    // }
+
     // Validação específica do estado (UF) para boleto
-    if (paymentMethod === "boleto") {
-      const stateRegex = /^[A-Z]{2}$/; // Apenas 2 letras maiúsculas
-      if (!stateRegex.test(payer.state)) {
-        setModalError(
-          "Estado Inválido",
-          "O estado deve ser uma sigla de 2 letras maiúsculas (ex.: SP)."
-        );
-        return false;
-      }
-    }
+    // if (paymentMethod === "boleto") {
+    //   const stateRegex = /^[A-Z]{2}$/; // Apenas 2 letras maiúsculas
+    //   if (!stateRegex.test(payer.state)) {
+    //     setModalError(
+    //       "Estado Inválido",
+    //       "O estado deve ser uma sigla de 2 letras maiúsculas (ex.: SP)."
+    //     );
+    //     return false;
+    //   }
+    // }
 
     return true;
   };
@@ -274,6 +283,17 @@ const usePaymentForm = () => {
       setModalError("Cupom Inválido", "Digite um cupom válido.");
       return;
     }
+
+    console.log("Cupom: " + trimmedCoupon);
+
+    // if (
+    //   trimmedCoupon !== "grupo" ||
+    //   trimmedCoupon !== "terapeuta" ||
+    //   trimmedCoupon !== "cupom50"
+    // ) {
+    //   setModalError(`Cupom: ${trimmedCoupon} não existe.`);
+    //   return;
+    // }
 
     try {
       const response = await PaymentService.calculateTotals({
