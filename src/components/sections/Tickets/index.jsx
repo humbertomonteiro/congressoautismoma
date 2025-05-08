@@ -295,7 +295,7 @@
 // export default Tickets;
 
 import React, { useState } from "react";
-import styles from "./Tickets.module.css";
+import styles from "./tickets.module.css";
 import Section from "../../shared/Section";
 import Title from "../../shared/Title";
 import ButtonSecondary from "../../shared/ButtonSecondary";
