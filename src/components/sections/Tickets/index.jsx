@@ -294,7 +294,7 @@
 
 // export default Tickets;
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./tickets.module.css";
 import Section from "../../shared/Section";
 import Title from "../../shared/Title";
@@ -346,12 +346,12 @@ const Item1 = ({ wpp, openChatbot }) => {
         <p>25/05 ou enquanto durar</p>
       </div>
       <div className={styles.boxValue}>
-        {/* <span>
+        <span>
           De <s>R$ 799,80</s> por:
-        </span> */}
+        </span>
         <h4>R$ 499,90</h4>
         <h3>
-          ou <strong>10X de </strong>R$ 49,90
+          ou <strong>10X de R$ 49,90</strong>
         </h3>
         <ul>
           <li>Evento com Certificado de 20 horas.</li>
@@ -412,9 +412,9 @@ const Item2 = ({ wpp, openChatbot }) => {
         <p>Compre no mínimo 5 ingressos para ter desconto.</p>
       </div>
       <div className={styles.boxValue}>
-        {/* <span>
+        <span>
           De <s>R$ 799,80</s> por:
-        </span> */}
+        </span>
         <h4>R$ 449,90</h4>
         <h3>
           ou <strong>10X de R$ 44,90</strong>
@@ -552,11 +552,51 @@ const ItemHalf = ({ wpp, openChatbot }) => {
 const Tickets = ({ wpp }) => {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [initialTicketType, setInitialTicketType] = useState("");
+  const [targetDate, setTargetDate] = useState("");
 
   const openChatbot = (ticketType) => {
     setInitialTicketType(ticketType);
     setIsChatbotOpen(true);
   };
+
+  useEffect(() => {
+    const calculateTargetDate = () => {
+      const currentDate = new Date();
+      const target = new Date(currentDate);
+      target.setDate(currentDate.getDate() + 3); // 3 dias a partir de hoje
+      target.setHours(23, 59, 59, 999);
+
+      const year = target.getFullYear();
+      const month = String(target.getMonth() + 1).padStart(2, "0");
+      const day = String(target.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}T23:59:59`;
+    };
+
+    const storedDate = localStorage.getItem("countdownTargetDate");
+    const now = new Date().getTime();
+
+    if (storedDate) {
+      const storedTimestamp = new Date(storedDate).getTime();
+      if (storedTimestamp > now) {
+        // Data armazenada ainda é válida
+        setTargetDate(storedDate);
+        console.log("Using stored targetDate:", storedDate);
+      } else {
+        // Data expirou, calcular nova
+        const newTargetDate = calculateTargetDate();
+        localStorage.setItem("countdownTargetDate", newTargetDate);
+        setTargetDate(newTargetDate);
+        console.log("Stored date expired, new targetDate:", newTargetDate);
+      }
+    } else {
+      // Nenhuma data armazenada, calcular nova
+      const newTargetDate = calculateTargetDate();
+      localStorage.setItem("countdownTargetDate", newTargetDate);
+      setTargetDate(newTargetDate);
+      console.log("No stored date, new targetDate:", newTargetDate);
+    }
+  }, []);
 
   return (
     <Section>
@@ -569,8 +609,11 @@ const Tickets = ({ wpp }) => {
             divididos em lotes, com preços promocionais para quem comprar
             antecipado.
           </p>
-          <strong>⚡ Confira os valores e garanta o melhor preço:</strong>
-          <CountdownTimer targetDate="2025-05-25T23:59:59" />
+          <CountdownTimer targetDate={targetDate} />
+          <strong className={styles.highlightText}>
+            Lote promocional encerrando em breve. Compre agora e economize!
+          </strong>
+          {/* <CountdownTimer targetDate={new Date().getTime()} /> */}
         </div>
         <div className={styles.boxes}>
           <Item1 wpp={wpp} openChatbot={openChatbot} />
