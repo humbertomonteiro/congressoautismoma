@@ -609,6 +609,7 @@ const Tickets = ({ wpp }) => {
             divididos em lotes, com preços promocionais para quem comprar
             antecipado.
           </p>
+          <strong>⚡ Confira os valores e garanta o melhor preço:</strong>
           <CountdownTimer targetDate={targetDate} />
           <strong className={styles.highlightText}>
             Lote promocional encerrando em breve. Compre agora e economize!

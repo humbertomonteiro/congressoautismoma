@@ -9,17 +9,38 @@ import {
   Divider,
   Grid,
   TextField,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { QRCodeSVG } from "qrcode.react";
 import { IoIosArrowDown } from "react-icons/io";
 import { useState } from "react";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
-import { db } from "../../../../../firebaseConfig"; // Ajuste o caminho
-import PaymentService from "../../../../data/services/PaymentService"; // Ajuste o caminho
+import { db } from "../../../../../firebaseConfig";
+import PaymentService from "../../../../data/services/PaymentService";
 import { toast } from "react-toastify";
 import { FaRegEdit } from "react-icons/fa";
 
 const EMAIL_FROM = import.meta.env.VITE_EMAIL_FROM;
+
+const statusOptions = [
+  { value: "approved", label: "Aprovado" },
+  { value: "pending", label: "Pendente" },
+  { value: "error", label: "Erro" },
+  { value: "canceled", label: "Cancelado" },
+  { value: "refunded", label: "Estornado" },
+];
+
+const paymentMethods = [
+  { value: "creditCard", label: "Cartão de Crédito" },
+  { value: "pix", label: "Pix" },
+  { value: "cash", label: "Dinheiro" },
+  { value: "internal", label: "Pagamento Interno" },
+  { value: "boleto", label: "Boleto" },
+  { value: "debitCard", label: "Cartão de Débito" },
+  { value: "courtesy", label: "Cortesia" },
+  { value: "falha-tecnica", label: "Falha técnica" },
+];
 
 const ModalCheckoutDetails = ({
   checkout,
@@ -30,16 +51,65 @@ const ModalCheckoutDetails = ({
   updateCheckoutInContext,
 }) => {
   const [participants, setParticipants] = useState(checkout.participants);
-  const [observation, setObservation] = useState(
-    checkout?.observation || "Sem observações..."
-  );
-  const [isEditingObservation, setIsEditingObservation] = useState(false);
+  const [orderData, setOrderData] = useState({
+    document: checkout.document || checkout.cpf || "",
+    status: checkout.status || "",
+    paymentMethod: checkout.paymentMethod || "",
+    observation: checkout.observation || "Sem observações...",
+    totalAmount: checkout.totalAmount || "0.00",
+    orderDetails: {
+      fullTickets: checkout.orderDetails.fullTickets || 0,
+      halfTickets: checkout.orderDetails.halfTickets || 0,
+      coupon: checkout.orderDetails.coupon || "",
+      discount: checkout.orderDetails.discount || "0.00",
+      valueTicketsAll:
+        checkout.orderDetails.valueTicketsAll ||
+        checkout.orderDetails.fullTicketsValue ||
+        "0.00",
+      valueTicketsHalf:
+        checkout.orderDetails.valueTicketsHalf ||
+        checkout.orderDetails.halfTicketsValue ||
+        "0.00",
+    },
+  });
+  const [isEditingOrderDetails, setIsEditingOrderDetails] = useState(false);
   const [editingParticipantIndex, setEditingParticipantIndex] = useState(null);
 
   const handleInputChange = (index, field, value) => {
     const updatedParticipants = [...participants];
     updatedParticipants[index][field] = value;
     setParticipants(updatedParticipants);
+  };
+
+  const handleOrderDataChange = (field, value, nestedField = null) => {
+    const updatedOrderData = { ...orderData };
+
+    if (nestedField) {
+      // Atualiza campo dentro de orderDetails
+      updatedOrderData.orderDetails[nestedField] = value;
+
+      // Recalcula valueTicketsAll e valueTicketsHalf
+      const fullPrice = 499.9; // Preço do ingresso inteiro (conforme Item1)
+      const halfPrice = 399.9; // Preço do ingresso meia (conforme ItemHalf)
+      updatedOrderData.orderDetails.valueTicketsAll = (
+        parseInt(updatedOrderData.orderDetails.fullTickets || 0) * fullPrice
+      ).toFixed(2);
+      updatedOrderData.orderDetails.valueTicketsHalf = (
+        parseInt(updatedOrderData.orderDetails.halfTickets || 0) * halfPrice
+      ).toFixed(2);
+
+      // Recalcula totalAmount
+      updatedOrderData.totalAmount = (
+        parseInt(updatedOrderData.orderDetails.fullTickets || 0) * fullPrice +
+        parseInt(updatedOrderData.orderDetails.halfTickets || 0) * halfPrice -
+        parseFloat(updatedOrderData.orderDetails.discount || 0)
+      ).toFixed(2);
+    } else {
+      // Atualiza campo de nível superior
+      updatedOrderData[field] = value;
+    }
+
+    setOrderData(updatedOrderData);
   };
 
   const clearQrCodes = (index) => {
@@ -54,13 +124,44 @@ const ModalCheckoutDetails = ({
       const checkoutRef = doc(db, "checkouts", checkout.id);
       await updateDoc(checkoutRef, {
         participants,
-        observation, // Salva a observação atualizada
+        document: orderData.document,
+        status: orderData.status,
+        paymentMethod: orderData.paymentMethod,
+        observation: orderData.observation,
+        totalAmount: orderData.totalAmount,
+        orderDetails: {
+          ...checkout.orderDetails,
+          fullTickets: parseInt(orderData.orderDetails.fullTickets || 0),
+          halfTickets: parseInt(orderData.orderDetails.halfTickets || 0),
+          coupon: orderData.orderDetails.coupon,
+          discount: parseFloat(orderData.orderDetails.discount || 0).toFixed(2),
+          valueTicketsAll: orderData.orderDetails.valueTicketsAll,
+          valueTicketsHalf: orderData.orderDetails.valueTicketsHalf,
+        },
       });
       toast.success("Alterações salvas com sucesso!");
 
       // Atualiza o contexto global
-      updateCheckoutInContext({ ...checkout, participants, observation });
-      setIsEditingObservation(false); // Sai do modo de edição após salvar
+      updateCheckoutInContext({
+        ...checkout,
+        participants,
+        document: orderData.document,
+        status: orderData.status,
+        paymentMethod: orderData.paymentMethod,
+        observation: orderData.observation,
+        totalAmount: orderData.totalAmount,
+        orderDetails: {
+          ...checkout.orderDetails,
+          fullTickets: parseInt(orderData.orderDetails.fullTickets || 0),
+          halfTickets: parseInt(orderData.orderDetails.halfTickets || 0),
+          coupon: orderData.orderDetails.coupon,
+          discount: parseFloat(orderData.orderDetails.discount || 0).toFixed(2),
+          valueTicketsAll: orderData.orderDetails.valueTicketsAll,
+          valueTicketsHalf: orderData.orderDetails.valueTicketsHalf,
+        },
+      });
+      setIsEditingOrderDetails(false);
+      setEditingParticipantIndex(null);
     } catch (error) {
       console.error("Erro ao salvar alterações:", error);
       toast.error("Erro ao salvar alterações");
@@ -88,19 +189,15 @@ const ModalCheckoutDetails = ({
         data: {
           name: participant.name,
           transactionId: checkout.transactionId,
-          fullTickets: checkout.orderDetails.fullTickets,
-          valueTicketsAll:
-            checkout.orderDetails.valueTicketsAll ||
-            checkout.orderDetails.fullTicketsValue,
-          halfTickets: checkout.orderDetails.halfTickets,
-          valueTicketsHalf:
-            checkout.orderDetails.valueTicketsHalf ||
-            checkout.orderDetails.halfTicketsValue,
-          coupon: checkout.orderDetails.coupon || "",
-          discount: checkout.orderDetails.discount || "0.00",
-          total: checkout.totalAmount,
+          fullTickets: orderData.orderDetails.fullTickets,
+          valueTicketsAll: orderData.orderDetails.valueTicketsAll,
+          halfTickets: orderData.orderDetails.halfTickets,
+          valueTicketsHalf: orderData.orderDetails.valueTicketsHalf,
+          coupon: orderData.orderDetails.coupon || "",
+          discount: orderData.orderDetails.discount || "0.00",
+          total: orderData.totalAmount,
           installments:
-            checkout.paymentMethod === "creditCard"
+            orderData.paymentMethod === "creditCard"
               ? checkout.paymentDetails.creditCard?.installments || "1"
               : "1",
         },
@@ -140,8 +237,7 @@ const ModalCheckoutDetails = ({
       const checkoutSnap = await getDoc(checkoutRef);
       if (checkoutSnap.exists()) {
         const updatedCheckout = { id: checkout.id, ...checkoutSnap.data() };
-        const updatedParticipants = updatedCheckout.participants;
-        setParticipants(updatedParticipants);
+        setParticipants(updatedCheckout.participants);
         updateCheckoutInContext(updatedCheckout);
       } else {
         throw new Error(
@@ -154,6 +250,22 @@ const ModalCheckoutDetails = ({
         "Aguarde um momento e verifique seu email, caso não tenha recebido, tente novamente."
       );
     }
+  };
+
+  // Função para obter o label do paymentMethod
+  const getPaymentMethodLabel = (value) => {
+    const method = paymentMethods.find((m) => m.value === value);
+    return method
+      ? method.label
+      : value.charAt(0).toUpperCase() + value.slice(1);
+  };
+
+  // Função para obter o label do status
+  const getStatusLabel = (value) => {
+    const status = statusOptions.find((s) => s.value === value);
+    return status
+      ? status.label
+      : value.charAt(0).toUpperCase() + value.slice(1);
   };
 
   return (
@@ -183,20 +295,6 @@ const ModalCheckoutDetails = ({
               <Typography sx={{ color: "#666666" }}>
                 <strong>Data e Hora:</strong>{" "}
                 {formatTimestamp(checkout.timestamp)}
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography sx={{ color: "#666666" }}>
-                <strong>Status:</strong>{" "}
-                {checkout.status.charAt(0).toUpperCase() +
-                  checkout.status.slice(1)}
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography sx={{ color: "#666666" }}>
-                <strong>Método:</strong>{" "}
-                {checkout.paymentMethod.charAt(0).toUpperCase() +
-                  checkout.paymentMethod.slice(1)}
               </Typography>
             </Grid>
           </Grid>
@@ -282,6 +380,13 @@ const ModalCheckoutDetails = ({
                       fullWidth
                       sx={{ mb: 2 }}
                     />
+                    <Button
+                      variant="contained"
+                      onClick={saveChanges}
+                      sx={{ mt: 2 }}
+                    >
+                      Salvar Alterações
+                    </Button>
                   </>
                 ) : (
                   <Box
@@ -354,15 +459,6 @@ const ModalCheckoutDetails = ({
                       Apagar QR Codes
                     </Button>
                   )}
-                  {editingParticipantIndex === index && (
-                    <Button
-                      variant="contained"
-                      onClick={saveChanges}
-                      sx={{ flex: "1 1 45%", minWidth: "150px" }}
-                    >
-                      Salvar Alterações
-                    </Button>
-                  )}
                 </Box>
               </AccordionDetails>
             </Accordion>
@@ -370,83 +466,221 @@ const ModalCheckoutDetails = ({
 
           <Divider sx={{ my: 3 }} />
 
-          <Typography
-            variant="h6"
-            sx={{ color: "#1976D2", fontWeight: 500, mb: 2 }}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+            }}
           >
-            Detalhes do Pedido
-          </Typography>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-            <Typography sx={{ color: "#666666" }}>
-              <strong>Documento do Pagador:</strong> {checkout.document}
+            <Typography
+              variant="h6"
+              sx={{ color: "#1976D2", fontWeight: 500, mb: 2 }}
+            >
+              Detalhes do Pedido
             </Typography>
-            {checkout.orderDetails.fullTickets > 0 && (
-              <Typography sx={{ color: "#666666" }}>
-                <strong>Inteiros:</strong> {checkout.orderDetails.fullTickets}{" "}
-                (R$
-                {checkout.orderDetails.valueTicketsAll ||
-                  checkout.orderDetails.fullTicketsValue}
-                )
-              </Typography>
-            )}
-            {checkout.orderDetails.halfTickets > 0 && (
-              <Typography sx={{ color: "#666666" }}>
-                <strong>Meia:</strong> {checkout.orderDetails.halfTickets} (R$
-                {checkout.orderDetails.valueTicketsHalf ||
-                  checkout.orderDetails.halfTicketsValue}
-                )
-              </Typography>
-            )}
-            {checkout.orderDetails.coupon && (
-              <>
-                <Typography sx={{ color: "#666666" }}>
-                  <strong>Desconto:</strong> R$ {checkout.orderDetails.discount}
-                </Typography>
-                <Typography sx={{ color: "#666666" }}>
-                  <strong>Cupom:</strong> {checkout.orderDetails.coupon}
-                </Typography>
-              </>
-            )}
-            <Box sx={{ display: "flex", flexDirection: "column", mb: 2 }}>
-              <Typography sx={{ color: "#666666" }}>
-                <strong>Observação:</strong>
-              </Typography>
-              <Box sx={{ display: "flex", gap: 1, alignItems: "start" }}>
-                {isEditingObservation ? (
-                  <TextField
-                    value={observation}
-                    onChange={(e) => setObservation(e.target.value)}
-                    fullWidth
-                    multiline
-                    rows={2}
-                    sx={{ flexGrow: 1 }}
-                  />
-                ) : (
-                  <Typography sx={{ color: "#666666", flexGrow: 1 }}>
-                    {observation}
-                  </Typography>
-                )}
-                <Button
-                  variant="outlined"
-                  onClick={() => setIsEditingObservation(!isEditingObservation)}
+            <Button
+              variant="outlined"
+              onClick={() => setIsEditingOrderDetails(!isEditingOrderDetails)}
+            >
+              {isEditingOrderDetails ? "Cancelar" : <FaRegEdit />}
+            </Button>
+          </Box>
+          <Box sx={{ display: "flex", gap: 1, alignItems: "start", mb: 3 }}>
+            {isEditingOrderDetails ? (
+              <Box sx={{ flexGrow: 1 }}>
+                <TextField
+                  label="Documento do Pagador"
+                  value={orderData.document}
+                  onChange={(e) =>
+                    handleOrderDataChange("document", e.target.value)
+                  }
+                  fullWidth
+                  sx={{ mb: 2 }}
+                />
+                <Select
+                  label="Status"
+                  value={orderData.status}
+                  onChange={(e) =>
+                    handleOrderDataChange("status", e.target.value)
+                  }
+                  fullWidth
+                  sx={{ mb: 2 }}
                 >
-                  {isEditingObservation ? "Cancelar" : <FaRegEdit />}
-                </Button>
-              </Box>
-              {isEditingObservation && (
+                  {statusOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <Select
+                  label="Método de Pagamento"
+                  value={orderData.paymentMethod}
+                  onChange={(e) =>
+                    handleOrderDataChange("paymentMethod", e.target.value)
+                  }
+                  fullWidth
+                  sx={{ mb: 2 }}
+                >
+                  {paymentMethods.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <TextField
+                  label="Ingressos Inteiros"
+                  type="number"
+                  value={orderData.orderDetails.fullTickets}
+                  onChange={(e) =>
+                    handleOrderDataChange(
+                      "orderDetails",
+                      e.target.value,
+                      "fullTickets"
+                    )
+                  }
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  inputProps={{ min: 0 }}
+                />
+                <TextField
+                  label="Ingressos Meia-Entrada"
+                  type="number"
+                  value={orderData.orderDetails.halfTickets}
+                  onChange={(e) =>
+                    handleOrderDataChange(
+                      "orderDetails",
+                      e.target.value,
+                      "halfTickets"
+                    )
+                  }
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  inputProps={{ min: 0 }}
+                />
+                <TextField
+                  label="Cupom"
+                  value={orderData.orderDetails.coupon}
+                  onChange={(e) =>
+                    handleOrderDataChange(
+                      "orderDetails",
+                      e.target.value,
+                      "coupon"
+                    )
+                  }
+                  fullWidth
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  label="Desconto (R$)"
+                  type="number"
+                  value={orderData.orderDetails.discount}
+                  onChange={(e) =>
+                    handleOrderDataChange(
+                      "orderDetails",
+                      e.target.value,
+                      "discount"
+                    )
+                  }
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  inputProps={{ min: 0, step: "0.01" }}
+                />
+                <Typography sx={{ color: "#666666", mb: 2 }}>
+                  <strong>Valor Ingressos Inteiros:</strong> R${" "}
+                  {orderData.orderDetails.valueTicketsAll}
+                </Typography>
+                <Typography sx={{ color: "#666666", mb: 2 }}>
+                  <strong>Valor Ingressos Meia:</strong> R${" "}
+                  {orderData.orderDetails.valueTicketsHalf}
+                </Typography>
+                <TextField
+                  label="Observação"
+                  value={orderData.observation}
+                  onChange={(e) =>
+                    handleOrderDataChange("observation", e.target.value)
+                  }
+                  fullWidth
+                  multiline
+                  rows={2}
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  label="Valor Total (R$)"
+                  type="number"
+                  value={orderData.totalAmount}
+                  onChange={(e) =>
+                    handleOrderDataChange("totalAmount", e.target.value)
+                  }
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  inputProps={{ step: "0.01" }}
+                />
                 <Button
                   variant="contained"
                   onClick={saveChanges}
-                  sx={{ mt: 2, mb: 3 }}
+                  sx={{ mt: 2 }}
                 >
                   Salvar Alterações
                 </Button>
-              )}
-            </Box>
-            <Typography sx={{ color: "#333333", fontWeight: 500, mb: 3 }}>
-              <strong>Valor Total:</strong> R$ {checkout.totalAmount}
-            </Typography>
+              </Box>
+            ) : (
+              <Box
+                sx={{
+                  flexGrow: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1,
+                }}
+              >
+                <Typography sx={{ color: "#666666" }}>
+                  <strong>Documento do Pagador:</strong>{" "}
+                  {orderData.document ||
+                    orderData.cpf ||
+                    participants[0].document}
+                </Typography>
+                <Typography sx={{ color: "#666666" }}>
+                  <strong>Status:</strong> {getStatusLabel(orderData.status)}
+                </Typography>
+                <Typography sx={{ color: "#666666" }}>
+                  <strong>Método:</strong>{" "}
+                  {getPaymentMethodLabel(orderData.paymentMethod)}
+                </Typography>
+                {orderData.orderDetails.fullTickets > 0 && (
+                  <Typography sx={{ color: "#666666" }}>
+                    <strong>Inteiros:</strong>{" "}
+                    {orderData.orderDetails.fullTickets} (R${" "}
+                    {orderData.orderDetails.valueTicketsAll})
+                  </Typography>
+                )}
+                {orderData.orderDetails.halfTickets > 0 && (
+                  <Typography sx={{ color: "#666666" }}>
+                    <strong>Meia:</strong> {orderData.orderDetails.halfTickets}{" "}
+                    (R$
+                    {orderData.orderDetails.valueTicketsHalf})
+                  </Typography>
+                )}
+                {orderData.orderDetails.coupon && (
+                  <>
+                    <Typography sx={{ color: "#666666" }}>
+                      <strong>Desconto:</strong> R${" "}
+                      {orderData.orderDetails.discount}
+                    </Typography>
+                    <Typography sx={{ color: "#666666" }}>
+                      <strong>Cupom:</strong> {orderData.orderDetails.coupon}
+                    </Typography>
+                  </>
+                )}
+                <Typography sx={{ color: "#666666" }}>
+                  <strong>Observação:</strong> {orderData.observation}
+                </Typography>
+                <Typography sx={{ color: "#333333", fontWeight: 500 }}>
+                  <strong>Valor Total:</strong> R$ {orderData.totalAmount}
+                </Typography>
+              </Box>
+            )}
           </Box>
+
           <Divider sx={{ mb: 3 }} />
 
           <Typography
