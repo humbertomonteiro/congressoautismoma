@@ -53,37 +53,35 @@ const calculateFee = (
   let totalFee = 0;
   cardBrand = cardBrand.toLowerCase();
 
-  // Log para depuração
   console.log(
     `Calculando taxa: totalAmount=${totalAmount}, paymentMethod=${paymentMethod}, cardBrand=${cardBrand}, numParticipants=${numParticipants}`
   );
 
   switch (paymentMethod) {
     case "pix":
-      totalFee = totalAmount * 0.0099; // 0.99%
+      totalFee = totalAmount * 0.0099;
       break;
     case "creditCard":
     case "debitCard":
       if (["visa", "mastercard", "master"].includes(cardBrand)) {
-        totalFee = totalAmount * 0.0449; // 4.49%
+        totalFee = totalAmount * 0.0449;
       } else if (cardBrand === "elo") {
-        totalFee = totalAmount * 0.0509; // 5.09%
+        totalFee = totalAmount * 0.0509;
       } else {
-        totalFee = totalAmount * 0.0449; // Padrão Visa/Master
+        totalFee = totalAmount * 0.0449;
       }
       break;
     case "boleto":
-      totalFee = 5.0; // R$ 5 por checkout
+      totalFee = 5.0;
       break;
     case "courtesy":
-      totalFee = 0; // Sem taxa para cortesias
+      totalFee = 0;
       break;
     default:
       totalFee = 0;
       console.warn(`Método de pagamento desconhecido: ${paymentMethod}`);
   }
 
-  // Divide a taxa total pelo número de participantes
   const feePerParticipant =
     numParticipants > 0 ? totalFee / numParticipants : 0;
   console.log(
@@ -100,12 +98,12 @@ const calculateParticipantValue = (checkout, participantIndex) => {
 
   let value;
   if (participantIndex < fullTickets) {
-    value = 499; // Inteira
+    value = 499;
     if (isGroupCoupon) {
-      value -= 50; // Desconto de R$50
+      value -= 50;
     }
   } else {
-    value = 399; // Meia
+    value = 399;
   }
   return value;
 };
@@ -141,7 +139,6 @@ const CheckoutListCards = ({
       const cardBrand = checkout.paymentDetails?.creditCard?.brand || "unknown";
       const numParticipants = participants?.length || 1;
 
-      // Log para depuração de cortesias e taxas
       console.log(
         `Processando checkout: id=${
           checkout.id
@@ -166,6 +163,7 @@ const CheckoutListCards = ({
           participant.name || "N/A",
           participant.document || participant.cpf || "N/A",
           participant.email || "N/A",
+          participant.number || "N/A", // Adiciona número de telefone
           formatBrazilianDate(timestamp, true),
           paymentMethod,
           formatBrazilianCurrency(participantValue),
@@ -210,31 +208,34 @@ const CheckoutListCards = ({
       "Nome do Participante": row[0],
       CPF: row[1],
       Email: row[2],
-      "Data da Compra": row[3],
-      Método: row[4],
-      "Valor Bruto": row[5],
-      Taxa: row[6],
-      "Valor Líquido": row[7],
+      Telefone: row[3], // Adiciona telefone
+      "Data da Compra": row[4],
+      Método: row[5],
+      "Valor Bruto": row[6],
+      Taxa: row[7],
+      "Valor Líquido": row[8],
     }));
     const pendingData = prepareTableData(sortedPending).map((row) => ({
       "Nome do Participante": row[0],
       CPF: row[1],
       Email: row[2],
-      "Data da Compra": row[3],
-      Método: row[4],
-      "Valor Bruto": row[5],
-      Taxa: row[6],
-      "Valor Líquido": row[7],
+      Telefone: row[3], // Adiciona telefone
+      "Data da Compra": row[4],
+      Método: row[5],
+      "Valor Bruto": row[6],
+      Taxa: row[7],
+      "Valor Líquido": row[8],
     }));
     const errorData = prepareTableData(sortedErrors).map((row) => ({
       "Nome do Participante": row[0],
       CPF: row[1],
       Email: row[2],
-      "Data da Compra": row[3],
-      Método: row[4],
-      "Valor Bruto": row[5],
-      Taxa: row[6],
-      "Valor Líquido": row[7],
+      Telefone: row[3], // Adiciona telefone
+      "Data da Compra": row[4],
+      Método: row[5],
+      "Valor Bruto": row[6],
+      Taxa: row[7],
+      "Valor Líquido": row[8],
     }));
 
     const totalGross = sortedApproved.reduce((sum, checkout) => {
@@ -290,6 +291,7 @@ const CheckoutListCards = ({
         "Nome do Participante": "Total Bruto (Aprovados)",
         CPF: "",
         Email: "",
+        Telefone: "", // Adiciona telefone
         "Data da Compra": "",
         Método: "",
         "Valor Bruto": formatBrazilianCurrency(totalGross),
@@ -300,6 +302,7 @@ const CheckoutListCards = ({
         "Nome do Participante": "Ingressos Inteiros",
         CPF: "",
         Email: "",
+        Telefone: "", // Adiciona telefone
         "Data da Compra": "",
         Método: "",
         "Valor Bruto": totalFullTickets.toString(),
@@ -310,6 +313,7 @@ const CheckoutListCards = ({
         "Nome do Participante": "Ingressos Meia",
         CPF: "",
         Email: "",
+        Telefone: "", // Adiciona telefone
         "Data da Compra": "",
         Método: "",
         "Valor Bruto": totalHalfTickets.toString(),
@@ -320,6 +324,7 @@ const CheckoutListCards = ({
         "Nome do Participante": "Ingressos Cortesias",
         CPF: "",
         Email: "",
+        Telefone: "", // Adiciona telefone
         "Data da Compra": "",
         Método: "",
         "Valor Bruto": totalCourtesyTickets.toString(),
@@ -329,9 +334,68 @@ const CheckoutListCards = ({
     ];
 
     const wb = XLSX.utils.book_new();
+
+    // Função auxiliar para aplicar estilos à planilha
+    const styleWorksheet = (ws, dataLength) => {
+      const range = XLSX.utils.decode_range(ws["!ref"]);
+      for (let R = range.s.r; R <= range.e.r; ++R) {
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const cellAddress = { c: C, r: R };
+          const cellRef = XLSX.utils.encode_cell(cellAddress);
+          if (!ws[cellRef]) continue;
+
+          ws[cellRef].s = {
+            border: {
+              top: { style: "thin", color: { rgb: "000000" } },
+              bottom: { style: "thin", color: { rgb: "000000" } },
+              left: { style: "thin", color: { rgb: "000000" } },
+              right: { style: "thin", color: { rgb: "000000" } },
+            },
+            alignment: {
+              vertical: "center",
+              horizontal: C >= 6 ? "right" : "left",
+            },
+          };
+
+          if (R === 0) {
+            ws[cellRef].s = {
+              ...ws[cellRef].s,
+              font: { bold: true, color: { rgb: "FFFFFF" } },
+              fill: { fgColor: { rgb: "16A085" } },
+            };
+          } else if (R <= dataLength) {
+            ws[cellRef].s = {
+              ...ws[cellRef].s,
+              fill: { fgColor: { rgb: R % 2 === 1 ? "F5F5F5" : "FFFFFF" } },
+            };
+          } else {
+            ws[cellRef].s = {
+              ...ws[cellRef].s,
+              font: { bold: true },
+              fill: { fgColor: { rgb: "E0F7FA" } },
+            };
+          }
+        }
+      }
+      ws["!cols"] = [
+        { wch: 30 }, // Nome
+        { wch: 15 }, // CPF
+        { wch: 25 }, // Email
+        { wch: 15 }, // Telefone
+        { wch: 20 }, // Data
+        { wch: 12 }, // Método
+        { wch: 15 }, // Valor Bruto
+        { wch: 15 }, // Taxa
+        { wch: 15 }, // Valor Líquido
+      ];
+    };
+
     const wsApproved = XLSX.utils.json_to_sheet(approvedWithTotals);
+    styleWorksheet(wsApproved, approvedData.length);
     const wsPending = XLSX.utils.json_to_sheet(pendingData);
+    styleWorksheet(wsPending, pendingData.length);
     const wsErrors = XLSX.utils.json_to_sheet(errorData);
+    styleWorksheet(wsErrors, errorData.length);
 
     XLSX.utils.book_append_sheet(wb, wsApproved, "Aprovados");
     if (pendingData.length > 0) {
@@ -460,6 +524,7 @@ const CheckoutListCards = ({
           "Nome do Participante",
           "CPF",
           "Email",
+          "Telefone",
           "Data da Compra",
           "Método",
           "Valor Bruto",
@@ -472,9 +537,15 @@ const CheckoutListCards = ({
       styles: { fontSize: 8, cellPadding: 2 },
       headStyles: { fillColor: [22, 160, 133], textColor: [255, 255, 255] },
       columnStyles: {
-        5: { halign: "right" },
-        6: { halign: "right" },
-        7: { halign: "right" },
+        0: { cellWidth: 35 }, // Nome
+        1: { cellWidth: 20 }, // CPF
+        2: { cellWidth: 30 }, // Email
+        3: { cellWidth: 20 }, // Telefone
+        4: { cellWidth: 25 }, // Data
+        5: { cellWidth: 15 }, // Método
+        6: { halign: "right", cellWidth: 15 }, // Valor Bruto
+        7: { halign: "right", cellWidth: 15 }, // Taxa
+        8: { halign: "right", cellWidth: 15 }, // Valor Líquido
       },
     });
 
@@ -496,6 +567,7 @@ const CheckoutListCards = ({
             "Nome do Participante",
             "CPF",
             "Email",
+            "Telefone",
             "Data da Compra",
             "Método",
             "Valor Bruto",
@@ -508,9 +580,15 @@ const CheckoutListCards = ({
         styles: { fontSize: 8, cellPadding: 2 },
         headStyles: { fillColor: [255, 179, 0], textColor: [255, 255, 255] },
         columnStyles: {
-          5: { halign: "right" },
-          6: { halign: "right" },
-          7: { halign: "right" },
+          0: { cellWidth: 35 },
+          1: { cellWidth: 20 },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 25 },
+          5: { cellWidth: 15 },
+          6: { halign: "right", cellWidth: 15 },
+          7: { halign: "right", cellWidth: 15 },
+          8: { halign: "right", cellWidth: 15 },
         },
       });
       finalY = doc.lastAutoTable.finalY;
@@ -533,6 +611,7 @@ const CheckoutListCards = ({
             "Nome do Participante",
             "CPF",
             "Email",
+            "Telefone",
             "Data da Compra",
             "Método",
             "Valor Bruto",
@@ -545,9 +624,15 @@ const CheckoutListCards = ({
         styles: { fontSize: 8, cellPadding: 2 },
         headStyles: { fillColor: [211, 47, 47], textColor: [255, 255, 255] },
         columnStyles: {
-          5: { halign: "right" },
-          6: { halign: "right" },
-          7: { halign: "right" },
+          0: { cellWidth: 35 },
+          1: { cellWidth: 20 },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 25 },
+          5: { cellWidth: 15 },
+          6: { halign: "right", cellWidth: 15 },
+          7: { halign: "right", cellWidth: 15 },
+          8: { halign: "right", cellWidth: 15 },
         },
       });
     }
@@ -778,7 +863,7 @@ const CheckoutListCards = ({
               component={Paper}
               sx={{ maxHeight: 400, overflowX: "auto" }}
             >
-              <Table stickyHeader sx={{ minWidth: isMobile ? 600 : "auto" }}>
+              <Table stickyHeader sx={{ minWidth: isMobile ? 700 : "auto" }}>
                 <TableHead>
                   <TableRow>
                     <TableCell
@@ -795,6 +880,11 @@ const CheckoutListCards = ({
                       sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
                     >
                       Email
+                    </TableCell>
+                    <TableCell
+                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
+                    >
+                      Telefone
                     </TableCell>
                     <TableCell
                       sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
@@ -862,6 +952,7 @@ const CheckoutListCards = ({
                           <TableCell>{participant.name || "N/A"}</TableCell>
                           <TableCell>{participant.document || "N/A"}</TableCell>
                           <TableCell>{participant.email || "N/A"}</TableCell>
+                          <TableCell>{participant.phone || "N/A"}</TableCell>
                           <TableCell>
                             {formatBrazilianDate(checkout.timestamp, true)}
                           </TableCell>

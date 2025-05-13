@@ -226,10 +226,6 @@
       & p {
         font-size: 0.9rem;
       }
-
-      & strong {
-        color: var(--text-1);
-      }
     }
   }
 }
@@ -242,7 +238,8 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   font-family: "Poppins", "Segoe UI Emoji", "Arial", sans-serif;
   font-weight: 700;
-  font-size: 1.2rem;
+  /* font-size: 1.2rem; */
+  max-width: 90%;
   /* text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); */
   animation: zoomInOut 2s ease-in-out infinite; /* Animação de zoom */
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -253,7 +250,7 @@
     transform: scale(1);
   }
   50% {
-    transform: scale(1.1);
+    transform: scale(1.03);
   }
   100% {
     transform: scale(1);
