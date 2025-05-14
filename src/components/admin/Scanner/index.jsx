@@ -114,7 +114,9 @@ const Scanner = () => {
       console.log("Enviando qrData para validação:", qrText);
       const response = await axios.post(
         `${
-          import.meta.env.VITE_BASE_URL_PRODUCTION
+          import.meta.env.VITE_ENV === "sandbox"
+            ? import.meta.env.VITE_BASE_URL_SANDBOX
+            : import.meta.env.VITE_BASE_URL_PRODUCTION
         }/credentials/validate-qr-code`,
         { qrData: qrText },
         { headers: { "Content-Type": "application/json" } }
