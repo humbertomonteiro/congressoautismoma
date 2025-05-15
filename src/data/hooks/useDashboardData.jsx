@@ -443,6 +443,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import PaymentService from "../services/PaymentService";
+import { toast } from "react-toastify";
 
 const formatToBrazilianCurrency = (value) => {
   const num = parseFloat(value) || 0;
@@ -455,7 +456,7 @@ const formatToBrazilianCurrency = (value) => {
 const useDashboardData = () => {
   const [checkouts, setCheckouts] = useState([]);
   const [filteredCheckouts, setFilteredCheckouts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
   const [payerSearchQuery, setPayerSearchQuery] = useState("");
@@ -471,17 +472,19 @@ const useDashboardData = () => {
   const [errorMessage, setErrorMessage] = useState(""); // Novo estado para mensagem de erro
 
   const loadInitialData = async (forceUpdate = false) => {
-    setLoading(true);
+    // setLoading(true);
+
     try {
       await updateMetrics(true);
     } catch (error) {
-      console.error("Erro ao carregar dados iniciais:", error);
+      toast.error("Erro ao carregar dados iniciais:", error);
       setErrorMessage(
         "Erro ao carregar dados iniciais. Exibindo dados disponíveis."
       );
-    } finally {
-      setLoading(false);
     }
+    // finally {
+    //   setLoading(false);
+    // }
   };
 
   useEffect(() => {
@@ -614,7 +617,11 @@ const useDashboardData = () => {
   };
 
   const updateMetrics = async (fullUpdate = false) => {
-    setLoading(true);
+    // setLoading(true);
+    const id = toast.loading(
+      "Verificando boletos, novos checkouts e atualizando métricas...",
+      { position: "bottom-right" }
+    );
     setErrorMessage(""); // Limpa mensagens de erro anteriores
     try {
       // Tenta verificar o status dos boletos, mas continua mesmo em caso de erro
@@ -771,13 +778,20 @@ const useDashboardData = () => {
       setLastUpdated(updatedMetrics.lastUpdated);
       setEventOptions(updatedMetrics.events || []);
       applyFilters(allCheckouts);
+      toast.update(id, {
+        render: "Atualização concluída",
+        type: "success",
+        isLoading: false,
+        autoClose: true,
+      });
     } catch (error) {
       console.error("Erro ao atualizar métricas:", error);
-      setErrorMessage(
-        "Erro ao atualizar métricas. Exibindo dados disponíveis."
-      );
-    } finally {
-      setLoading(false);
+      toast.update(id, {
+        render: "Erro ao atualizar métricas. Exibindo dados disponíveis.",
+        type: "error",
+        isLoading: false,
+        autoClose: true,
+      });
     }
   };
 
@@ -815,7 +829,7 @@ const useDashboardData = () => {
     setCheckouts,
     filteredCheckouts,
     setFilteredCheckouts,
-    loading,
+    // loading,
     statusFilter,
     setStatusFilter,
     methodFilter,

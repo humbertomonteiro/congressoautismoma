@@ -19,6 +19,7 @@ import usePaymentForm from "../../../../data/hooks/usePaymentForm";
 import Modal from "../../../checkout/Modal";
 import PaymentService from "../../../../data/services/PaymentService";
 import { useDashboard } from "../../../../data/contexts/DashboardContext";
+import { toast } from "react-toastify";
 
 const AddManualPayment = () => {
   const {
@@ -113,6 +114,7 @@ const AddManualPayment = () => {
     }
 
     setFormState((prev) => ({ ...prev, loading: true }));
+    const id = toast.loading("Adicionando chekcout...");
 
     try {
       // Recalcular os totais antes de salvar
@@ -285,7 +287,7 @@ const AddManualPayment = () => {
       }
 
       // Atualizar as métricas do dashboard
-      await updateMetrics();
+      // await updateMetrics();
 
       // Atualizar localStorage localmente
       // const cachedCheckouts = JSON.parse(
@@ -323,17 +325,31 @@ const AddManualPayment = () => {
       });
       setInstallments("1");
       setCardBrand("visa");
+
+      toast.update(id, {
+        render: "Checkout Adicionado",
+        status: "success",
+        isLoading: false,
+        autoClose: true,
+      });
     } catch (error) {
       console.error("Erro ao salvar checkout manual:", error);
-      setModalState({
-        isOpen: true,
-        title: "Erro ao Salvar",
-        message: "Erro ao adicionar checkout manual: " + error.message,
-        type: "error",
+      toast.update(id, {
+        render: "Erro ao adicionar checkout" + error,
+        status: "error",
+        isLoading: false,
+        autoClose: true,
       });
-    } finally {
-      setFormState((prev) => ({ ...prev, loading: false }));
+      // setModalState({
+      //   isOpen: true,
+      //   title: "Erro ao Salvar",
+      //   message: "Erro ao adicionar checkout manual: " + error.message,
+      //   type: "error",
+      // });
     }
+    // finally {
+    //   setFormState((prev) => ({ ...prev, loading: false }));
+    // }
   };
 
   return (
@@ -604,14 +620,14 @@ const AddManualPayment = () => {
         content={modalState.content}
       />
 
-      {formState.loading && (
+      {/* {formState.loading && (
         <div className={styles.loadingOverlay}>
           <div className={styles.loadingContent}>
             <div className={styles.spinner}></div>
             <p>Processando pagamento, por favor, não recarregue a página...</p>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

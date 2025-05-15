@@ -1,6 +1,7 @@
 // src/hooks/useManualTicketTotals.js
 import { useState, useEffect } from "react";
 import PaymentService from "../services/PaymentService";
+import { toast } from "react-toastify";
 
 const useManualTicketTotals = (ticketQuantity, ticketTypes, coupon) => {
   const [totals, setTotals] = useState({
@@ -22,7 +23,8 @@ const useManualTicketTotals = (ticketQuantity, ticketTypes, coupon) => {
       const halfTickets = ticketTypes.filter((t) => t === "Meia").length;
 
       try {
-        setLoading(true);
+        const id = toast.loading("Carregando metricas...");
+        // setLoading(true);
         const response = await PaymentService.calculateTotals({
           ticketQuantity: ticketQty,
           halfTickets,
@@ -31,8 +33,18 @@ const useManualTicketTotals = (ticketQuantity, ticketTypes, coupon) => {
         if (response.success) {
           setTotals(response.data);
         }
+        toast.update(id, {
+          render: "Atualizado com sucesso!",
+          type: "success",
+          isLoading: false,
+        });
       } catch (error) {
         console.error("Erro ao calcular totais:", error);
+        toast.update(id, {
+          render: "Erro ao atualizado!",
+          type: "Erro",
+          isLoading: false,
+        });
         setTotals({
           valueTicketsAll: "0.00",
           valueTicketsHalf: "0.00",
@@ -42,9 +54,10 @@ const useManualTicketTotals = (ticketQuantity, ticketTypes, coupon) => {
           total: "0.00",
           totalInCents: 0,
         });
-      } finally {
-        setLoading(false);
       }
+      // finally {
+      //   setLoading(false);
+      // }
     };
 
     fetchTotals();
