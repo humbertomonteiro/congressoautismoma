@@ -20,8 +20,6 @@ import Modal from "../../../checkout/Modal";
 import PaymentService from "../../../../data/services/PaymentService";
 import { useDashboard } from "../../../../data/contexts/DashboardContext";
 
-const EMAIL_FROM = import.meta.env.EMAIL_USER_2;
-
 const AddManualPayment = () => {
   const {
     formState,
@@ -225,7 +223,7 @@ const AddManualPayment = () => {
       for (const participant of participants) {
         const emailData = {
           checkoutId: docRef.id,
-          from: EMAIL_FROM || "congressoautismoma2@gmail.com",
+          from: "congressoautismoma2@gmail.com",
           to: participant.email,
           subject: "Confirmação de Pagamento - Congresso Autismo MA 2025",
           data: {

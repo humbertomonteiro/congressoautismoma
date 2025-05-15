@@ -349,7 +349,7 @@ const Item1 = ({ wpp, openChatbot }) => {
         <span>
           De <s>R$ 799,80</s> por:
         </span>
-        <h4>R$ 499,90</h4>
+        <h4>R$ 499,00</h4>
         <h3>
           ou <strong>10X de R$ 49,90</strong>
         </h3>
@@ -415,7 +415,7 @@ const Item2 = ({ wpp, openChatbot }) => {
         <span>
           De <s>R$ 799,80</s> por:
         </span>
-        <h4>R$ 449,90</h4>
+        <h4>R$ 449,00</h4>
         <h3>
           ou <strong>10X de R$ 44,90</strong>
         </h3>
@@ -486,7 +486,7 @@ const ItemHalf = ({ wpp, openChatbot }) => {
       </div>
       <div className={styles.boxValue}>
         <span>50% de R$ 799,80:</span>
-        <h4>R$ 399,90</h4>
+        <h4>R$ 399,00</h4>
         <h3>
           ou <strong>10X de R$ 39,90</strong>
         </h3>
