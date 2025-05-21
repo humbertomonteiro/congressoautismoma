@@ -225,7 +225,7 @@ const AddManualPayment = () => {
       for (const participant of participants) {
         const emailData = {
           checkoutId: docRef.id,
-          from: "congressoautismoma2@gmail.com",
+          from: "congressoautismoma@gmail.com",
           to: participant.email,
           subject: "Confirmação de Pagamento - Congresso Autismo MA 2025",
           data: {

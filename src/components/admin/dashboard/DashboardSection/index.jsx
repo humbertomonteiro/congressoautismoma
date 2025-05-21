@@ -34,7 +34,7 @@ const DashboardSection = () => {
     checkouts,
   } = useDashboard();
 
-  if (loading || !metrics) return <Loading />;
+  // if (loading || !metrics) return <Loading />;
 
   return (
     <div

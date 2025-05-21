@@ -435,26 +435,28 @@ const PaymentForm = () => {
                         <span className={styles.error}>{documentError}</span>
                       )}
                     </label>
-                    <label className={styles.toggleLabel}>
-                      <p>Meia entrada?</p>
-                      <div
-                        className={`${styles.toggle} ${
-                          currentParticipant.isHalfPrice
-                            ? styles.toggleActive
-                            : ""
-                        }`}
-                        onClick={() =>
-                          handleParticipantChange(
-                            "isHalfPrice",
-                            !currentParticipant.isHalfPrice
-                          )
-                        }
-                      >
-                        <span>
-                          {currentParticipant.isHalfPrice ? "Sim" : "Não"}
-                        </span>
-                      </div>
-                    </label>
+                    {typeTicket === "half" && formState.ticketQuantity >= 2 && (
+                      <label className={styles.toggleLabel}>
+                        <p>Meia entrada?</p>
+                        <div
+                          className={`${styles.toggle} ${
+                            currentParticipant.isHalfPrice
+                              ? styles.toggleActive
+                              : ""
+                          }`}
+                          onClick={() =>
+                            handleParticipantChange(
+                              "isHalfPrice",
+                              !currentParticipant.isHalfPrice
+                            )
+                          }
+                        >
+                          <span>
+                            {currentParticipant.isHalfPrice ? "Sim" : "Não"}
+                          </span>
+                        </div>
+                      </label>
+                    )}
                     {formState.ticketQuantity > 1 && (
                       <button
                         type="submit"
