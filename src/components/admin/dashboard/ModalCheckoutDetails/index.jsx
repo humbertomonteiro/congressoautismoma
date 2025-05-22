@@ -57,6 +57,7 @@ const ModalCheckoutDetails = ({
     paymentMethod: checkout.paymentMethod || "",
     observation: checkout.observation || "Sem observações...",
     totalAmount: checkout.totalAmount || "0.00",
+    paymentId: checkout.paymentId,
     orderDetails: {
       fullTickets: checkout.orderDetails.fullTickets || 0,
       halfTickets: checkout.orderDetails.halfTickets || 0,
@@ -633,6 +634,9 @@ const ModalCheckoutDetails = ({
                   gap: 1,
                 }}
               >
+                <Typography sx={{ color: "#666666" }}>
+                  <strong>Id do pagamento:</strong> {orderData.paymentId}
+                </Typography>
                 <Typography sx={{ color: "#666666" }}>
                   <strong>Documento do Pagador:</strong>{" "}
                   {orderData.document ||

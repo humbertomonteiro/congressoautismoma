@@ -8,6 +8,7 @@ import Auth from "../pages/Auth";
 import Scanner from "../components/admin/Scanner";
 import ThankYouPage from "../pages/ThankYouPage";
 // import HomeWhastsapp from "../pages/HomeWhatsapp";
+import Tickets from "../pages/Tickets";
 
 const RoutesApp = () => {
   return (
@@ -26,6 +27,7 @@ const RoutesApp = () => {
           </Private>
         }
       />
+      <Route path="ingressos" element={<Tickets />} />
       <Route path="*" element={<Home />} />
     </Routes>
   );

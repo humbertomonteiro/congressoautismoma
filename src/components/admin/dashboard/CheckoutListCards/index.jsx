@@ -641,6 +641,10 @@ const CheckoutListCards = ({
   };
 
   useEffect(() => {
+    setPage(0);
+  }, [allFilteredCheckouts]);
+
+  useEffect(() => {
     if (!allFilteredCheckouts) {
       console.warn("allFilteredCheckouts está indefinido no useEffect");
       setPaginatedCheckouts([]);
