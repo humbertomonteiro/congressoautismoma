@@ -2,67 +2,19 @@ import React, { useState, useEffect } from "react";
 import Reader from "react-qr-scanner";
 import styles from "./scanner.module.css";
 import axios from "axios";
-import { db } from "../../../../firebaseConfig";
-import { collection, getDocs } from "firebase/firestore";
-import {
-  TextField,
-  Button,
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  IconButton,
-  Collapse,
-} from "@mui/material";
-import { MdExpandMore, MdExpandLess } from "react-icons/md";
+import { toast } from "react-toastify";
+import { Button, Card, Box, Typography, CircularProgress } from "@mui/material";
+import ManualAuth from "./ManualAuth";
 
 const Scanner = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [result, setResult] = useState("");
   const [validationStatus, setValidationStatus] = useState(null);
-  const [validatedQRs, setValidatedQRs] = useState([]);
-  const [searchEmail, setSearchEmail] = useState("");
-  const [expandedCard, setExpandedCard] = useState(null);
   const [facingMode, setFacingMode] = useState("environment");
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
 
   useEffect(() => {
-    const fetchValidatedQRs = async () => {
-      try {
-        const snapshot = await getDocs(collection(db, "checkouts"));
-        const validated = [];
-        snapshot.forEach((doc) => {
-          const checkout = doc.data();
-          checkout.participants.forEach((participant, index) => {
-            if (participant.validated) {
-              const participantId = `${checkout.transactionId}-${index}`;
-              if (participant.validated["2025-05-31"]) {
-                validated.push({
-                  participantId,
-                  email: participant.email,
-                  name: participant.name,
-                  date: "2025-05-31",
-                });
-              }
-              if (participant.validated["2025-06-01"]) {
-                validated.push({
-                  participantId,
-                  email: participant.email,
-                  name: participant.name,
-                  date: "2025-06-01",
-                });
-              }
-            }
-          });
-        });
-        setValidatedQRs(validated);
-        console.log("QR codes validados carregados:", validated);
-      } catch (error) {
-        console.error("Erro ao buscar QR codes validados:", error.message);
-      }
-    };
-    fetchValidatedQRs();
-
     // Verificar se há múltiplas câmeras disponíveis
     const checkCameras = async () => {
       try {
@@ -88,8 +40,11 @@ const Scanner = () => {
     console.log("QR Code lido:", qrText);
 
     setResult(qrText);
+    setIsValidating(true);
     setValidationStatus("Validando...");
 
+    // Garantir pelo menos 1 segundo de animação
+    const startTime = Date.now();
     try {
       let parsedData;
       try {
@@ -98,6 +53,7 @@ const Scanner = () => {
       } catch (parseError) {
         console.error("Erro ao parsear QR como JSON:", parseError.message);
         setValidationStatus("Erro: Formato de QR Code inválido");
+        setIsValidating(false);
         return;
       }
 
@@ -108,6 +64,7 @@ const Scanner = () => {
       ) {
         console.error("Dados do QR incompletos:", parsedData);
         setValidationStatus("Erro: Dados do QR incompletos");
+        setIsValidating(false);
         return;
       }
 
@@ -124,27 +81,44 @@ const Scanner = () => {
 
       console.log("Resposta do backend:", response.data);
 
+      // Garantir que a animação dure pelo menos 1 segundo
+      const elapsedTime = Date.now() - startTime;
+      if (elapsedTime < 1000) {
+        await new Promise((resolve) => setTimeout(resolve, 1000 - elapsedTime));
+      }
+
       if (response.data.success) {
         setValidationStatus("Válido");
-        setValidatedQRs((prev) => [
-          ...prev,
-          {
-            participantId: parsedData.participantId,
-            email: parsedData.participantEmail || "Desconhecido",
-            name: parsedData.participantName,
-            date: parsedData.date,
-            eventName: parsedData.eventName,
-          },
-        ]);
-        setIsScanning(false);
+        toast.success(
+          `QR Code válido! Participante: ${parsedData.participantName}, Data: ${parsedData.date}`,
+          { position: "top-center", autoClose: 3000 }
+        );
+        setIsScanning(false); // Fechar a câmera
       } else {
         setValidationStatus(response.data.message || "Inválido");
+        toast.error(`Erro: ${response.data.message || "QR Code inválido"}`, {
+          position: "top-center",
+          autoClose: 3000,
+        });
       }
     } catch (error) {
       const errorMessage =
         error.response?.data?.message || error.message || "Erro desconhecido";
       console.error("Erro ao validar QR Code:", errorMessage);
+
+      // Garantir que a animação dure pelo menos 1 segundo
+      const elapsedTime = Date.now() - startTime;
+      if (elapsedTime < 1000) {
+        await new Promise((resolve) => setTimeout(resolve, 1000 - elapsedTime));
+      }
+
       setValidationStatus(`Erro: ${errorMessage}`);
+      toast.error(`Erro: ${errorMessage}`, {
+        position: "top-center",
+        autoClose: 3000,
+      });
+    } finally {
+      setIsValidating(false);
     }
   };
 
@@ -152,6 +126,10 @@ const Scanner = () => {
     console.error("Erro ao escanear QR Code:", err);
     setValidationStatus(`Erro ao abrir a câmera: ${err.message}`);
     setIsScanning(false);
+    toast.error(`Erro ao abrir a câmera: ${err.message}`, {
+      position: "top-center",
+      autoClose: 3000,
+    });
   };
 
   const handleStartScanning = () => {
@@ -199,10 +177,6 @@ const Scanner = () => {
     height: { ideal: 720 },
   };
 
-  const filteredValidatedQRs = validatedQRs.filter((qr) =>
-    qr.email.toLowerCase().includes(searchEmail.toLowerCase())
-  );
-
   return (
     <div className={styles.container}>
       <h1>Validação de QR Code</h1>
@@ -212,8 +186,8 @@ const Scanner = () => {
           borderRadius: "12px",
           boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
           p: "20px",
-          width: "100%",
-          maxWidth: "1200px",
+          width: "600px",
+          maxWidth: "100%",
           mx: "auto",
           mb: 3,
         }}
@@ -286,10 +260,20 @@ const Scanner = () => {
             sx={{
               mb: 3,
               padding: "20px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               ...getStatusStyle(validationStatus),
             }}
           >
-            {validationStatus === "Válido" ? (
+            {isValidating ? (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <CircularProgress size={24} />
+                <Typography variant="h6" color="info.main">
+                  Validando...
+                </Typography>
+              </Box>
+            ) : validationStatus === "Válido" ? (
               (() => {
                 const parsed = JSON.parse(result);
                 return (
@@ -325,60 +309,8 @@ const Scanner = () => {
             )}
           </Box>
         )}
-        <Box sx={{ mb: 2 }}>
-          <TextField
-            label="Buscar por Email"
-            value={searchEmail}
-            onChange={(e) => setSearchEmail(e.target.value)}
-            fullWidth
-            variant="outlined"
-          />
-        </Box>
       </Card>
-      <Box sx={{ backgroundColor: "#FFFFFF", borderRadius: "12px", p: 2 }}>
-        <Typography variant="h6" sx={{ mb: 1 }}>
-          QR Codes Validados ({filteredValidatedQRs.length})
-        </Typography>
-        {filteredValidatedQRs.map((qr, index) => (
-          <Card
-            key={index}
-            sx={{
-              mb: 1,
-              borderLeft: "4px solid #4caf50",
-              "&:hover": { boxShadow: 4 },
-            }}
-          >
-            <CardContent sx={{ p: 1 }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Box>
-                  <Typography variant="subtitle1">{qr.name}</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    {qr.email} | {qr.date}
-                  </Typography>
-                </Box>
-                <IconButton
-                  onClick={() =>
-                    setExpandedCard(expandedCard === index ? null : index)
-                  }
-                >
-                  {expandedCard === index ? <MdExpandLess /> : <MdExpandMore />}
-                </IconButton>
-              </Box>
-              <Collapse in={expandedCard === index}>
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  <strong>ID do Participante:</strong> {qr.participantId}
-                </Typography>
-              </Collapse>
-            </CardContent>
-          </Card>
-        ))}
-      </Box>
+      <ManualAuth />
     </div>
   );
 };

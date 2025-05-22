@@ -1,9 +1,9 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import { toast } from "react-toastify";
 import { db } from "../../../firebaseConfig";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { QRCodeSVG } from "qrcode.react";
 import logo from "../../assets/logos/logo-no-text.png";
 
@@ -16,6 +16,16 @@ const Tickets = () => {
   const [pdfUrl, setPdfUrl] = useState(null);
   const [pdfName, setPdfName] = useState("");
   const templateRef = useRef(null);
+
+  // Limpar a URL do Blob quando o componente for desmontado ou um novo PDF for gerado
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+        console.log("URL do Blob revogada ao desmontar.");
+      }
+    };
+  }, [pdfUrl]);
 
   // Função para formatar CPF
   const formatCpf = (value) => {
@@ -178,8 +188,12 @@ const Tickets = () => {
 
     setLoading(true);
     setErrorMessage("");
-    setPdfUrl(null); // Limpar URL anterior
-    setPdfName("");
+    // Limpar URL anterior, se existir
+    if (pdfUrl) {
+      URL.revokeObjectURL(pdfUrl);
+      setPdfUrl(null);
+      setPdfName("");
+    }
     try {
       const { checkout, participant } = await fetchCheckoutByCpf(cpf);
       await generatePDF(checkout, participant);
@@ -191,14 +205,32 @@ const Tickets = () => {
     }
   };
 
-  // Função para limpar o PDF gerado
-  const clearPdf = () => {
-    if (pdfUrl) {
-      URL.revokeObjectURL(pdfUrl);
-      setPdfUrl(null);
-      setPdfName("");
-      setParticipant(null);
-      setCheckout(null);
+  // Função para iniciar o download manual
+  const handleManualDownload = () => {
+    if (pdfUrl && pdfName) {
+      try {
+        const link = document.createElement("a");
+        link.href = pdfUrl;
+        link.download = pdfName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Download iniciado!", {
+          position: "bottom-right",
+          autoClose: 3000,
+        });
+      } catch (error) {
+        console.error("Erro ao iniciar download manual:", error);
+        toast.error("Erro ao baixar o PDF. Tente novamente.", {
+          position: "bottom-right",
+          autoClose: 3000,
+        });
+      }
+    } else {
+      toast.error("Nenhum PDF disponível para download.", {
+        position: "bottom-right",
+        autoClose: 3000,
+      });
     }
   };
 
@@ -231,14 +263,12 @@ const Tickets = () => {
         </button>
         {pdfUrl && (
           <div style={{ marginTop: "20px" }}>
-            <a
-              href={pdfUrl}
-              download={pdfName}
+            <button
+              onClick={handleManualDownload}
               style={styles.downloadButton}
-              onClick={clearPdf}
             >
               Baixar PDF Manualmente
-            </a>
+            </button>
           </div>
         )}
       </div>
@@ -461,14 +491,12 @@ const styles = {
     cursor: "not-allowed",
   },
   downloadButton: {
-    display: "inline-block",
     width: "100%",
     padding: "12px",
     fontSize: "16px",
     backgroundColor: "#2980b9",
     color: "#ffffff",
-    textAlign: "center",
-    textDecoration: "none",
+    border: "none",
     borderRadius: "4px",
     cursor: "pointer",
     transition: "background-color 0.3s",
