@@ -1,0 +1,42 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: 1.5rem;
+  background-color: var(--color-5);
+  padding: 1.5rem;
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  z-index: 2;
+  min-height: 350px;
+}
+
+.support {
+  width: 600px;
+  max-width: 100%;
+  border-radius: 1rem;
+}
+
+.imgBottom {
+  width: 100%;
+  transform: scaleX(-1);
+  position: absolute;
+  bottom: 0;
+  z-index: -1;
+  border: 1px solid var(--border-color);
+  /* bottom: -5px; */
+  /* right: 0; */
+}
+
+.imgBottom img {
+  width: 100%;
+  opacity: 0.5;
+}
+
+@media (max-width: 480px) {
+  .container {
+    min-height: 250px;
+  }
+}

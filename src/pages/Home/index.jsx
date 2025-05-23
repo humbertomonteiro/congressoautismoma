@@ -8,6 +8,7 @@ import PrivilegeOfParticipating from "../../components/sections/PrivilegeOfParti
 import Testimonials from "../../components/sections/Testimonials";
 import CarouselScrollInfinit from "../../components/shared/CarouselScrollInfinit";
 import HalfiPrice from "../../components/sections/HalfPrice";
+import Support from "../../components/sections/Support";
 import BeSupport from "../../components/sections/BeSupport";
 import Local from "../../components/sections/Local";
 import Questions from "../../components/sections/Questions";
@@ -53,6 +54,7 @@ const Home = ({ wpp }) => {
       <Testimonials />
       <CarouselScrollInfinit />
       <HalfiPrice wpp={wpp} />
+      <Support />
       <BeSupport />
       <Local />
       <Questions />
