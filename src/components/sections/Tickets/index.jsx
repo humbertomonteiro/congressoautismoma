@@ -349,9 +349,9 @@ const Item1 = ({ wpp, openChatbot }) => {
         <span>
           De <s>R$ 798,00</s> por:
         </span>
-        <h4>R$ 499,00</h4>
+        <h4>R$ 549,00</h4>
         <h3>
-          ou <strong>10X de R$ 49,90</strong>
+          ou <strong>10X de R$ 54,90</strong>
         </h3>
         <ul>
           <li>Evento com Certificado de 20 horas.</li>
