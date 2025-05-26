@@ -343,7 +343,7 @@ const Item1 = ({ wpp, openChatbot }) => {
         <span>Ingresso</span>
         <h4>Ingresso INDIVIDUAL</h4>
         <h5>Disponível até:</h5>
-        <p>25/05 ou enquanto durar</p>
+        <p>28/05 ou enquanto durar</p>
       </div>
       <div className={styles.boxValue}>
         <span>
@@ -408,7 +408,7 @@ const Item2 = ({ wpp, openChatbot }) => {
         <span>Ingresso</span>
         <h4>Ingresso GRUPO</h4>
         <h5>Disponível até:</h5>
-        <p>25/05 ou enquanto durar</p>
+        <p>28/05 ou enquanto durar</p>
         <p>Compre no mínimo 5 ingressos para ter desconto.</p>
       </div>
       <div className={styles.boxValue}>
@@ -478,7 +478,7 @@ const ItemHalf = ({ wpp, openChatbot }) => {
         <span>Ingresso</span>
         <h4>Ingresso MEIA-ENTRADA</h4>
         <h5>Disponível até:</h5>
-        <p>25/05 ou enquanto durar</p>
+        <p>28/05 ou enquanto durar</p>
         <p>
           Lembre-se: os documentos comprobatórios devem ser apresentados na
           entrada do evento.
@@ -559,44 +559,44 @@ const Tickets = ({ wpp }) => {
     setIsChatbotOpen(true);
   };
 
-  useEffect(() => {
-    const calculateTargetDate = () => {
-      const currentDate = new Date();
-      const target = new Date(currentDate);
-      target.setDate(currentDate.getDate() + 3); // 3 dias a partir de hoje
-      target.setHours(23, 59, 59, 999);
+  // useEffect(() => {
+  //   const calculateTargetDate = () => {
+  //     const currentDate = new Date();
+  //     const target = new Date(currentDate);
+  //     target.setDate(currentDate.getDate() + 3); // 3 dias a partir de hoje
+  //     target.setHours(23, 59, 59, 999);
 
-      const year = target.getFullYear();
-      const month = String(target.getMonth() + 1).padStart(2, "0");
-      const day = String(target.getDate()).padStart(2, "0");
+  //     const year = target.getFullYear();
+  //     const month = String(target.getMonth() + 1).padStart(2, "0");
+  //     const day = String(target.getDate()).padStart(2, "0");
 
-      return `${year}-${month}-${day}T23:59:59`;
-    };
+  //     return `${year}-${month}-${day}T23:59:59`;
+  //   };
 
-    const storedDate = localStorage.getItem("countdownTargetDate");
-    const now = new Date().getTime();
+  //   const storedDate = localStorage.getItem("countdownTargetDate");
+  //   const now = new Date().getTime();
 
-    if (storedDate) {
-      const storedTimestamp = new Date(storedDate).getTime();
-      if (storedTimestamp > now) {
-        // Data armazenada ainda é válida
-        setTargetDate(storedDate);
-        console.log("Using stored targetDate:", storedDate);
-      } else {
-        // Data expirou, calcular nova
-        const newTargetDate = calculateTargetDate();
-        localStorage.setItem("countdownTargetDate", newTargetDate);
-        setTargetDate(newTargetDate);
-        console.log("Stored date expired, new targetDate:", newTargetDate);
-      }
-    } else {
-      // Nenhuma data armazenada, calcular nova
-      const newTargetDate = calculateTargetDate();
-      localStorage.setItem("countdownTargetDate", newTargetDate);
-      setTargetDate(newTargetDate);
-      console.log("No stored date, new targetDate:", newTargetDate);
-    }
-  }, []);
+  //   if (storedDate) {
+  //     const storedTimestamp = new Date(storedDate).getTime();
+  //     if (storedTimestamp > now) {
+  //       // Data armazenada ainda é válida
+  //       setTargetDate(storedDate);
+  //       console.log("Using stored targetDate:", storedDate);
+  //     } else {
+  //       // Data expirou, calcular nova
+  //       const newTargetDate = calculateTargetDate();
+  //       localStorage.setItem("countdownTargetDate", newTargetDate);
+  //       setTargetDate(newTargetDate);
+  //       console.log("Stored date expired, new targetDate:", newTargetDate);
+  //     }
+  //   } else {
+  //     // Nenhuma data armazenada, calcular nova
+  //     const newTargetDate = calculateTargetDate();
+  //     localStorage.setItem("countdownTargetDate", newTargetDate);
+  //     setTargetDate(newTargetDate);
+  //     console.log("No stored date, new targetDate:", newTargetDate);
+  //   }
+  // }, []);
 
   return (
     <Section>
@@ -610,7 +610,7 @@ const Tickets = ({ wpp }) => {
             antecipado.
           </p>
           <strong>⚡ Confira os valores e garanta o melhor preço:</strong>
-          <CountdownTimer targetDate={targetDate} />
+          <CountdownTimer targetDate={"2025-05-28T23:59:59"} />
           <strong className={styles.highlightText}>
             Lote promocional encerrando em breve. Compre agora e economize!
           </strong>
