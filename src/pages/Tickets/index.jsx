@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
 import { toast } from "react-toastify";
 import { db } from "../../../firebaseConfig";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore"; // Removed unused 'query' and 'where'
 import { QRCodeSVG } from "qrcode.react";
 import logo from "../../assets/logos/logo-no-text.png";
+import html2canvas from "html2canvas";
 
 const Tickets = () => {
-  const [cpf, setCpf] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [participant, setParticipant] = useState(null);
@@ -29,33 +29,35 @@ const Tickets = () => {
 
   // Função para formatar CPF
   const formatCpf = (value) => {
-    const cleanCpf = value.replace(/[^\d]/g, "");
-    if (cleanCpf.length <= 11) {
-      return cleanCpf
+    const cleanValue = value.replace(/[^\d]/g, "");
+    if (cleanValue.length === 11) {
+      return cleanValue
         .replace(/(\d{3})(\d)/, "$1.$2")
         .replace(/(\d{3})(\d)/, "$1.$2")
         .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
     }
-    return cleanCpf;
+    return value; // Return original value for document numbers
   };
 
-  // Manipulador de mudança no input do CPF
-  const handleCpfChange = (e) => {
-    const formattedCpf = formatCpf(e.target.value);
-    setCpf(formattedCpf);
+  // Manipulador de mudança no input
+  const handleIdentifierChange = (e) => {
+    const formattedValue = formatCpf(e.target.value);
+    setIdentifier(formattedValue);
   };
 
-  // Função para buscar checkout pelo CPF no Firebase
-  const fetchCheckoutByCpf = async (cpf) => {
+  // Função para buscar checkout pelo CPF ou documento no Firebase
+  const fetchCheckoutByIdentifier = async (identifier) => {
     try {
-      const cleanCpf = cpf.replace(/[^\d]/g, "");
-      if (cleanCpf.length !== 11) {
-        throw new Error("CPF inválido. Deve conter 11 dígitos.");
+      const cleanIdentifier = identifier.replace(/[^\d]/g, "");
+      if (!cleanIdentifier) {
+        throw new Error(
+          "Por favor, insira um CPF ou número de documento válido."
+        );
       }
 
-      console.log(`Buscando checkout para CPF: ${cleanCpf}`);
+      console.log(`Buscando checkout para identificador: ${cleanIdentifier}`);
       const checkoutsRef = collection(db, "checkouts");
-      const snapshot = await getDocs(checkoutsRef); // TODO: Otimizar com query
+      const snapshot = await getDocs(checkoutsRef); // Fetch all checkouts
 
       let matchingCheckout = null;
       let matchingParticipant = null;
@@ -67,7 +69,14 @@ const Tickets = () => {
             p.cpf && typeof p.cpf === "string"
               ? p.cpf.replace(/[^\d]/g, "")
               : null;
-          return participantCpf === cleanCpf;
+          const participantDocument =
+            p.document && typeof p.document === "string"
+              ? p.document.replace(/[^\d]/g, "")
+              : null;
+          return (
+            participantCpf === cleanIdentifier ||
+            participantDocument === cleanIdentifier
+          );
         });
         if (participant) {
           console.log(
@@ -75,13 +84,17 @@ const Tickets = () => {
           );
           matchingCheckout = checkout;
           matchingParticipant = participant;
-          break; // Sai do loop após encontrar o participante
+          break; // Exit loop after finding a match
         }
       }
 
       if (!matchingCheckout) {
-        console.log("Nenhum checkout encontrado para o CPF informado.");
-        throw new Error("Nenhum checkout encontrado para este CPF.");
+        console.log(
+          "Nenhum checkout encontrado para o identificador informado."
+        );
+        throw new Error(
+          "Nenhum checkout encontrado para este CPF ou número de documento."
+        );
       }
 
       return { checkout: matchingCheckout, participant: matchingParticipant };
@@ -93,7 +106,7 @@ const Tickets = () => {
     }
   };
 
-  // Função para gerar o PDF
+  // Função para gerar o PDF (mantida igual)
   const generatePDF = async (checkoutData, participantData) => {
     setLoading(true);
     try {
@@ -110,14 +123,11 @@ const Tickets = () => {
 
       console.log("qrRawData encontrado:", { qrRawDataDay1, qrRawDataDay2 });
 
-      // Atualizar o estado com checkout e participante
       setCheckout(checkoutData);
       setParticipant(participantData);
 
-      // Aguardar a renderização do template
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // Verificar o template
       const templateElement = templateRef.current;
       if (!templateElement) {
         console.error("Elemento do template não encontrado.");
@@ -128,8 +138,8 @@ const Tickets = () => {
 
       console.log("Renderizando template HTML com html2canvas...");
       const canvas = await html2canvas(templateElement, {
-        scale: 2, // Aumentar a resolução
-        useCORS: true, // Habilitar CORS para imagens externas
+        scale: 2,
+        useCORS: true,
       });
       console.log(
         "Canvas gerado com sucesso:",
@@ -138,34 +148,28 @@ const Tickets = () => {
         canvas.height
       );
 
-      // Criar o PDF
       const doc = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
       });
 
-      // Converter canvas para imagem
       const imgData = canvas.toDataURL("image/png");
-      const imgWidth = 210; // Largura A4 em mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width; // Proporção mantida
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      // Adicionar imagem ao PDF
       doc.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
       console.log("Imagem do template adicionada ao PDF.");
 
-      // Gerar o nome do PDF
       const generatedPdfName = `tickets_${
         checkoutData.id
       }_${participantData.name.replace(/\s/g, "_")}.pdf`;
       setPdfName(generatedPdfName);
 
-      // Criar Blob e URL para download manual
       const pdfBlob = doc.output("blob");
       const pdfUrl = URL.createObjectURL(pdfBlob);
       setPdfUrl(pdfUrl);
 
-      // Download automático
       doc.save(generatedPdfName);
       console.log(`PDF salvo como: ${generatedPdfName}`);
       toast.success(
@@ -179,23 +183,24 @@ const Tickets = () => {
     }
   };
 
-  // Função para buscar checkout pelo CPF e gerar PDF
+  // Função para buscar checkout pelo identificador e gerar PDF
   const handleGeneratePDF = async () => {
-    if (!cpf || cpf.replace(/[^\d]/g, "").length !== 11) {
-      toast.error("Por favor, insira um CPF válido.");
+    if (!identifier || identifier.replace(/[^\d]/g, "").length < 1) {
+      toast.error("Por favor, insira um CPF ou número de documento válido.");
       return;
     }
 
     setLoading(true);
     setErrorMessage("");
-    // Limpar URL anterior, se existir
     if (pdfUrl) {
       URL.revokeObjectURL(pdfUrl);
       setPdfUrl(null);
       setPdfName("");
     }
     try {
-      const { checkout, participant } = await fetchCheckoutByCpf(cpf);
+      const { checkout, participant } = await fetchCheckoutByIdentifier(
+        identifier
+      );
       await generatePDF(checkout, participant);
     } catch (error) {
       setErrorMessage(error.message);
@@ -240,11 +245,11 @@ const Tickets = () => {
         <h2>Gerar Ingressos por CPF</h2>
         {errorMessage && <p style={styles.error}>{errorMessage}</p>}
         <div style={styles.inputGroup}>
-          <label style={styles.label}>CPF do Participante:</label>
+          <label style={styles.label}>CPF do participante:</label>
           <input
             type="text"
-            value={cpf}
-            onChange={handleCpfChange}
+            value={identifier}
+            onChange={handleIdentifierChange}
             placeholder="Digite o CPF (ex: 123.456.789-00)"
             maxLength={14}
             style={styles.input}
@@ -273,7 +278,7 @@ const Tickets = () => {
         )}
       </div>
 
-      {/* Template HTML escondido */}
+      {/* Template HTML escondido (mantido igual) */}
       <div
         ref={templateRef}
         style={{
@@ -292,7 +297,6 @@ const Tickets = () => {
             position: "relative",
           }}
         >
-          {/* Cabeçalho */}
           <div
             style={{
               backgroundColor: "#2c3e50",
@@ -324,7 +328,6 @@ const Tickets = () => {
             </div>
           </div>
 
-          {/* Ticket 1 */}
           <div
             style={{
               width: "555px",
@@ -376,7 +379,6 @@ const Tickets = () => {
             </div>
           </div>
 
-          {/* Ticket 2 */}
           <div
             style={{
               width: "555px",
@@ -428,7 +430,6 @@ const Tickets = () => {
             </div>
           </div>
 
-          {/* Rodapé */}
           <div
             style={{
               position: "absolute",
