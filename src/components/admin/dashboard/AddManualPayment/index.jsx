@@ -160,12 +160,12 @@ const AddManualPayment = () => {
         paymentMethod: formState.paymentMethod,
         observation: formState.observation,
         totalAmount: updatedTotals.total,
-        eventName: "Congresso Autismo MA 2025",
+        eventName: "Congresso Autismo MA 2026",
         participants: participants.map((p) => ({
           name: p.name,
           email: p.email,
           number: p.number,
-          cpf: p.documentType === "cpf" ? p.document : undefined,
+          document: p.documentType === "cpf" ? p.document : undefined,
           ticketType: p.isHalfPrice ? "Meia" : "Inteira",
         })),
         paymentId: transactionId,
@@ -227,7 +227,7 @@ const AddManualPayment = () => {
           checkoutId: docRef.id,
           from: "congressoautismoma@gmail.com",
           to: participant.email,
-          subject: "Confirmação de Pagamento - Congresso Autismo MA 2025",
+          subject: "Confirmação de Pagamento - Congresso Autismo MA 2026",
           data: {
             name: participant.name,
             transactionId: transactionId,

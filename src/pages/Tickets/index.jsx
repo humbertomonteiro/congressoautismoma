@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { jsPDF } from "jspdf";
 import { toast } from "react-toastify";
 import { db } from "../../../firebaseConfig";
-import { collection, getDocs } from "firebase/firestore"; // Removed unused 'query' and 'where'
+import { collection, getDocs, query, where } from "firebase/firestore"; // Removed unused 'query' and 'where'
 import { QRCodeSVG } from "qrcode.react";
 import logo from "../../assets/logos/logo-no-text.png";
 import html2canvas from "html2canvas";
@@ -48,16 +48,21 @@ const Tickets = () => {
   // Função para buscar checkout pelo CPF ou documento no Firebase
   const fetchCheckoutByIdentifier = async (identifier) => {
     try {
-      const cleanIdentifier = identifier.replace(/[^\d]/g, "");
+      const cleanIdentifier = identifier.replace(/[^\d]/g, "").trim();
       if (!cleanIdentifier) {
         throw new Error(
           "Por favor, insira um CPF ou número de documento válido."
         );
       }
 
-      console.log(`Buscando checkout para identificador: ${cleanIdentifier}`);
+      console.log(
+        `Buscando checkout aprovado para identificador: ${cleanIdentifier}`
+      );
       const checkoutsRef = collection(db, "checkouts");
-      const snapshot = await getDocs(checkoutsRef); // Fetch all checkouts
+      // Adiciona query para filtrar apenas checkouts com status "approved"
+      const q = query(checkoutsRef, where("status", "==", "approved"));
+      const snapshot = await getDocs(q); // Usa a query em vez de getDocs(checkoutsRef)
+      console.log(`Total de checkouts aprovados encontrados: ${snapshot.size}`);
 
       let matchingCheckout = null;
       let matchingParticipant = null;
@@ -67,11 +72,11 @@ const Tickets = () => {
         const participant = checkout.participants?.find((p) => {
           const participantCpf =
             p.cpf && typeof p.cpf === "string"
-              ? p.cpf.replace(/[^\d]/g, "")
+              ? p.cpf.replace(/[^\d]/g, "").trim()
               : null;
           const participantDocument =
             p.document && typeof p.document === "string"
-              ? p.document.replace(/[^\d]/g, "")
+              ? p.document.replace(/[^\d]/g, "").trim()
               : null;
           return (
             participantCpf === cleanIdentifier ||
@@ -90,10 +95,10 @@ const Tickets = () => {
 
       if (!matchingCheckout) {
         console.log(
-          "Nenhum checkout encontrado para o identificador informado."
+          "Nenhum checkout aprovado encontrado para o identificador informado."
         );
         throw new Error(
-          "Nenhum checkout encontrado para este CPF ou número de documento."
+          "Nenhum checkout aprovado encontrado para este CPF ou número de documento."
         );
       }
 
@@ -111,8 +116,8 @@ const Tickets = () => {
     setLoading(true);
     try {
       console.log("Gerando PDF para participante:", participantData);
-      const qrRawDataDay1 = participantData.qrRawData?.["2025-05-31"];
-      const qrRawDataDay2 = participantData.qrRawData?.["2025-06-01"];
+      const qrRawDataDay1 = participantData.qrRawData?.["2026-05-31"];
+      const qrRawDataDay2 = participantData.qrRawData?.["2026-06-01"];
 
       if (!qrRawDataDay1 || !qrRawDataDay2) {
         console.log("qrRawData ausente:", { qrRawDataDay1, qrRawDataDay2 });
@@ -324,7 +329,7 @@ const Tickets = () => {
                 bottom: "10px",
               }}
             >
-              CONGRESSO AUTISMO MA 2025
+              CONGRESSO AUTISMO MA 2026
             </div>
           </div>
 
@@ -354,13 +359,13 @@ const Tickets = () => {
                   marginBottom: "10px",
                 }}
               >
-                CONGRESSO AUTISMO MA 2025
+                CONGRESSO AUTISMO MA 2026
               </div>
               <div style={{ fontSize: "10px", marginBottom: "5px" }}>
                 NOME: {participant?.name?.toUpperCase() || ""}
               </div>
               <div style={{ fontSize: "10px", marginBottom: "5px" }}>
-                DATA: 31.05.2025
+                DATA: 31.05.2026
               </div>
               <div style={{ fontSize: "10px", marginBottom: "5px" }}>
                 LOCAL: CENTRO DE CONVENÇÕES MA
@@ -371,7 +376,7 @@ const Tickets = () => {
               {participant && participant.qrRawData && (
                 <QRCodeSVG
                   id="qrCode1"
-                  value={participant.qrRawData["2025-05-31"] || ""}
+                  value={participant.qrRawData["2026-05-31"] || ""}
                   size={113}
                   level="H"
                 />
@@ -405,13 +410,13 @@ const Tickets = () => {
                   marginBottom: "10px",
                 }}
               >
-                CONGRESSO AUTISMO MA 2025
+                CONGRESSO AUTISMO MA 2026
               </div>
               <div style={{ fontSize: "10px", marginBottom: "5px" }}>
                 NOME: {participant?.name?.toUpperCase() || ""}
               </div>
               <div style={{ fontSize: "10px", marginBottom: "5px" }}>
-                DATA: 01.06.2025
+                DATA: 01.06.2026
               </div>
               <div style={{ fontSize: "10px", marginBottom: "5px" }}>
                 LOCAL: CENTRO DE CONVENÇÕES MA
@@ -422,7 +427,7 @@ const Tickets = () => {
               {participant && participant.qrRawData && (
                 <QRCodeSVG
                   id="qrCode2"
-                  value={participant.qrRawData["2025-06-01"] || ""}
+                  value={participant.qrRawData["2026-06-01"] || ""}
                   size={113}
                   level="H"
                 />

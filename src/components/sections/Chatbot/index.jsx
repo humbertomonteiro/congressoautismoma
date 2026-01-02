@@ -55,7 +55,7 @@ const Chatbot = ({ isOpen, onClose, initialTicketType }) => {
         : [
             {
               sender: "bot",
-              text: "Olá! Seja bem-vindo ao atendimento do Congresso Autismo MA 2025!",
+              text: "Olá! Seja bem-vindo ao atendimento do Congresso Autismo MA 2026!",
             },
             {
               sender: "bot",
@@ -91,7 +91,7 @@ const Chatbot = ({ isOpen, onClose, initialTicketType }) => {
       messages: [
         {
           sender: "bot",
-          text: "Olá! Seja bem-vindo ao atendimento do Congresso Autismo MA 2025!",
+          text: "Olá! Seja bem-vindo ao atendimento do Congresso Autismo MA 2026!",
         },
         {
           sender: "bot",
@@ -307,7 +307,7 @@ const Chatbot = ({ isOpen, onClose, initialTicketType }) => {
       const price = ticketPrices[type];
       const total = (quantity * price).toFixed(2);
 
-      const message = `Olá! Gostaria de comprar ingressos para o Congresso Autismo MA 2025:
+      const message = `Olá! Gostaria de comprar ingressos para o Congresso Autismo MA 2026:
 
 🔹 Quantidade: ${quantity}
 🔹 Tipo: ${getTicketLabel(type)}

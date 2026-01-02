@@ -740,16 +740,16 @@ const CheckoutListCards = ({
                       variant="body2"
                       sx={{ fontWeight: 500, fontSize: ".80rem" }}
                     >
-                      Aprovados: {filteredMetrics?.approvedCount || 0} -{" "}
-                      {filteredMetrics?.approvedValue || 0}
+                      Aprovados: {filteredMetrics?.approvedCount || 0}
+                      {/* {filteredMetrics?.approvedValue || 0} */}
                     </Typography>
                     {!isMobile && <Typography>|</Typography>}
                     <Typography
                       variant="body2"
                       sx={{ fontWeight: 500, fontSize: ".80rem" }}
                     >
-                      Pendentes: {filteredMetrics?.pendingCount || 0} -{" "}
-                      {filteredMetrics?.pendingValue || 0}
+                      Pendentes: {filteredMetrics?.pendingCount || 0}
+                      {/* {filteredMetrics?.pendingValue || 0} */}
                     </Typography>
                     {!isMobile && <Typography>|</Typography>}
                     <Typography

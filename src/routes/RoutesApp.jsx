@@ -9,6 +9,8 @@ import Scanner from "../components/admin/Scanner";
 import ThankYouPage from "../pages/ThankYouPage";
 // import HomeWhastsapp from "../pages/HomeWhatsapp";
 import Tickets from "../pages/Tickets";
+import CertificateHome from "../components/certificateGenerator/CertificateHome";
+import Certificate from "../pages/Certificate";
 
 const RoutesApp = () => {
   return (
@@ -27,7 +29,25 @@ const RoutesApp = () => {
           </Private>
         }
       />
-      <Route path="ingressos" element={<Tickets />} />
+      <Route
+        path="/certificate"
+        element={
+          <Private>
+            <Certificate />
+          </Private>
+        }
+      />
+      <Route path="/ingressos" element={<Tickets />} />
+      <Route path="/certificado" element={<CertificateHome />} />
+      <Route
+        path="/certificado-comissao-cientifica"
+        element={<CertificateHome />}
+      />
+      <Route path="/certificado-monitoria" element={<CertificateHome />} />
+      <Route
+        path="/certificado-comissao-organizadora"
+        element={<CertificateHome />}
+      />
       <Route path="*" element={<Home />} />
     </Routes>
   );

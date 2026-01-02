@@ -41,7 +41,7 @@ const ThankYouPage = ({ totalValue }) => {
       items: [
         {
           item_id: itemId,
-          item_name: "Ingresso Congresso Autismo 2025",
+          item_name: "Ingresso Congresso Autismo 2026",
           price: formattedTotal,
           quantity: 1,
         },
@@ -57,7 +57,7 @@ const ThankYouPage = ({ totalValue }) => {
   const message = isCreditCard ? (
     <>
       Obrigado por adquirir seu ingresso para o{" "}
-      <strong>Congresso Autismo MA 2025</strong>! Estamos muito felizes em
+      <strong>Congresso Autismo MA 2026</strong>! Estamos muito felizes em
       tê-lo(a) conosco nesse evento incrível. Um e-mail com os detalhes da sua
       compra foi enviado para você. Prepare-se para dois dias inesquecíveis de
       aprendizado e conexão!
@@ -65,7 +65,7 @@ const ThankYouPage = ({ totalValue }) => {
   ) : (
     <>
       Parabéns por dar o primeiro passo para participar do{" "}
-      <strong>Congresso Autismo MA 2025</strong>! Seu boleto foi gerado com
+      <strong>Congresso Autismo MA 2026</strong>! Seu boleto foi gerado com
       sucesso. Para garantir sua vaga, efetue o pagamento até o vencimento
       usando o código de barras abaixo. Você também pode baixar o boleto
       novamente clicando no botão!{" "}
@@ -104,7 +104,7 @@ const ThankYouPage = ({ totalValue }) => {
             <strong>Valor Total:</strong> R$ {formattedTotal}
           </p>
           <p>
-            <strong>Data do Evento:</strong> 31 de maio e 1º de junho de 2025
+            <strong>Data do Evento:</strong> 31 de maio e 1º de junho de 2026
           </p>
           {!isCreditCard && (
             <>

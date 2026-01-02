@@ -15,8 +15,11 @@ import Questions from "../../components/sections/Questions";
 import Politic from "../../components/sections/Politic";
 import Footer from "../../components/templates/Footer";
 
+import CertificateHome from "../../components/certificateGenerator/CertificateHome";
+
 import { useState, useEffect } from "react";
 import ButtonWhatsapp from "../../components/sections/ButtonWhatsapp";
+import Timeline from "../../components/sections/Timeline";
 
 const Home = ({ wpp }) => {
   const [visibleItems, setVisibleItems] = useState(4);
@@ -37,9 +40,11 @@ const Home = ({ wpp }) => {
   return (
     <div>
       <TopBar
-        text={"Compre seu ingresso com menor valor!"}
+        // text={"INFELIZMENTE OS INGRESSOS ESTÃO ESGOTADOS!"}
+        text={"Pré-venda liberada! Aproveite o menor preço!"}
         action={"link"}
         textAction={"COMPRAR INGRESSO"}
+        // textAction="INGRESSOS ESGOTADOS"
         linkAction={"#tickets"}
       />
       <Header />
@@ -53,10 +58,12 @@ const Home = ({ wpp }) => {
       <PrivilegeOfParticipating />
       <Testimonials />
       <CarouselScrollInfinit />
-      <HalfiPrice wpp={wpp} />
+      {/* <HalfiPrice wpp={wpp} /> */}
       <Support />
+      <Timeline />
       <BeSupport />
       <Local />
+      <CertificateHome />
       <Questions />
       <Politic />
       <Footer />

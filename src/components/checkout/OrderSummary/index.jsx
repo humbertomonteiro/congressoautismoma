@@ -75,7 +75,7 @@ const OrderSummary = ({
       </div>
 
       <div className={styles.quantityOfItem}>
-        {/* <p>Ingresso Congresso Autismo MA 2025</p> */}
+        {/* <p>Ingresso Congresso Autismo MA 2026</p> */}
         <h2>Quantidade de ingresso(s)</h2>
         <select value={ticketQuantity} onChange={onTicketQuantityChange}>
           {Array.from({ length: 60 }, (_, index) => (

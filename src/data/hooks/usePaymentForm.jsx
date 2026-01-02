@@ -405,7 +405,7 @@ const usePaymentForm = () => {
               checkoutId: response.checkoutId,
               from: EMAIL_FROM,
               to: participant.email,
-              subject: "Confirmação de Pagamento - Congresso Autismo MA 2025",
+              subject: "Confirmação de Pagamento - Congresso Autismo MA 2026",
               data: {
                 name: participant.name,
                 transactionId: response.transactionId,

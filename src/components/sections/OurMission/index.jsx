@@ -45,7 +45,9 @@ const OurMission = () => {
             link="#tickets"
             onClick={handleViewItem}
           >
-            COMPRAR INGRESSO <FaArrowDown />
+            COMPRAR INGRESSO
+            {/* INGRESSOS ESGOTADOS */}
+            <FaArrowDown />
           </ButtonSecondary>
         </div>
         <div className={styles.img}>

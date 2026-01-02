@@ -33,7 +33,7 @@ const Header = () => {
           <span>Caminhos Para Inclusão</span>
         </div>
         <h1>Terceira edição do Congresso!</h1>
-        <h2 className={styles.date}>31/05 e 01/06/2025 em São Luís - MA</h2>
+        <h2 className={styles.date}>31/05 e 01/06/2026 em São Luís - MA</h2>
         <p>
           Junte-se a especialistas, profissionais da saúde e educadores em um
           encontro dedicado à conscientização e troca de conhecimento.
@@ -44,6 +44,7 @@ const Header = () => {
           link="#tickets"
           onClick={handleViewItem}
         >
+          {/* INGRESSOS ESGOTADOS */}
           COMPRAR INGRESSO <IoRocketOutline style={{ fontSize: "1.7rem" }} />
         </ButtonSecondary>
       </div>

@@ -1,0 +1,15 @@
+.container {
+  display: flex;
+  gap: 1.5rem;
+  background: var(--color-5);
+  border: 1px solid var(--border-color);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  justify-content: center;
+  align-items: center;
+
+  & img {
+    max-width: 100%;
+    border-radius: 1rem;
+  }
+}

@@ -135,10 +135,12 @@ const Testimonials = () => {
       <div className={styles.button}>
         <ButtonSecondary
           action={"link"}
-          link={"#tickets"}
+          link="#tickets"
           onClick={handleViewItem}
         >
-          COMPRAR INGRESSO <IoTicketOutline />
+          COMPRAR INGRESSO
+          <IoTicketOutline />
+          {/* INGRESSOS ESGOTADOS */}
         </ButtonSecondary>
       </div>
     </section>

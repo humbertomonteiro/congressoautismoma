@@ -48,6 +48,7 @@ const PaymentForm = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasShownHalfPriceModal, setHasShownHalfPriceModal] = useState(false);
   const [typeTicket, setTypeTicket] = useState("full");
+  const [basePrice, setBasePrice] = useState("R$ 289,00");
 
   const brands = ["Visa", "Mastercard", "Amex", "Elo"];
   const location = useLocation();
@@ -310,7 +311,7 @@ const PaymentForm = () => {
           <div className={styles.description}>
             <img src={logo} alt="Logo" />
             <div className={styles.text}>
-              <h1>Congresso Autismo MA 2025</h1>
+              <h1>Congresso Autismo MA 2026</h1>
               <span>Checkout Seguro</span>
               <h2>Descrição</h2>
               <p>
@@ -510,16 +511,15 @@ const PaymentForm = () => {
               <div className={`${styles.paymentSummary} ${styles.card}`}>
                 <h2>Resumo do Pedido</h2>
                 <p>
-                  Ingressos inteiros:{" "}
-                  {formState.ticketQuantity - formState.halfTickets} x R${" "}
-                  {totals.valueTicketsAll}
+                  Ingressos {formState.ticketQuantity - formState.halfTickets} x{" "}
+                  {basePrice}
                 </p>
-                {formState.halfTickets > 0 && (
+                {/* {formState.halfTickets > 0 && (
                   <p>
                     Ingressos meia: {formState.halfTickets} x R${" "}
                     {totals.valueTicketsHalf}
                   </p>
-                )}
+                )} */}
                 {formState.coupon.isApplied && (
                   <p>
                     Desconto ({formState.coupon.code}): R$ {totals.discount}
@@ -649,7 +649,7 @@ const PaymentForm = () => {
                           onChange={(e) =>
                             handleCreditCardChange("maturity", e.target.value)
                           }
-                          placeholder="Ex: 05/2025"
+                          placeholder="Ex: 05/2026"
                           required
                         >
                           {(inputProps) => (

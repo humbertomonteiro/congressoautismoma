@@ -8,6 +8,8 @@ import {
   MenuItem,
   TextField,
   Button,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 import { useDashboard } from "../../../../data/contexts/DashboardContext";
 import DatePicker from "react-datepicker";
@@ -28,6 +30,8 @@ const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
     startDateFilter,
     setStartDateFilter,
     endDateFilter,
+    attendedFilter,
+    setAttendedFilter,
     setEndDateFilter,
   } = useDashboard();
 
@@ -66,6 +70,7 @@ const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
     setParticipantSearchQuery("");
     setStartDateFilter("");
     setEndDateFilter("");
+    setAttendedFilter(false);
   };
 
   return (
@@ -179,6 +184,16 @@ const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
             />
           }
         />
+        {/* <FormControlLabel
+          control={
+            <Checkbox
+              checked={attendedFilter}
+              onChange={(e) => setAttendedFilter(e.target.checked)}
+              color="primary"
+            />
+          }
+          label="Participantes presentes"
+        /> */}
         <Button
           variant="outlined"
           onClick={handleClearFilters}

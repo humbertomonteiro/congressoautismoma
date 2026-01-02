@@ -29,6 +29,7 @@ const statusOptions = [
   { value: "error", label: "Erro" },
   { value: "canceled", label: "Cancelado" },
   { value: "refunded", label: "Estornado" },
+  { value: "test", label: "Teste" },
 ];
 
 const paymentMethods = [
@@ -86,27 +87,21 @@ const ModalCheckoutDetails = ({
     const updatedOrderData = { ...orderData };
 
     if (nestedField) {
-      // Atualiza campo dentro de orderDetails
       updatedOrderData.orderDetails[nestedField] = value;
-
-      // Recalcula valueTicketsAll e valueTicketsHalf
-      const fullPrice = 499.9; // Preço do ingresso inteiro (conforme Item1)
-      const halfPrice = 399.9; // Preço do ingresso meia (conforme ItemHalf)
+      const fullPrice = 499.9;
+      const halfPrice = 399.9;
       updatedOrderData.orderDetails.valueTicketsAll = (
         parseInt(updatedOrderData.orderDetails.fullTickets || 0) * fullPrice
       ).toFixed(2);
       updatedOrderData.orderDetails.valueTicketsHalf = (
         parseInt(updatedOrderData.orderDetails.halfTickets || 0) * halfPrice
       ).toFixed(2);
-
-      // Recalcula totalAmount
       updatedOrderData.totalAmount = (
         parseInt(updatedOrderData.orderDetails.fullTickets || 0) * fullPrice +
         parseInt(updatedOrderData.orderDetails.halfTickets || 0) * halfPrice -
         parseFloat(updatedOrderData.orderDetails.discount || 0)
       ).toFixed(2);
     } else {
-      // Atualiza campo de nível superior
       updatedOrderData[field] = value;
     }
 
@@ -141,8 +136,6 @@ const ModalCheckoutDetails = ({
         },
       });
       toast.success("Alterações salvas com sucesso!");
-
-      // Atualiza o contexto global
       updateCheckoutInContext({
         ...checkout,
         participants,
@@ -172,8 +165,8 @@ const ModalCheckoutDetails = ({
   const sendConfirmationEmail = async (participant, index) => {
     if (
       participant.qrRawData &&
-      (participant.qrRawData["2025-05-31"] ||
-        participant.qrRawData["2025-06-01"])
+      (participant.qrRawData["2026-05-31"] ||
+        participant.qrRawData["2026-06-01"])
     ) {
       toast.error(
         "Este participante já possui QR Codes. Apague-os antes de enviar o email de confirmação."
@@ -186,7 +179,7 @@ const ModalCheckoutDetails = ({
         checkoutId: checkout.id,
         from: EMAIL_FROM,
         to: participant.email,
-        subject: "Confirmação de Pagamento - Congresso Autismo MA 2025",
+        subject: "Confirmação de Pagamento - Congresso Autismo MA 2026",
         data: {
           name: participant.name,
           transactionId: checkout.transactionId,
@@ -253,7 +246,6 @@ const ModalCheckoutDetails = ({
     }
   };
 
-  // Função para obter o label do paymentMethod
   const getPaymentMethodLabel = (value) => {
     const method = paymentMethods.find((m) => m.value === value);
     return method
@@ -261,12 +253,78 @@ const ModalCheckoutDetails = ({
       : value.charAt(0).toUpperCase() + value.slice(1);
   };
 
-  // Função para obter o label do status
   const getStatusLabel = (value) => {
     const status = statusOptions.find((s) => s.value === value);
     return status
       ? status.label
       : value.charAt(0).toUpperCase() + value.slice(1);
+  };
+
+  const renderCertificateInfo = (participant) => {
+    const hasCertificateInfo =
+      participant.certificateIssued !== undefined ||
+      participant.certificateIssuedAt ||
+      (participant.certificateIssuedNames &&
+        participant.certificateIssuedNames.length > 0) ||
+      (participant.attempts && participant.attempts.length > 0) ||
+      participant.emittedOnDashboard !== undefined;
+
+    if (!hasCertificateInfo) return null;
+
+    return (
+      <Box sx={{ mt: 2 }}>
+        <Typography variant="h6" sx={{ color: "#666666", mb: 1 }}>
+          Informações do Certificado
+        </Typography>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+          {participant.certificateIssued !== undefined && (
+            <Typography sx={{ color: "#666666" }}>
+              <strong>Certificado Emitido:</strong>{" "}
+              {participant.certificateIssued ? "Sim" : "Não"}
+            </Typography>
+          )}
+          {participant.certificateIssuedAt && (
+            <Typography sx={{ color: "#666666" }}>
+              <strong>Data de Emissão:</strong>{" "}
+              {formatTimestamp(participant.certificateIssuedAt)}
+            </Typography>
+          )}
+          {participant.emittedOnDashboard !== undefined && (
+            <Typography sx={{ color: "#666666" }}>
+              <strong>Emitido no Dashboard:</strong>{" "}
+              {participant.emittedOnDashboard ? "Sim" : "Não"}
+            </Typography>
+          )}
+          {participant.certificateIssuedNames &&
+            participant.certificateIssuedNames.length > 0 && (
+              <Box>
+                <Typography sx={{ color: "#666666", fontWeight: 500, mb: 0.5 }}>
+                  Emissões do Certificado:
+                </Typography>
+                {participant.certificateIssuedNames.map((entry, idx) => (
+                  <Typography key={idx} sx={{ color: "#666666", ml: 2 }}>
+                    - Nome: {entry.name}, CPF: {entry.cpf}, Data:{" "}
+                    {formatTimestamp(entry.timestamp)}
+                  </Typography>
+                ))}
+              </Box>
+            )}
+          {participant.attempts && participant.attempts.length > 0 && (
+            <Box>
+              <Typography sx={{ color: "#666666", fontWeight: 500, mb: 0.5 }}>
+                Tentativas de Emissão:
+              </Typography>
+              {participant.attempts.map((attempt, idx) => (
+                <Typography key={idx} sx={{ color: "#666666", ml: 2 }}>
+                  - Nome: {attempt.name}, Data:{" "}
+                  {formatTimestamp(attempt.timestamp)}
+                </Typography>
+              ))}
+            </Box>
+          )}
+        </Box>
+      </Box>
+    );
   };
 
   return (
@@ -321,8 +379,19 @@ const ModalCheckoutDetails = ({
                     justifyContent: "space-between",
                   }}
                 >
-                  <Typography sx={{ color: "#333333", fontWeight: 600 }}>
-                    {p.name} {p.isHalfPrice ? "(Meia)" : ""}
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: p.certificateIssued ? "#2E7D32" : "#333333",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                    }}
+                  >
+                    {p.name}
+                    <Typography sx={{ fontSize: "1rem" }}>
+                      {p.certificateIssued && "(Certificado emitido)"}
+                    </Typography>
                   </Typography>
                 </Box>
               </AccordionSummary>
@@ -405,11 +474,13 @@ const ModalCheckoutDetails = ({
                     <Typography sx={{ color: "#666666" }}>
                       <strong>Número:</strong> {p.number || "Não informado"}
                     </Typography>
+                    {renderCertificateInfo(p)}
                   </Box>
                 )}
-                {p.qrRawData &&
-                p.qrRawData["2025-05-31"] &&
-                p.qrRawData["2025-06-01"] ? (
+                {p.qrRawData ? (
+                  // &&
+                  // p.qrRawData["2026-05-31"] &&
+                  // p.qrRawData["2026-06-01"] ?
                   <Box sx={{ mt: 2 }}>
                     <Typography sx={{ color: "#666666", fontWeight: 500 }}>
                       <strong>QR Codes:</strong>
@@ -417,19 +488,19 @@ const ModalCheckoutDetails = ({
                     <Box sx={{ display: "flex", gap: 2, mt: 1 }}>
                       <Box>
                         <Typography sx={{ color: "#666666" }}>
-                          31/05/2025
+                          31/05/2026
                         </Typography>
                         <QRCodeSVG
-                          value={p.qrRawData["2025-05-31"]}
+                          value={p.qrRawData["2026-05-31"]}
                           size={100}
                         />
                       </Box>
                       <Box>
                         <Typography sx={{ color: "#666666" }}>
-                          01/06/2025
+                          01/06/2026
                         </Typography>
                         <QRCodeSVG
-                          value={p.qrRawData["2025-06-01"]}
+                          value={p.qrRawData["2026-06-01"]}
                           size={100}
                         />
                       </Box>
@@ -653,7 +724,7 @@ const ModalCheckoutDetails = ({
                 {orderData.orderDetails.fullTickets > 0 && (
                   <Typography sx={{ color: "#666666" }}>
                     <strong>Inteiros:</strong>{" "}
-                    {orderData.orderDetails.fullTickets} (R${" "}
+                    {orderData.orderDetails.fullTickets} (R$
                     {orderData.orderDetails.valueTicketsAll})
                   </Typography>
                 )}
@@ -685,7 +756,7 @@ const ModalCheckoutDetails = ({
             )}
           </Box>
 
-          <Divider sx={{ mb: 3 }} />
+          <Divider sx={{ my: 3 }} />
 
           <Typography
             variant="h6"

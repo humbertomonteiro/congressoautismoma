@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { db } from "../../../../../firebaseConfig";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, where, query } from "firebase/firestore";
 import axios from "axios";
 import { toast } from "react-toastify";
 import {
@@ -44,19 +44,21 @@ const ManualAuth = () => {
     setCpf(formattedCpf);
   };
 
-  // Função para buscar participante por CPF
+  // Função para buscar participante por CPF ou documento
   const fetchParticipantByCpf = async () => {
     try {
-      const cleanCpf = cpf.replace(/[^\d]/g, "");
+      const cleanCpf = cpf.replace(/[^\d]/g, "").trim();
       if (cleanCpf.length !== 11) {
         throw new Error("CPF inválido. Deve conter 11 dígitos.");
       }
 
       setLoading(true);
       setErrorMessage("");
-      console.log(`Buscando participante para CPF: ${cleanCpf}`);
+      console.log(`Buscando participante para identificador: ${cleanCpf}`);
       const checkoutsRef = collection(db, "checkouts");
-      const snapshot = await getDocs(checkoutsRef);
+      // Adiciona query para filtrar apenas checkouts com status "approved"
+      const q = query(checkoutsRef, where("status", "==", "approved"));
+      const snapshot = await getDocs(q);
 
       let matchingCheckout = null;
       let matchingParticipant = null;
@@ -66,13 +68,20 @@ const ManualAuth = () => {
         const participant = checkout.participants?.find((p) => {
           const participantCpf =
             p.cpf && typeof p.cpf === "string"
-              ? p.cpf.replace(/[^\d]/g, "")
+              ? p.cpf.replace(/[^\d]/g, "").trim()
               : null;
-          return participantCpf === cleanCpf;
+          const participantDocument =
+            p.document && typeof p.document === "string"
+              ? p.document.replace(/[^\d]/g, "").trim()
+              : null;
+          return (
+            participantCpf === cleanCpf || participantDocument === cleanCpf
+          );
         });
         if (participant) {
           console.log(
-            `Participante encontrado: ${participant.name} no checkout ${doc.id}`
+            `Participante encontrado: ${participant.name} no checkout ${doc.id}`,
+            { foundBy: participant.cpf ? "cpf" : "document" }
           );
           matchingCheckout = checkout;
           matchingParticipant = participant;
@@ -81,6 +90,9 @@ const ManualAuth = () => {
       }
 
       if (!matchingParticipant) {
+        console.log(
+          "Nenhum participante encontrado para este CPF ou documento."
+        );
         throw new Error("Nenhum participante encontrado para este CPF.");
       }
 
@@ -198,32 +210,32 @@ const ManualAuth = () => {
                 <strong>Validar Ingresso:</strong>
               </Typography>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                {participant.qrRawData?.["2025-05-31"] && (
+                {participant.qrRawData?.["2026-05-31"] && (
                   <Button
                     variant="outlined"
                     onClick={() =>
                       handleValidateClick(
-                        "2025-05-31",
-                        participant.qrRawData["2025-05-31"]
+                        "2026-05-31",
+                        participant.qrRawData["2026-05-31"]
                       )
                     }
                     disabled={loading}
                   >
-                    Validar para 31/05/2025
+                    Validar para 31/05/2026
                   </Button>
                 )}
-                {participant.qrRawData?.["2025-06-01"] && (
+                {participant.qrRawData?.["2026-06-01"] && (
                   <Button
                     variant="outlined"
                     onClick={() =>
                       handleValidateClick(
-                        "2025-06-01",
-                        participant.qrRawData["2025-06-01"]
+                        "2026-06-01",
+                        participant.qrRawData["2026-06-01"]
                       )
                     }
                     disabled={loading}
                   >
-                    Validar para 01/06/2025
+                    Validar para 01/06/2026
                   </Button>
                 )}
               </Box>

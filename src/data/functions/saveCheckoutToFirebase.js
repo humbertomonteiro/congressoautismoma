@@ -32,7 +32,7 @@ export const saveCheckoutToFirebase = async (result) => {
             ? {
                 qrCodeBase64: result.qrCode,
                 qrCodeString: result.qrCodeString,
-                expirationDate: result.expirationDate || "2025-12-31T23:59:59Z",
+                expirationDate: result.expirationDate || "2026-12-31T23:59:59Z",
               }
             : null,
         boleto:

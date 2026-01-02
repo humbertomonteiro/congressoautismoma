@@ -29,7 +29,7 @@ const CheckoutCard = ({ checkout, isMobile }) => {
     const formattedPhone = cleanPhone.startsWith("55")
       ? cleanPhone
       : `55${cleanPhone}`;
-    const message = `Olá! Vi que houve uma tentativa de pagamento via ${paymentMethod} no Congresso Autismo MA 2025. Podemos ajudar com algo?`;
+    const message = `Olá! Vi que houve uma tentativa de pagamento via ${paymentMethod} no Congresso Autismo MA 2026. Podemos ajudar com algo?`;
     const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(
       message
     )}`;

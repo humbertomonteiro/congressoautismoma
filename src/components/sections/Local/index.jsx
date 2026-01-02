@@ -35,7 +35,6 @@ const Local = () => {
               <ul>
                 <li>Com 1 grande palco na Expo</li>
                 <li>⁠Stands na área secundária</li>
-                <li>Coffe break</li>
                 <li>⁠Opção de almoço buffet no local</li>
                 <li>Comodidade para hospedagem</li>
                 <li>⁠Fácil acesso</li>
@@ -49,10 +48,11 @@ const Local = () => {
               </ul>
               <ButtonSecondary
                 action={"link"}
-                link={"#tickets"}
+                link="#tickets"
                 onClick={handleViewItem}
               >
                 COMPRAR INGRESSO
+                {/* INGRESSOS ESGOTADOS */}
               </ButtonSecondary>
             </div>
             <div className={styles.map}>
