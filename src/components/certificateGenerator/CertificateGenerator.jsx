@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Box, Container } from "@mui/material";
-import CertificateService from "../../data/services/CertificateService";
+import CertificateService from "../../data/services/certificateService";
 import PdfService from "../../data/services/PdfService";
 import AttemptsService from "../../data/services/AttemptsService";
 import CertificateForm from "./CertificateForm";
