@@ -47,7 +47,7 @@ const Item1 = ({ wpp, openChatbot }) => {
         <span>Ingresso</span>
         <h4>INDIVIDUAL - PRÉ-VENDA</h4>
         <h5>Disponível até:</h5>
-        <p>30/01/2026 ou enquanto durar</p>
+        <p>30/01 ou enquanto durar</p>
       </div>
       <div className={styles.boxValue}>
         {/* <span>
@@ -118,7 +118,7 @@ const Item2 = ({ wpp, openChatbot }) => {
         <span>Ingresso</span>
         <h4>Ingresso GRUPO</h4>
         <h5>Disponível até:</h5>
-        <p>30/05 ou enquanto durar</p>
+        <p>30/01 ou enquanto durar</p>
         <p>Compre no mínimo 5 ingressos para ter desconto.</p>
       </div>
       <div className={styles.boxValue}>
@@ -191,19 +191,19 @@ const ItemHalf = ({ wpp, openChatbot }) => {
     <div className={styles.box} data-active="true">
       <div className={styles.boxContent}>
         <span>Ingresso</span>
-        <h4>Ingresso MEIA-ENTRADA</h4>
+        <h4>MEIA-ENTRADA - PRÉ-VENDA</h4>
         <h5>Disponível até:</h5>
-        <p>30/05 ou enquanto durar</p>
+        <p>30/01 ou enquanto durar</p>
         <p>
           Lembre-se: os documentos comprobatórios devem ser apresentados na
           entrada do evento.
         </p>
       </div>
       <div className={styles.boxValue}>
-        <span>50% de R$ 798,00:</span>
-        <h4>R$ 399,00</h4>
+        {/* <span>50% de R$ 798,00:</span> */}
+        <h4>R$ 144,50</h4>
         <h3>
-          ou <strong>10X de R$ 39,90</strong>
+          ou <strong>10X de R$ 14,45</strong>
         </h3>
         <h5>Veja se você se encaixa na meia entrada:</h5>
         <ul>

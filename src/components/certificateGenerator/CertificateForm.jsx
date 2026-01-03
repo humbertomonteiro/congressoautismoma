@@ -72,7 +72,7 @@ const CertificateForm = ({
         sx={{ color: "#333333", fontWeight: 500, mb: 2, borderRadius: "12px" }}
       >
         {windowLocation !== "/dashboard"
-          ? "Emita seu Certificado - Congresso Autismo MA 2026"
+          ? "Emita seu Certificado - Congresso Autismo MA 2025"
           : "Emitir Certificado"}
       </Typography>
       {windowLocation !== "/dashboard" && (
@@ -83,7 +83,7 @@ const CertificateForm = ({
             lineHeight: 1.6,
           }}
         >
-          Foi um prazer tê-lo no Congresso Autismo MA 2026! Preencha os campos
+          Foi um prazer tê-lo no Congresso Autismo MA 2025! Preencha os campos
           abaixo para gerar seu certificado de 30 horas. <br />
           <strong>O nome completo é indispensável.</strong>
         </Typography>

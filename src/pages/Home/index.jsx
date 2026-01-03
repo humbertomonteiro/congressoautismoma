@@ -19,7 +19,7 @@ import CertificateHome from "../../components/certificateGenerator/CertificateHo
 
 import { useState, useEffect } from "react";
 import ButtonWhatsapp from "../../components/sections/ButtonWhatsapp";
-import Timeline from "../../components/sections/Timeline";
+// import Timeline from "../../components/sections/Timeline";
 
 const Home = ({ wpp }) => {
   const [visibleItems, setVisibleItems] = useState(4);
@@ -50,19 +50,19 @@ const Home = ({ wpp }) => {
       <Header />
       <OurMission />
       <Tickets wpp={wpp} />
-      <CarouselSimple
+      {/* <CarouselSimple
         slides={itemsSpeakers}
         numberSlidesView={visibleItems - 1}
         textTitle="Conheça nossos palestrantes"
-      />
+      /> */}
       <PrivilegeOfParticipating />
       <Testimonials />
       <CarouselScrollInfinit />
       {/* <HalfiPrice wpp={wpp} /> */}
       <Support />
-      <Timeline />
+      {/* <Timeline /> */}
       <BeSupport />
-      <Local />
+      {/* <Local /> */}
       <CertificateHome />
       <Questions />
       <Politic />

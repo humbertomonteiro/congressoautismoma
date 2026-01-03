@@ -341,7 +341,7 @@ const PaymentForm = () => {
                 <strong>
                   Total: R${" "}
                   {typeTicket === "half" && formState.ticketQuantity <= 1
-                    ? "399,00"
+                    ? "144,50"
                     : totals.total}
                 </strong>
                 {formState.coupon.isApplied && (
@@ -436,28 +436,29 @@ const PaymentForm = () => {
                         <span className={styles.error}>{documentError}</span>
                       )}
                     </label>
-                    {typeTicket === "half" && formState.ticketQuantity >= 2 && (
-                      <label className={styles.toggleLabel}>
-                        <p>Meia entrada?</p>
-                        <div
-                          className={`${styles.toggle} ${
-                            currentParticipant.isHalfPrice
-                              ? styles.toggleActive
-                              : ""
-                          }`}
-                          onClick={() =>
-                            handleParticipantChange(
-                              "isHalfPrice",
-                              !currentParticipant.isHalfPrice
-                            )
-                          }
-                        >
-                          <span>
-                            {currentParticipant.isHalfPrice ? "Sim" : "Não"}
-                          </span>
-                        </div>
-                      </label>
-                    )}
+                    {/* {typeTicket === "half" ||
+                      (formState.ticketQuantity >= 2 && ( */}
+                    <label className={styles.toggleLabel}>
+                      <p>Meia entrada?</p>
+                      <div
+                        className={`${styles.toggle} ${
+                          currentParticipant.isHalfPrice
+                            ? styles.toggleActive
+                            : ""
+                        }`}
+                        onClick={() =>
+                          handleParticipantChange(
+                            "isHalfPrice",
+                            !currentParticipant.isHalfPrice
+                          )
+                        }
+                      >
+                        <span>
+                          {currentParticipant.isHalfPrice ? "Sim" : "Não"}
+                        </span>
+                      </div>
+                    </label>
+                    {/* ))} */}
                     {formState.ticketQuantity > 1 && (
                       <button
                         type="submit"
@@ -514,12 +515,12 @@ const PaymentForm = () => {
                   Ingressos {formState.ticketQuantity - formState.halfTickets} x{" "}
                   {basePrice}
                 </p>
-                {/* {formState.halfTickets > 0 && (
+                {formState.halfTickets > 0 && (
                   <p>
                     Ingressos meia: {formState.halfTickets} x R${" "}
                     {totals.valueTicketsHalf}
                   </p>
-                )} */}
+                )}
                 {formState.coupon.isApplied && (
                   <p>
                     Desconto ({formState.coupon.code}): R$ {totals.discount}

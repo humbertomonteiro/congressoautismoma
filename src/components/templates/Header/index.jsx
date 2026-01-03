@@ -33,7 +33,7 @@ const Header = () => {
           <span>Caminhos Para Inclusão</span>
         </div>
         <h1>Terceira edição do Congresso!</h1>
-        <h2 className={styles.date}>31/05 e 01/06/2026 em São Luís - MA</h2>
+        <h2 className={styles.date}>16/05 e 17/05/2026 em São Luís - MA</h2>
         <p>
           Junte-se a especialistas, profissionais da saúde e educadores em um
           encontro dedicado à conscientização e troca de conhecimento.
