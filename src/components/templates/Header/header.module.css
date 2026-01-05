@@ -92,7 +92,7 @@
     background-position: center bottom;
     .content {
       & .logo {
-        width: 250px;
+        width: 320px;
         margin-top: 4.75rem;
 
         & strong,
