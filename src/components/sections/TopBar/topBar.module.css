@@ -3,7 +3,7 @@
   top: 0;
   left: 0;
   right: 0;
-  background-color: var(--color-2);
+  background-color: var(--color-4);
   color: var(--text-light);
   z-index: 4;
   display: flex;
@@ -14,7 +14,7 @@
 
   & a,
   button {
-    background-color: var(--button-primary);
+    background-color: var(--color-2);
     color: var(--text-light);
     font-weight: bold;
     font-size: 0.8rem;
@@ -33,7 +33,7 @@
 
   & a:hover,
   button:hover {
-    background-color: var(--button-primary-hover);
+    background-color: var(--color-1);
     border: none;
   }
 }

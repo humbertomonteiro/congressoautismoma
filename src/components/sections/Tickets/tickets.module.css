@@ -60,7 +60,7 @@
       }
 
       & .boxContent {
-        background-color: var(--color-2);
+        background-color: var(--color-4);
         width: 100%;
         padding: 1rem;
         border-radius: 1.5rem 1.5rem 0 0;
@@ -232,15 +232,14 @@
 }
 
 .highlightText {
-  background: #e91e63;
+  background: var(--color-4);
   color: #ffffff;
   padding: 8px 16px;
   border-radius: 14px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   font-family: "Poppins", "Segoe UI Emoji", "Arial", sans-serif;
-  font-weight: 700;
   /* font-size: 1.2rem; */
-  max-width: 90%;
+  max-width: 100%;
   /* text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); */
   animation: zoomInOut 2s ease-in-out infinite; /* Animação de zoom */
   transition: transform 0.3s ease, box-shadow 0.3s ease;

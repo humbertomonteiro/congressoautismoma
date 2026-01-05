@@ -29,10 +29,10 @@ const Header = () => {
       <div className={styles.content}>
         <div className={styles.logo}>
           <img src={logo} alt="Logo Salud" />
-          <strong>Neurodiversidade em foco:</strong>
-          <span>Caminhos Para Inclusão</span>
+          {/* <strong>Neurodiversidade em foco:</strong>
+          <span>Caminhos Para Inclusão</span> */}
         </div>
-        <h1>Terceira edição do Congresso!</h1>
+        <h1>Quarta edição do Congresso!</h1>
         <h2 className={styles.date}>16/05 e 17/05/2026 em São Luís - MA</h2>
         <p>
           Junte-se a especialistas, profissionais da saúde e educadores em um

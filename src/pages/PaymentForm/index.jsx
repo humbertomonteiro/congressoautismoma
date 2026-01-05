@@ -438,7 +438,7 @@ const PaymentForm = () => {
                     </label>
                     {/* {typeTicket === "half" ||
                       (formState.ticketQuantity >= 2 && ( */}
-                    <label className={styles.toggleLabel}>
+                    {/* <label className={styles.toggleLabel}>
                       <p>Meia entrada?</p>
                       <div
                         className={`${styles.toggle} ${
@@ -457,7 +457,7 @@ const PaymentForm = () => {
                           {currentParticipant.isHalfPrice ? "Sim" : "Não"}
                         </span>
                       </div>
-                    </label>
+                    </label> */}
                     {/* ))} */}
                     {formState.ticketQuantity > 1 && (
                       <button

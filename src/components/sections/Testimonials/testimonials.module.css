@@ -1,5 +1,5 @@
 .container {
-  background-image: var(--gradient-3),
+  background-image: var(--gradient-1),
     url("https://img.freepik.com/vetores-gratis/fundo-branco-monocromatico-de-estilo-de-papel_52683-66443.jpg?t=st=1738973798~exp=1738977398~hmac=9a001b97a58ff861d8d55d547aa48e26ecf2397c0459c88f75d1430f7c03ce99&w=740");
   background-size: cover;
   background-position: center;
@@ -34,7 +34,7 @@
           right: -1rem;
           top: -1rem;
           font-size: 4rem;
-          color: var(--color-1);
+          color: var(--color-2);
         }
 
         & .stars {

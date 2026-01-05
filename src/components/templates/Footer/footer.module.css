@@ -6,7 +6,7 @@
 
   & .infos {
     display: grid;
-    grid-template-columns: 29% 40% 29%;
+    grid-template-columns: 1fr 1fr 1fr;
     place-items: center;
     gap: 1rem;
     background-color: var(--gray);
@@ -22,7 +22,7 @@
       }
 
       & .logo {
-        width: 50%;
+        width: 80%;
       }
 
       & .links {

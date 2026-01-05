@@ -1,10 +1,10 @@
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
 
 :root {
-  --color-1: #05b49c;
-  --color-2: #e91e63;
+  --color-1: #95c122;
+  --color-2: #ef7a37;
   --color-3: #ffd26a;
-  --color-4: #7c22dd98;
+  --color-4: #134183;
   --color-5: #fcfcfce5;
 
   --text-light: #ffffff;
@@ -21,7 +21,7 @@
 
   --font-1: "Montserrat";
 
-  --gradient-1: linear-gradient(135deg, #05b49c, #7d22dd);
+  --gradient-1: linear-gradient(135deg, #05b49dc4, #7c22ddd0);
   --gradient-2: linear-gradient(135deg, #ff4f8acc, #ffd26ac2);
   --gradient-3: linear-gradient(135deg, #05b49ddc, #ff4f8adc);
 
@@ -45,7 +45,7 @@ body {
 
 .bubbles {
   /* url("./assets/bg/event.png") */
-  background-image: linear-gradient(135deg, #c40f4bef, #3a4cb4de);
+  background-image: linear-gradient(135deg, var(--color-4), #ef7a3785);
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
