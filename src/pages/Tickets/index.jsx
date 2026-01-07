@@ -60,8 +60,12 @@ const Tickets = () => {
       );
       const checkoutsRef = collection(db, "checkouts");
       // Adiciona query para filtrar apenas checkouts com status "approved"
-      const q = query(checkoutsRef, where("status", "==", "approved"));
-      const snapshot = await getDocs(q); // Usa a query em vez de getDocs(checkoutsRef)
+      const q = query(
+        checkoutsRef,
+        where("status", "==", "approved"),
+        where("eventName", "==", "Congresso Autismo MA 2026")
+      );
+      const snapshot = await getDocs(q);
       console.log(`Total de checkouts aprovados encontrados: ${snapshot.size}`);
 
       let matchingCheckout = null;
@@ -116,8 +120,8 @@ const Tickets = () => {
     setLoading(true);
     try {
       console.log("Gerando PDF para participante:", participantData);
-      const qrRawDataDay1 = participantData.qrRawData?.["2026-05-31"];
-      const qrRawDataDay2 = participantData.qrRawData?.["2026-06-01"];
+      const qrRawDataDay1 = participantData.qrRawData?.["2026-05-16"];
+      const qrRawDataDay2 = participantData.qrRawData?.["2026-05-17"];
 
       if (!qrRawDataDay1 || !qrRawDataDay2) {
         console.log("qrRawData ausente:", { qrRawDataDay1, qrRawDataDay2 });
@@ -365,18 +369,18 @@ const Tickets = () => {
                 NOME: {participant?.name?.toUpperCase() || ""}
               </div>
               <div style={{ fontSize: "10px", marginBottom: "5px" }}>
-                DATA: 31.05.2026
+                DATA: 16.05.2026
               </div>
-              <div style={{ fontSize: "10px", marginBottom: "5px" }}>
+              {/* <div style={{ fontSize: "10px", marginBottom: "5px" }}>
                 LOCAL: CENTRO DE CONVENÇÕES MA
-              </div>
+              </div> */}
               <div style={{ fontSize: "10px" }}>HORÁRIO: 08:00 - 18:00</div>
             </div>
             <div style={{ width: "113px", height: "113px" }}>
               {participant && participant.qrRawData && (
                 <QRCodeSVG
                   id="qrCode1"
-                  value={participant.qrRawData["2026-05-31"] || ""}
+                  value={participant.qrRawData["2026-05-16"] || ""}
                   size={113}
                   level="H"
                 />
@@ -416,18 +420,18 @@ const Tickets = () => {
                 NOME: {participant?.name?.toUpperCase() || ""}
               </div>
               <div style={{ fontSize: "10px", marginBottom: "5px" }}>
-                DATA: 01.06.2026
+                DATA: 17.05.2026
               </div>
-              <div style={{ fontSize: "10px", marginBottom: "5px" }}>
+              {/* <div style={{ fontSize: "10px", marginBottom: "5px" }}>
                 LOCAL: CENTRO DE CONVENÇÕES MA
-              </div>
+              </div> */}
               <div style={{ fontSize: "10px" }}>HORÁRIO: 08:00 - 18:00</div>
             </div>
             <div style={{ width: "113px", height: "113px" }}>
               {participant && participant.qrRawData && (
                 <QRCodeSVG
                   id="qrCode2"
-                  value={participant.qrRawData["2026-06-01"] || ""}
+                  value={participant.qrRawData["2026-05-17"] || ""}
                   size={113}
                   level="H"
                 />

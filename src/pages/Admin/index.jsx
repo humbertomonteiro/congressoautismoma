@@ -25,8 +25,8 @@ import logo from "../../assets/logos/logo-no-text.png";
 import DashboardSection from "../../components/admin/dashboard/DashboardSection";
 import EmailSection from "../../components/admin/email/EmailSection";
 import AddManualPayment from "../../components/admin/dashboard/AddManualPayment";
-// import CertificateContainer from "../../components/certificateGenerator/CertificateContainer";
-// import Scanner from "../../components/admin/Scanner";
+import CertificateContainer from "../../components/certificateGenerator/CertificateContainer";
+import Scanner from "../../components/admin/Scanner";
 
 import { DashboardProvider } from "../../data/contexts/DashboardContext";
 
@@ -88,7 +88,7 @@ const AdminDashboard = () => {
           <ListItemText primary="Add Checkout" />
         </ListItem>
 
-        {/* <ListItem
+        <ListItem
           button
           className={`${styles.navItem} ${
             activeSection === "certificate-generator" ? styles.active : ""
@@ -99,9 +99,9 @@ const AdminDashboard = () => {
             <IoBagCheckOutline />
           </ListItemIcon>
           <ListItemText primary="Certificados" />
-        </ListItem> */}
+        </ListItem>
 
-        {/* <ListItem
+        <ListItem
           button
           className={`${styles.navItem} ${
             activeSection === "accreditation" ? styles.active : ""
@@ -112,7 +112,7 @@ const AdminDashboard = () => {
             <MdOutlineQrCode />
           </ListItemIcon>
           <ListItemText primary="Credenciamento" />
-        </ListItem> */}
+        </ListItem>
 
         <ListItem className={styles.navItem} data-exit="true">
           <ListItemIcon onClick={logout}>
@@ -179,10 +179,10 @@ const AdminDashboard = () => {
           {activeSection === "dashboard" && <DashboardSection />}
           {activeSection === "checkout-manual" && <AddManualPayment />}
           {activeSection === "emails" && <EmailSection />}
-          {/* {activeSection === "certificate-generator" && (
+          {activeSection === "certificate-generator" && (
             <CertificateContainer />
-          )} */}
-          {/* {activeSection === "accreditation" && <Scanner />} */}
+          )}
+          {activeSection === "accreditation" && <Scanner />}
         </Box>
       </Box>
     </DashboardProvider>

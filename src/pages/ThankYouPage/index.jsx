@@ -104,7 +104,7 @@ const ThankYouPage = ({ totalValue }) => {
             <strong>Valor Total:</strong> R$ {formattedTotal}
           </p>
           <p>
-            <strong>Data do Evento:</strong> 31 de maio e 1º de junho de 2026
+            <strong>Data do Evento:</strong> 16 e 17 de maio de 2026
           </p>
           {!isCreditCard && (
             <>

@@ -165,8 +165,8 @@ const ModalCheckoutDetails = ({
   const sendConfirmationEmail = async (participant, index) => {
     if (
       participant.qrRawData &&
-      (participant.qrRawData["2026-05-31"] ||
-        participant.qrRawData["2026-06-01"])
+      (participant.qrRawData["2026-05-16"] ||
+        participant.qrRawData["2026-05-17"])
     ) {
       toast.error(
         "Este participante já possui QR Codes. Apague-os antes de enviar o email de confirmação."
@@ -488,19 +488,19 @@ const ModalCheckoutDetails = ({
                     <Box sx={{ display: "flex", gap: 2, mt: 1 }}>
                       <Box>
                         <Typography sx={{ color: "#666666" }}>
-                          31/05/2026
+                          16/05/2026
                         </Typography>
                         <QRCodeSVG
-                          value={p.qrRawData["2026-05-31"]}
+                          value={p.qrRawData["2026-05-16"]}
                           size={100}
                         />
                       </Box>
                       <Box>
                         <Typography sx={{ color: "#666666" }}>
-                          01/06/2026
+                          17/05/2026
                         </Typography>
                         <QRCodeSVG
-                          value={p.qrRawData["2026-06-01"]}
+                          value={p.qrRawData["2026-05-17"]}
                           size={100}
                         />
                       </Box>

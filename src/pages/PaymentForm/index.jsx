@@ -185,25 +185,25 @@ const PaymentForm = () => {
     setCreditCardData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const fetchAddressFromCep = async (cep) => {
-    try {
-      const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
-      if (!response.data.erro) {
-        setSelectedPayer((prev) => ({
-          ...prev,
-          street: response.data.logradouro,
-          district: response.data.bairro,
-          city: response.data.localidade,
-          state: response.data.uf,
-        }));
-        setCepError("");
-      } else {
-        setCepError("CEP não encontrado.");
-      }
-    } catch (error) {
-      setCepError("Erro ao buscar o CEP.");
-    }
-  };
+  // const fetchAddressFromCep = async (cep) => {
+  //   try {
+  //     const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
+  //     if (!response.data.erro) {
+  //       setSelectedPayer((prev) => ({
+  //         ...prev,
+  //         street: response.data.logradouro,
+  //         district: response.data.bairro,
+  //         city: response.data.localidade,
+  //         state: response.data.uf,
+  //       }));
+  //       setCepError("");
+  //     } else {
+  //       setCepError("CEP não encontrado.");
+  //     }
+  //   } catch (error) {
+  //     setCepError("Erro ao buscar o CEP.");
+  //   }
+  // };
 
   const nextStep = () => {
     let automaticallyAddedParticipant = false;
