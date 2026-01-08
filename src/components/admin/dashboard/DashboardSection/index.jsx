@@ -11,7 +11,7 @@ import {
 import styles from "./dashboardSection.module.css";
 // import Loading from "../../../shared/Loading";
 import Filters from "../Filters";
-// import Metrics from "../Metrics";
+import Metrics from "../Metrics";
 import StatusGrafic from "../StatusGrafic";
 import CheckoutListCards from "../CheckoutListCards";
 import { useDashboard } from "../../../../data/contexts/DashboardContext";
@@ -72,13 +72,13 @@ const DashboardSection = () => {
           Atualizar Métricas
         </Button>
       </Box>
-      {/* 
+
       <Metrics
         metrics={metrics}
         formatToBrazilianCurrency={formatToBrazilianCurrency}
-      /> */}
+      />
 
-      {/* <Box
+      <Box
         sx={{
           display: "flex",
           alignItems: "flex-end",
@@ -152,7 +152,7 @@ const DashboardSection = () => {
             </Box>
           </Card>
         </Box>
-      </Box> */}
+      </Box>
 
       {!isMobile && (
         <Card
