@@ -84,10 +84,11 @@ const Item1 = ({ wpp, openChatbot }) => {
                 // link="https://api.whatsapp.com/send?phone=5598991058908&text=Olá!%20Gostaria%20de%20comprar%20ingresso"
                 // target="_blank"
                 // action="button"
-                // disabled={true}
+                disabled={true}
               >
-                Comprar Ingresso
+                {/* Comprar Ingresso */}
                 {/* INGRESSOS ESGOTADOS */}
+                EM BREVE
                 <IoTicketOutline style={{ fontSize: "1.2rem" }} />
               </ButtonSecondary>
             ) : (
