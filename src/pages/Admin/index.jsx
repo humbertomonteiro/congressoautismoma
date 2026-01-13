@@ -114,8 +114,8 @@ const AdminDashboard = () => {
           <ListItemText primary="Credenciamento" />
         </ListItem>
 
-        <ListItem className={styles.navItem} data-exit="true">
-          <ListItemIcon onClick={logout}>
+        <ListItem onClick={logout} className={styles.navItem} data-exit="true">
+          <ListItemIcon>
             <IoExitOutline />
           </ListItemIcon>
           <ListItemText primary="Sair" />

@@ -10,6 +10,7 @@ import {
   setDoc,
   where,
   Timestamp,
+  // limit,
 } from "firebase/firestore";
 import PaymentService from "../services/PaymentService";
 import { toast } from "react-toastify";
@@ -219,6 +220,7 @@ const useDashboardData = () => {
         const snapshot = await getDocs(
           query(
             collection(db, "checkouts"),
+            // limit(6),
             where("eventName", "==", "Congresso Autismo MA 2026"),
             orderBy("timestamp", "desc")
           )
@@ -439,7 +441,7 @@ const useDashboardData = () => {
     chartData,
     formatToBrazilianCurrency,
     loadInitialData,
-    errorMessage, // Retorna a mensagem de erro para o componente
+    errorMessage,
   };
 };
 

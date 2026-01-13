@@ -15,7 +15,10 @@ const Footer = () => {
         <div className={styles.info}>
           <h3>Contato</h3>
           <div className={styles.links}>
-            <a href="https://www.instagram.com/educandar_/" target="_blank">
+            <a
+              href="https://www.instagram.com/saludcuidarmais/"
+              target="_blank"
+            >
               Instagram <FaInstagram />
             </a>
             <a
@@ -27,7 +30,12 @@ const Footer = () => {
           </div>
         </div>
         <div className={styles.info}>
-          <img src={logoTel} alt="Realização do projeto" />
+          <h3>Realização</h3>
+          <img
+            className={styles.img2}
+            src={logoTel}
+            alt="Realização do projeto"
+          />
         </div>
       </div>
       <div className={styles.copy}>

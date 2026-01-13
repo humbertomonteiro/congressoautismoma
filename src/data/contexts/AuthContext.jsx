@@ -57,10 +57,12 @@ export default function AuthProvider({ children }) {
   }
 
   async function logout() {
+    console.log("clicou");
     try {
       const authentication = new FirebaseAuth();
       await authentication.logout();
       setUser(null);
+      console.log("deslogado");
       navigate("/login");
     } catch (error) {
       console.log("Error ao deslogar, " + error);

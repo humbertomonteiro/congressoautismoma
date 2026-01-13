@@ -21,6 +21,10 @@
         margin: auto;
       }
 
+      & .img2 {
+        width: 60%;
+      }
+
       & .logo {
         width: 80%;
       }

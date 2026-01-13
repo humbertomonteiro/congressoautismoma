@@ -59,11 +59,11 @@ const Home = ({ wpp }) => {
       <Testimonials />
       <CarouselScrollInfinit />
       {/* <HalfiPrice wpp={wpp} /> */}
-      <Support />
+      {/* <Support /> */}
       {/* <Timeline /> */}
       <BeSupport />
       {/* <Local /> */}
-      <CertificateHome />
+      {/* <CertificateHome /> */}
       <Questions />
       <Politic />
       <Footer />

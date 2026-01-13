@@ -50,9 +50,9 @@ const Item1 = ({ wpp, openChatbot }) => {
         <p>30/01 ou enquanto durar</p>
       </div>
       <div className={styles.boxValue}>
-        {/* <span>
-          De <s>R$ 798,00</s> por:
-        </span> */}
+        <span>
+          De <s>R$ 797,00</s> por:
+        </span>
         <h4>R$ 289,00</h4>
         <h3>
           ou <strong>10X de R$ 28,90</strong>

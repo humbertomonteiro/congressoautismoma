@@ -42,8 +42,10 @@ const BeSupport = () => {
 
           <div className={styles.info}>
             <p>
-              Para informações sobre valores fale com nossa equipe : (98)
-              99113-1020 /(98) 98164-4714 .
+              Para informações sobre valores fale com nossa equipe:
+              {/* (98)
+              99113-1020 / */}{" "}
+              (98) 98164-4714 .
             </p>
           </div>
         </div>

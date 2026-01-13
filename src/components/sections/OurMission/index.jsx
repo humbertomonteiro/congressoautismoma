@@ -3,8 +3,8 @@ import Section from "../../shared/Section";
 import ButtonSecondary from "../../shared/ButtonSecondary";
 import { FaArrowDown } from "react-icons/fa";
 
-import img1 from "../../../assets/events/foto-1.jpeg";
-import img2 from "../../../assets/events/foto-2.jpeg";
+// import img1 from "../../../assets/events/foto-1.jpeg";
+// import img2 from "../../../assets/events/foto-2.jpeg";
 import img3 from "../../../assets/events/event-1.jpg";
 import img4 from "../../../assets/events/event-2.jpg";
 import img5 from "../../../assets/events/event-3.jpg";
@@ -60,12 +60,12 @@ const OurMission = () => {
             modules={[EffectFlip, Pagination, Navigation, Autoplay]}
             className="mySwiper"
           >
-            <SwiperSlide>
+            {/* <SwiperSlide>
               <img src={img1} alt="Imagem do evento" />
             </SwiperSlide>
             <SwiperSlide>
               <img src={img2} alt="Imagem do evento" />
-            </SwiperSlide>
+            </SwiperSlide> */}
             <SwiperSlide>
               <img src={img3} alt="Imagem do evento" />
             </SwiperSlide>
