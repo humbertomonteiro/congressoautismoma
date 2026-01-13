@@ -32,6 +32,8 @@ const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
     endDateFilter,
     attendedFilter,
     setAttendedFilter,
+    eventFilter,
+    setEventFilter,
     setEndDateFilter,
   } = useDashboard();
 
@@ -88,6 +90,19 @@ const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
           flexDirection: isMobile ? "column" : "row",
         }}
       >
+        <FormControl fullWidth>
+          <InputLabel sx={{ color: "#666666" }}>Evento</InputLabel>
+          <Select
+            value={eventFilter}
+            onChange={(e) => setEventFilter(e.target.value)}
+            label="Método"
+            sx={{ borderRadius: "10px" }}
+          >
+            <MenuItem value="">{eventFilter}</MenuItem>
+            <MenuItem value="Congresso Autismo MA 2025">2025</MenuItem>
+            <MenuItem value="Congresso Autismo MA 2026">2026</MenuItem>
+          </Select>
+        </FormControl>
         <FormControl fullWidth>
           <InputLabel sx={{ color: "#666666" }}>Status</InputLabel>
           <Select

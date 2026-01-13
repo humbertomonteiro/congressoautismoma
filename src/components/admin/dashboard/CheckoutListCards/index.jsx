@@ -113,8 +113,11 @@ const CheckoutListCards = ({
   setOpenFiltersDrawer,
   openFiltersDrawer,
 }) => {
-  const { filteredCheckouts: allFilteredCheckouts, filteredMetrics } =
-    useDashboard();
+  const {
+    filteredCheckouts: allFilteredCheckouts,
+    filteredMetrics,
+    loadMoreCheckouts,
+  } = useDashboard();
   const [page, setPage] = useState(0);
   const [rowsPerPage] = useState(6);
   const [paginatedCheckouts, setPaginatedCheckouts] = useState([]);
@@ -1002,8 +1005,9 @@ const CheckoutListCards = ({
               Página {page + 1} de {totalPages}
             </Typography>
             <Button
-              disabled={page + 1 >= totalPages}
-              onClick={() => handleChangePage(page + 1)}
+              // disabled={page + 1 >= totalPages}
+              // onClick={() => handleChangePage(page + 1)}
+              onClick={() => loadMoreCheckouts()}
               sx={{
                 color: "#1976D2",
                 "&:hover": { color: "#1565C0" },

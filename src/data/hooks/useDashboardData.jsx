@@ -10,7 +10,8 @@ import {
   setDoc,
   where,
   Timestamp,
-  // limit,
+  limit,
+  startAfter,
 } from "firebase/firestore";
 import PaymentService from "../services/PaymentService";
 import { toast } from "react-toastify";
@@ -34,13 +35,14 @@ const useDashboardData = () => {
   const [startDateFilter, setStartDateFilter] = useState("");
   const [endDateFilter, setEndDateFilter] = useState("");
   const [attendedFilter, setAttendedFilter] = useState(false);
-  const [eventFilter, setEventFilter] = useState("");
+  const [eventFilter, setEventFilter] = useState("Congresso Autismo MA 2025");
   const [eventOptions, setEventOptions] = useState([]);
   const [metrics, setMetrics] = useState(null);
   const [filteredMetrics, setFilteredMetrics] = useState(null);
   const [qrCodeData, setQrCodeData] = useState({});
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [errorMessage, setErrorMessage] = useState(""); // Novo estado para mensagem de erro
+  // const [lastDoc, setLastDoc] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const loadInitialData = async (forceUpdate = false) => {
     // setLoading(true);
@@ -61,6 +63,60 @@ const useDashboardData = () => {
   useEffect(() => {
     loadInitialData();
   }, []);
+
+  // useEffect(() => {
+  //   setCheckouts([]);
+  //   setLastDoc(null);
+  //   loadInitialCheckouts();
+  // }, [eventFilter]);
+
+  const buildBaseQuery = (limitNumber = 6, lastDoc = null) => {
+    let q = query(
+      collection(db, "checkouts"),
+      // where("eventName", "==", eventFilter),
+      orderBy("timestamp", "desc")
+      // limit(limitNumber)
+    );
+
+    if (lastDoc) {
+      q = query(q, startAfter(lastDoc));
+    }
+
+    return q;
+  };
+
+  // const loadInitialCheckouts = async () => {
+  //   const snapshot = await getDocs(buildBaseQuery(6));
+
+  //   const initialCheckouts = snapshot.docs.map((doc) => ({
+  //     id: doc.id,
+  //     ...doc.data(),
+  //   }));
+
+  //   const lastVisible =
+  //     snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+
+  //   setCheckouts(initialCheckouts);
+  //   setLastDoc(lastVisible);
+  // };
+
+  const loadMoreCheckouts = async () => {
+    if (!lastDoc) return;
+
+    const snapshot = await getDocs(buildBaseQuery(6, lastDoc));
+
+    if (snapshot.empty) return;
+
+    const newCheckouts = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    const newLastDoc = snapshot.docs[snapshot.docs.length - 1] || null;
+
+    setCheckouts((prev) => [...prev, ...newCheckouts]);
+    setLastDoc(newLastDoc);
+  };
 
   const applyFilters = (data) => {
     let filteredData = [...data];
@@ -217,14 +273,15 @@ const useDashboardData = () => {
 
       let allCheckouts = [];
       if (fullUpdate || !lastUpdated) {
-        const snapshot = await getDocs(
-          query(
-            collection(db, "checkouts"),
-            // limit(6),
-            where("eventName", "==", "Congresso Autismo MA 2026"),
-            orderBy("timestamp", "desc")
-          )
-        );
+        const snapshot = await getDocs(buildBaseQuery(6));
+
+        // const lastVisible =
+        //   snapshot.docs.length > 0
+        //     ? snapshot.docs[snapshot.docs.length - 1]
+        //     : null;
+
+        // setLastDoc(lastVisible);
+
         allCheckouts = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
@@ -440,7 +497,8 @@ const useDashboardData = () => {
     updateMetrics,
     chartData,
     formatToBrazilianCurrency,
-    loadInitialData,
+    // loadInitialData,
+    loadMoreCheckouts,
     errorMessage,
   };
 };
