@@ -60,7 +60,7 @@ const Item1 = ({ wpp, openChatbot }) => {
         </span>
         <h4>{formatToBRL(Number(BASE_PRICE))}</h4>
         <h3>
-          ou <strong>10X de R$ 28,90</strong>
+          ou <strong>10X de {formatToBRL(Number(BASE_PRICE) / 10)}</strong>
         </h3>
         <ul>
           <li>Evento com Certificado de 20 horas.</li>
