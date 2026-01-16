@@ -3,11 +3,16 @@ import styles from "./tickets.module.css";
 import Section from "../../shared/Section";
 import Title from "../../shared/Title";
 import ButtonSecondary from "../../shared/ButtonSecondary";
-import CountdownTimer from "../../shared/CountdownTimer";
+// import CountdownTimer from "../../shared/CountdownTimer";
 import Chatbot from "../Chatbot";
 import { IoTicketOutline } from "react-icons/io5";
 import { FaWhatsapp } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+
+import { formatToBRL } from "../../../data/functions/formatToBRL";
+
+const BASE_PRICE = import.meta.env.VITE_BASE_PRICE;
+// const HALF_PRICE = import.meta.env.VITE_HALF_PRICE;
 
 const handleAddToCart = (itemId, itemName, price) => {
   window.dataLayer.push({
@@ -53,7 +58,7 @@ const Item1 = ({ wpp, openChatbot }) => {
         <span>
           De <s>R$ 797,00</s> por:
         </span>
-        <h4>R$ 289,00</h4>
+        <h4>{formatToBRL(Number(BASE_PRICE))}</h4>
         <h3>
           ou <strong>10X de R$ 28,90</strong>
         </h3>
@@ -75,20 +80,23 @@ const Item1 = ({ wpp, openChatbot }) => {
             {!wpp ? (
               <ButtonSecondary
                 style={{ width: "100%" }}
-                action="button"
-                onClick={() => {
-                  navigate("/checkout");
-                  handleAddToCart("individual", "Ingresso Individual", 499.9);
-                }}
+                action="link"
+                link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
+                target="_blank"
+                // action="button"
+                // onClick={() => {
+                //   navigate("/checkout");
+                //   handleAddToCart("individual", "Ingresso Individual", 499.9);
+                // }}
                 // action="link"
                 // link="https://api.whatsapp.com/send?phone=5598991058908&text=Olá!%20Gostaria%20de%20comprar%20ingresso"
                 // target="_blank"
                 // action="button"
-                disabled={true}
+                // disabled={true}
               >
-                {/* Comprar Ingresso */}
+                Comprar Ingresso
                 {/* INGRESSOS ESGOTADOS */}
-                EM BREVE
+                {/* EM BREVE */}
                 <IoTicketOutline style={{ fontSize: "1.2rem" }} />
               </ButtonSecondary>
             ) : (

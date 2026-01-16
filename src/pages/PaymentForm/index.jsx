@@ -17,6 +17,11 @@ import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import ButtonWhatsapp from "../../components/sections/ButtonWhatsapp";
 
+import { formatToBRL } from "../../data/functions/formatToBRL";
+
+const BASE_PRICE = import.meta.env.VITE_BASE_PRICE;
+// const HALF_PRICE = import.meta.env.VITE_HALF_PRICE;
+
 const PaymentForm = () => {
   const {
     formState,
@@ -48,7 +53,7 @@ const PaymentForm = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasShownHalfPriceModal, setHasShownHalfPriceModal] = useState(false);
   const [typeTicket, setTypeTicket] = useState("full");
-  const [basePrice, setBasePrice] = useState("R$ 289,00");
+  const [basePrice, setBasePrice] = useState(formatToBRL(BASE_PRICE));
 
   const brands = ["Visa", "Mastercard", "Amex", "Elo"];
   const location = useLocation();

@@ -2,23 +2,24 @@ import TopBar from "../../components/sections/TopBar";
 import Header from "../../components/templates/Header";
 import OurMission from "../../components/sections/OurMission";
 import Tickets from "../../components/sections/Tickets";
-import CarouselSimple from "../../components/shared/CarouselSimple";
-import { itemsSpeakers } from "../../data/constants/Speakers";
+// import CarouselSimple from "../../components/shared/CarouselSimple";
+// import { itemsSpeakers } from "../../data/constants/Speakers";
 import PrivilegeOfParticipating from "../../components/sections/PrivilegeOfParticipating";
 import Testimonials from "../../components/sections/Testimonials";
 import CarouselScrollInfinit from "../../components/shared/CarouselScrollInfinit";
-import HalfiPrice from "../../components/sections/HalfPrice";
-import Support from "../../components/sections/Support";
+// import HalfiPrice from "../../components/sections/HalfPrice";
+// import Support from "../../components/sections/Support";
 import BeSupport from "../../components/sections/BeSupport";
-import Local from "../../components/sections/Local";
+// import Local from "../../components/sections/Local";
 import Questions from "../../components/sections/Questions";
 import Politic from "../../components/sections/Politic";
 import Footer from "../../components/templates/Footer";
 
-import CertificateHome from "../../components/certificateGenerator/CertificateHome";
+// import CertificateHome from "../../components/certificateGenerator/CertificateHome";
 
 import { useState, useEffect } from "react";
 import ButtonWhatsapp from "../../components/sections/ButtonWhatsapp";
+import Speakers from "../../components/sections/Speakers";
 // import Timeline from "../../components/sections/Timeline";
 
 const Home = ({ wpp }) => {
@@ -49,6 +50,7 @@ const Home = ({ wpp }) => {
       />
       <Header />
       <OurMission />
+      <Speakers />
       <Tickets wpp={wpp} />
       {/* <CarouselSimple
         slides={itemsSpeakers}
