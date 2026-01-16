@@ -2,6 +2,8 @@ import styles from "./footer.module.css";
 import logo from "../../../assets/logos/logo.png";
 import logoTel from "../../../assets/logos/logos-telefone.png";
 
+import predio1 from "../../../assets/shared/predio.jpeg";
+
 import { FaInstagram, FaWhatsapp } from "react-icons/fa";
 
 const Footer = () => {
@@ -29,13 +31,19 @@ const Footer = () => {
             </a>
           </div>
         </div>
-        <div className={styles.info}>
-          <h3>Realização</h3>
-          <img
-            className={styles.img2}
-            src={logoTel}
-            alt="Realização do projeto"
-          />
+        <div className={styles.realization}>
+          <div>
+            <h3>Realização</h3>
+            <img
+              className={styles.img2}
+              src={logoTel}
+              alt="Realização do projeto"
+            />
+          </div>
+          <div className={styles.building}>
+            <img src={predio1} alt="Prédio da clínica Salud" />
+            <span>Nossa sede</span>
+          </div>
         </div>
       </div>
       <div className={styles.copy}>

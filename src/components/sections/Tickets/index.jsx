@@ -336,7 +336,8 @@ const Tickets = ({ wpp }) => {
           {/* <strong>⚡ Confira os valores e garanta o melhor preço:</strong> */}
           {/* <CountdownTimer targetDate={"2026-05-30T23:59:59"} /> */}
           <strong className={styles.highlightText}>
-            Corre que os ingressos estão acabando! Últimos 20 ingressos
+            As primeiras 300 inscrições ganharão uma exclusiva camisa do
+            Congresso!
           </strong>
           {/* <CountdownTimer targetDate={new Date().getTime()} /> */}
         </div>
