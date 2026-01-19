@@ -1,0 +1,699 @@
+/* Reset e configurações base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --primary: #4a6fa5;
+  --primary-light: #6b8cc0;
+  --secondary: #ff7b54;
+  --success: #4caf50;
+  --warning: #ff9800;
+  --danger: #f44336;
+  --light: #f8f9fa;
+  --dark: #343a40;
+  --gray: #6c757d;
+  --gray-light: #e9ecef;
+  --border-radius: 12px;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+  --transition: all 0.3s ease;
+}
+
+/* App principal */
+.app {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--dark);
+  line-height: 1.6;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    var(--primary-light) 100%
+  );
+  color: white;
+  padding: 2rem 1rem;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.logoContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.logo {
+  font-size: 2.5rem;
+  font-weight: 300;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+}
+
+.tagline {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  font-weight: 300;
+}
+
+/* Main content */
+.main {
+  max-width: 1000px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+/* Progress bar */
+.progressContainer {
+  background: white;
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow);
+}
+
+.progressBar {
+  height: 8px;
+  background: var(--gray-light);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(to right, var(--primary), var(--secondary));
+  border-radius: 4px;
+  transition: var(--transition);
+}
+
+.stepIndicators {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+}
+
+.stepIndicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.stepNumber {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid var(--gray-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: var(--gray);
+  margin-bottom: 0.5rem;
+  transition: var(--transition);
+}
+
+.stepIndicator.active .stepNumber {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+  transform: scale(1.1);
+}
+
+.stepLabel {
+  font-size: 0.85rem;
+  color: var(--gray);
+  text-align: center;
+  transition: var(--transition);
+}
+
+.stepIndicator.active .stepLabel {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* Form */
+.form {
+  background: white;
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  box-shadow: var(--shadow-lg);
+}
+
+/* .formContent {
+  margin-bottom: 2rem;
+} */
+
+/* Steps */
+.stepTitle {
+  color: var(--primary);
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  gap: 0.5rem;
+}
+
+.stepDescription {
+  color: var(--gray);
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+/* Form sections */
+.formSection {
+  background: var(--light);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid var(--primary);
+}
+
+.sectionTitle {
+  color: var(--primary);
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid rgba(74, 111, 165, 0.1);
+}
+
+/* Form groups */
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--dark);
+  font-size: 0.95rem;
+}
+
+.subLabel {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--gray);
+  font-weight: normal;
+  margin-top: 0.2rem;
+}
+
+/* Inputs */
+.input,
+.select,
+.textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--gray-light);
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: var(--transition);
+  background: white;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.1);
+}
+
+.input::placeholder {
+  color: #adb5bd;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* Row layout */
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+/* Checkboxes e radios */
+.checkboxGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.checkboxLabel,
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.75rem;
+  border-radius: 8px;
+  transition: var(--transition);
+  user-select: none;
+}
+
+.checkboxLabel:hover,
+.radioLabel:hover {
+  background: rgba(74, 111, 165, 0.05);
+}
+
+.checkbox,
+.radio {
+  display: none;
+}
+
+.checkboxCustom {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--gray);
+  border-radius: 4px;
+  position: relative;
+  transition: var(--transition);
+}
+
+.checkbox:checked + .checkboxCustom {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.checkbox:checked + .checkboxCustom::after {
+  content: "✓";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 14px;
+}
+
+.radioGroup {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.radioLabel {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.radioLabel::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--gray);
+  border-radius: 50%;
+  transition: var(--transition);
+}
+
+.radio:checked + .radioLabel::before {
+  border-color: var(--primary);
+  background: radial-gradient(circle, var(--primary) 40%, transparent 45%);
+}
+
+/* Info boxes */
+.infoBox {
+  background: #e8f4fd;
+  border-left: 4px solid var(--primary);
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.infoBox p {
+  margin-bottom: 0.5rem;
+}
+
+.highlight {
+  background: linear-gradient(120deg, #ffecd2 0%, #fcb69f 100%);
+  padding: 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  margin: 1rem 0;
+}
+
+/* Upload sections */
+.uploadSection {
+  margin-top: 2rem;
+}
+
+.uploadInfo {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.documentList {
+  list-style: none;
+  padding-left: 1rem;
+  margin: 1rem 0;
+}
+
+.documentList li {
+  padding: 0.3rem 0;
+  position: relative;
+}
+
+.documentList li::before {
+  content: "•";
+  color: var(--primary);
+  font-weight: bold;
+  position: absolute;
+  left: -1rem;
+}
+
+.note {
+  font-size: 0.9rem;
+  color: var(--gray);
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
+.fileInput {
+  width: 100%;
+  padding: 1rem;
+  border: 2px dashed var(--gray-light);
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.fileInput:hover {
+  border-color: var(--primary);
+  background: #f8f9fa;
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  color: var(--gray);
+  font-size: 0.9rem;
+}
+
+.fileIcon {
+  font-size: 1.2rem;
+}
+
+/* Declaration box */
+.declarationBox {
+  background: #f0f7ff;
+  padding: 2rem;
+  border-radius: 12px;
+  border: 2px solid #d1e3ff;
+  margin-bottom: 2rem;
+}
+
+.declarationText {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  margin-bottom: 1.5rem;
+  color: var(--dark);
+}
+
+/* Final step */
+.finalStep {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.successIcon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  animation: bounce 1s infinite alternate;
+}
+
+@keyframes bounce {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-10px);
+  }
+}
+
+.successMessage {
+  max-width: 600px;
+  margin: 0 auto;
+  font-size: 1.1rem;
+  line-height: 1.8;
+}
+
+.successMessage p {
+  margin-bottom: 1.5rem;
+}
+
+.signature {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--gray-light);
+  font-size: 1.2rem;
+}
+
+/* Buttons */
+.buttonContainer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 2rem;
+  border-top: 2px solid var(--gray-light);
+}
+
+.button {
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 150px;
+}
+
+.buttonPrimary {
+  background: linear-gradient(to right, var(--primary), var(--primary-light));
+  color: white;
+}
+
+.buttonPrimary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  background: linear-gradient(to right, var(--primary-light), var(--primary));
+}
+
+.buttonSecondary {
+  background: white;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+}
+
+.buttonSecondary:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.buttonSuccess {
+  background: linear-gradient(to right, var(--success), #66bb6a);
+  color: white;
+}
+
+.buttonSuccess:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  background: linear-gradient(to right, #66bb6a, var(--success));
+}
+
+/* Footer */
+.footer {
+  background: var(--dark);
+  color: white;
+  text-align: center;
+  padding: 2rem 1rem;
+  margin-top: 3rem;
+}
+
+.contact {
+  margin-top: 0.5rem;
+  opacity: 0.8;
+  font-size: 0.9rem;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .logo {
+    font-size: 2rem;
+  }
+
+  .stepTitle {
+    font-size: 1.5rem;
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+  }
+
+  .checkboxGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .stepIndicators {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .stepIndicator {
+    flex: 1;
+    min-width: 80px;
+  }
+
+  .buttonContainer {
+    flex-direction: column;
+  }
+
+  .button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .main {
+    padding: 0 0.5rem;
+  }
+
+  .form {
+    padding: 1.5rem 1rem;
+  }
+
+  .header {
+    padding: 1.5rem 1rem;
+  }
+
+  .stepLabel {
+    font-size: 0.75rem;
+  }
+}
+
+.radioInput {
+  opacity: 0;
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.radioLabel {
+  position: relative;
+  padding-left: 2.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  margin-bottom: 0.5rem;
+}
+
+.radioLabel::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--gray);
+  border-radius: 50%;
+  background: white;
+  transition: var(--transition);
+}
+
+.radioLabel::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  opacity: 0;
+  transition: var(--transition);
+}
+
+.radioInput:checked + .radioLabel::before {
+  border-color: var(--primary);
+}
+
+.radioInput:checked + .radioLabel::after {
+  opacity: 1;
+}
+
+.radioLabel:hover::before {
+  border-color: var(--primary);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.button:disabled:hover {
+  background: inherit !important;
+}
+
+/* Estilos para mensagens de erro */
+.errorMessage {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.errorMessage::before {
+  content: "⚠";
+}
+
+.inputError,
+.selectError,
+.textareaError {
+  border-color: var(--danger) !important;
+  background-color: #fff5f5;
+}
+
+.inputError:focus,
+.selectError:focus,
+.textareaError:focus {
+  box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.1) !important;
+}
+
+.radioGroupError .radioLabel::before {
+  border-color: var(--danger);
+}
+
+.checkboxGroupError .checkboxLabel {
+  color: var(--danger);
+}

@@ -115,7 +115,7 @@ const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
             <MenuItem value="approved">Aprovado</MenuItem>
             <MenuItem value="pending">Pendente</MenuItem>
             <MenuItem value="error">Erro</MenuItem>
-            <MenuItem value="tested">Teste</MenuItem>
+            <MenuItem value="test">Teste</MenuItem>
           </Select>
         </FormControl>
         <FormControl fullWidth>

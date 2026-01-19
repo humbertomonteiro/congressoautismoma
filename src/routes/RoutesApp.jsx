@@ -12,6 +12,8 @@ import Tickets from "../pages/Tickets";
 import CertificateHome from "../components/certificateGenerator/CertificateHome";
 import Certificate from "../pages/Certificate";
 
+import FormRegisterSalud from "../pages/FormRegisterSalud";
+
 const RoutesApp = () => {
   return (
     <Routes>
@@ -48,6 +50,8 @@ const RoutesApp = () => {
         path="/certificado-comissao-organizadora"
         element={<CertificateHome />}
       />
+      <Route path="/formulario-pre-inscricao" element={<FormRegisterSalud />} />
+
       <Route path="*" element={<Home />} />
     </Routes>
   );
