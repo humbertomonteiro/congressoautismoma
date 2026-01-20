@@ -35,8 +35,9 @@
 .header {
   background: linear-gradient(
     135deg,
-    var(--primary) 0%,
-    var(--primary-light) 100%
+    var(--primary-light) 0%,
+    var(--primary-light) 50%,
+    var(--primary) 100%
   );
   color: white;
   padding: 2rem 1rem;

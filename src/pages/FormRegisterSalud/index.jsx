@@ -50,6 +50,7 @@ function FormRegisterSalud() {
   const [errors, setErrors] = useState({});
   const [submitMessage, setSubmitMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null);
 
   const validateStep1 = () => {
     if (!formData.nomeCliente.trim()) return false;
@@ -235,15 +236,73 @@ function FormRegisterSalud() {
     window.scrollTo(0, 0);
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setIsSubmitting(true);
+  //   setSubmitMessage("");
+
+  //   try {
+  //     const payload = new FormData();
+
+  //     // 🔹 Dados simples
+  //     Object.entries(formData).forEach(([key, value]) => {
+  //       if (
+  //         key !== "assinaturaDigital" &&
+  //         key !== "documentos" &&
+  //         value !== null
+  //       ) {
+  //         if (Array.isArray(value)) {
+  //           payload.append(key, JSON.stringify(value));
+  //         } else {
+  //           payload.append(key, value);
+  //         }
+  //       }
+  //     });
+
+  //     // 🔹 Arquivos
+  //     if (formData.assinaturaDigital) {
+  //       payload.append("assinaturaDigital", formData.assinaturaDigital);
+  //     }
+
+  //     if (formData.documentos && formData.documentos.length > 0) {
+  //       formData.documentos.forEach((file) => {
+  //         payload.append("documentos", file);
+  //       });
+  //     }
+
+  //     const isProduction = import.meta.env.VITE_ENV === "production";
+  //     const baseUrl = isProduction
+  //       ? `${import.meta.env.VITE_BASE_URL_PRODUCTION}/client/register`
+  //       : `${import.meta.env.VITE_BASE_URL_SANDBOX}/client/register`;
+
+  //     const response = await fetch(baseUrl, {
+  //       method: "POST",
+  //       body: payload,
+  //     });
+
+  //     if (!response.ok) {
+  //       throw new Error("Erro ao enviar formulário");
+  //     }
+
+  //     setSubmitMessage("✅ Cadastro enviado com sucesso!");
+  //     setStep(6);
+  //   } catch (error) {
+  //     console.error(error);
+  //     setSubmitMessage("❌ Erro ao enviar. Tente novamente.");
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitMessage("");
+    setSubmitStatus(null);
 
     try {
       const payload = new FormData();
 
-      // 🔹 Dados simples
       Object.entries(formData).forEach(([key, value]) => {
         if (
           key !== "assinaturaDigital" &&
@@ -258,12 +317,11 @@ function FormRegisterSalud() {
         }
       });
 
-      // 🔹 Arquivos
       if (formData.assinaturaDigital) {
         payload.append("assinaturaDigital", formData.assinaturaDigital);
       }
 
-      if (formData.documentos && formData.documentos.length > 0) {
+      if (formData.documentos?.length > 0) {
         formData.documentos.forEach((file) => {
           payload.append("documentos", file);
         });
@@ -283,15 +341,46 @@ function FormRegisterSalud() {
         throw new Error("Erro ao enviar formulário");
       }
 
-      setSubmitMessage("✅ Cadastro enviado com sucesso!");
+      setSubmitStatus("success");
       setStep(6);
     } catch (error) {
       console.error(error);
-      setSubmitMessage("❌ Erro ao enviar. Tente novamente.");
+      setSubmitStatus("error");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const ErrorStep = () => (
+    <div className={styles.finalStep}>
+      <div className={styles.errorIcon}>⚠️</div>
+
+      <h2 className={styles.stepTitle}>Ops! Tivemos um probleminha 😥</h2>
+
+      <div className={styles.errorMessage}>
+        <p>Não conseguimos finalizar seu cadastro automaticamente.</p>
+
+        <p>Mas fique tranquila(o)! Nossa equipe está pronta para te ajudar.</p>
+
+        <p className={styles.highlight}>
+          Entre em contato agora pelo WhatsApp:
+        </p>
+
+        <a
+          href="https://wa.me/559888259214"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.whatsappButton}
+        >
+          💬 Falar no WhatsApp
+        </a>
+
+        <p className={styles.note}>
+          Número: <strong>+55 98 8825-9214</strong>
+        </p>
+      </div>
+    </div>
+  );
 
   const renderStep = () => {
     switch (step) {
@@ -306,7 +395,7 @@ function FormRegisterSalud() {
       case 5:
         return <Step5 formData={formData} handleChange={handleChange} />;
       case 6:
-        return <FinalStep />;
+        return submitStatus === "success" ? <FinalStep /> : <ErrorStep />;
       default:
         return <Step1 formData={formData} handleChange={handleChange} />;
     }
@@ -362,7 +451,7 @@ function FormRegisterSalud() {
           <div className={styles.formContent}>{renderStep()}</div>
 
           <div className={styles.buttonContainer}>
-            {step > 1 && (
+            {step > 1 && step < 6 && (
               <button
                 type="button"
                 onClick={prevStep}
@@ -372,7 +461,7 @@ function FormRegisterSalud() {
               </button>
             )}
 
-            {step < 6 ? (
+            {step < 5 && (
               <button
                 type="button"
                 onClick={nextStep}
@@ -381,13 +470,15 @@ function FormRegisterSalud() {
               >
                 Continuar →
               </button>
-            ) : (
-              // <div></div>
+            )}
+
+            {step === 5 && (
               <button
                 type="submit"
                 className={`${styles.button} ${styles.buttonSuccess}`}
+                disabled={isSubmitting}
               >
-                ✅ Finalizar Cadastro
+                {isSubmitting ? "Enviando..." : "✅ Finalizar Cadastro"}
               </button>
             )}
           </div>
@@ -1174,7 +1265,7 @@ const Step5 = ({ formData, handleChange }) => (
           />
           <div className={styles.fileInfo}>
             <span className={styles.fileIcon}>📎</span>
-            <span>Até 10 arquivos - Máx. 10MB cada</span>
+            <span>Até 3 arquivos - Máx. 10MB cada</span>
           </div>
         </div>
       </div>
