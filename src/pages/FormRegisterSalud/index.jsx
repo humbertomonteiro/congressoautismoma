@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import styles from "./FormRegisterSalud.module.css";
+import logo from "../../assets/logos/logos-telefone.png";
 
 function FormRegisterSalud() {
   const [step, setStep] = useState(1);
@@ -315,7 +316,12 @@ function FormRegisterSalud() {
     <div className={styles.app}>
       <header className={styles.header}>
         <div className={styles.logoContainer}>
-          <h1 className={styles.logo}>Salud Cuidar Mais</h1>
+          {/* <h1 className={styles.logo}>Salud Cuidar Mais</h1> */}
+          <img
+            src={logo}
+            className={styles.logo}
+            alt="Logo Salud Cuidar Mais"
+          />
           <p className={styles.tagline}>
             Cuidando com carinho e profissionalismo
           </p>
@@ -366,7 +372,7 @@ function FormRegisterSalud() {
               </button>
             )}
 
-            {step <= 6 ? (
+            {step < 6 ? (
               <button
                 type="button"
                 onClick={nextStep}
@@ -376,12 +382,13 @@ function FormRegisterSalud() {
                 Continuar →
               </button>
             ) : (
-              <button
-                type="submit"
-                className={`${styles.button} ${styles.buttonSuccess}`}
-              >
-                ✅ Finalizar Cadastro
-              </button>
+              <div></div>
+              // <button
+              //   type="submit"
+              //   className={`${styles.button} ${styles.buttonSuccess}`}
+              // >
+              //   ✅ Finalizar Cadastro
+              // </button>
             )}
           </div>
         </form>
