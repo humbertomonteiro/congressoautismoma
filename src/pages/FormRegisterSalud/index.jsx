@@ -488,7 +488,7 @@ function FormRegisterSalud() {
       <footer className={styles.footer}>
         <p>© 2024 Salud Cuidar Mais. Todos os direitos reservados.</p>
         <p className={styles.contact}>
-          Dúvidas? Entre em contato: contato@saludcuidar.com
+          Dúvidas? Entre em contato: atendimentosalud@gmail.com
         </p>
       </footer>
     </div>
@@ -602,7 +602,7 @@ const Step1 = ({ formData, handleChange }) => (
 
       <div className={styles.formGroup}>
         <label htmlFor="diagnostico" className={styles.label}>
-          DIAGNÓSTICO *
+          DIAGNÓSTICO (DESCREVER O CID QUE CONSTA EM LAUDO) *
         </label>
         <textarea
           id="diagnostico"
