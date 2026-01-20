@@ -382,13 +382,13 @@ function FormRegisterSalud() {
                 Continuar →
               </button>
             ) : (
-              <div></div>
-              // <button
-              //   type="submit"
-              //   className={`${styles.button} ${styles.buttonSuccess}`}
-              // >
-              //   ✅ Finalizar Cadastro
-              // </button>
+              // <div></div>
+              <button
+                type="submit"
+                className={`${styles.button} ${styles.buttonSuccess}`}
+              >
+                ✅ Finalizar Cadastro
+              </button>
             )}
           </div>
         </form>
