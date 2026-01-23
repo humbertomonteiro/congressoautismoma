@@ -9,8 +9,8 @@ import { Navigation, Pagination, Autoplay } from "swiper/modules";
 
 import tiagoCastroVideo from "../../../assets/videos/abertura-evento-tiago-castro.mp4";
 import thiagoCastroImg from "../../../assets/speakers/dr-thiago-castro.jpeg";
-// exemplo de novo palestrante
-import outroPalestranteImg from "../../../assets/speakers/debora-sauressig.jpeg";
+import deboraSauressig from "../../../assets/speakers/debora-sauressig.jpeg";
+import drElizangilaLeite from "../../../assets/speakers/dr-elizangila-leite.jpeg";
 
 import imgTShirt from "../../../assets/shared/tshirt.png";
 
@@ -23,15 +23,19 @@ const speakers = [
   {
     name: "Débora Saueressig",
     description: "Especialista convidado",
-    image: outroPalestranteImg,
+    image: deboraSauressig,
+  },
+  {
+    name: "Dra. Elizangila Leite",
+    description: "Especialista convidado",
+    image: drElizangilaLeite,
   },
 ];
 
 export default function Speakers() {
   return (
     <Section>
-      <Title text="Mais de 12 Palestrantes" align="center" />
-
+      <Title text="Mais de 12 Palestrantes" align="center" />d
       <div className={styles.container}>
         {/* Vídeo */}
         <div className={styles.video}>

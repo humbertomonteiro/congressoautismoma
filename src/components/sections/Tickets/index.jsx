@@ -11,6 +11,8 @@ import { useNavigate } from "react-router-dom";
 
 import { formatToBRL } from "../../../data/functions/formatToBRL";
 
+import panfletoFiqueAtento from "../../../assets/shared/panfleto-fique-atento.jpeg";
+
 const BASE_PRICE = import.meta.env.VITE_BASE_PRICE;
 // const HALF_PRICE = import.meta.env.VITE_HALF_PRICE;
 
@@ -342,6 +344,7 @@ const Tickets = ({ wpp }) => {
           {/* <CountdownTimer targetDate={new Date().getTime()} /> */}
         </div>
         <div className={styles.boxes}>
+          <img src={panfletoFiqueAtento} alt="Panfleto fique atento" />
           <Item1 wpp={wpp} openChatbot={openChatbot} />
           {/* <Item2 wpp={wpp} openChatbot={openChatbot} /> */}
           {/* <ItemHalf wpp={wpp} openChatbot={openChatbot} /> */}
