@@ -66,7 +66,7 @@ const Item1 = ({ wpp, openChatbot }) => {
           {formatToBRL(Number(SOCIAL_PRICE))}
           {/* <span>À vista</span> */}
           <div className={styles.infoPrice}>
-            Taxa da bilheteria digital cobrada no momento da compra.
+            Taxa da Bilheteria Digital cobrada no momento da compra.
           </div>
         </h4>
         {/* <h3>
@@ -88,7 +88,7 @@ const Item1 = ({ wpp, openChatbot }) => {
         <div className={styles.buttons}>
           <p>
             Informação Importante: O valor do ingresso refere-se exclusivamente
-            à inscrição no evento. A taxa de serviço da bilheteria digital não
+            à inscrição no evento. A taxa de serviço da Bilheteria Digital não
             está inclusa e será cobrada separadamente pela plataforma, com
             informação discriminada no momento da compra.
           </p>
