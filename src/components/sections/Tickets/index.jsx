@@ -15,6 +15,8 @@ import panfletoFiqueAtento from "../../../assets/shared/panfleto-fique-atento.jp
 
 const BASE_PRICE = import.meta.env.VITE_BASE_PRICE;
 // const HALF_PRICE = import.meta.env.VITE_HALF_PRICE;
+const SOCIAL_PRICE = import.meta.env.VITE_SOCIAL_PRICE;
+const TAX_PRICE_PERCENTAGE = 10;
 
 const handleAddToCart = (itemId, itemName, price) => {
   window.dataLayer.push({
@@ -47,7 +49,7 @@ const handleViewContent = (itemId, itemName, price) => {
 };
 
 const Item1 = ({ wpp, openChatbot }) => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   return (
     <div className={styles.box} data-active="true">
       <div className={styles.boxContent}>
@@ -58,12 +60,18 @@ const Item1 = ({ wpp, openChatbot }) => {
       </div>
       <div className={styles.boxValue}>
         <span>
-          De <s>R$ 797,00</s> por:
+          De <s>{formatToBRL(Number(BASE_PRICE))}</s> por:
         </span>
-        <h4>{formatToBRL(Number(BASE_PRICE))}</h4>
-        <h3>
+        <h4 className={styles.valueTicket}>
+          {formatToBRL(Number(SOCIAL_PRICE))}
+          {/* <span>À vista</span> */}
+          <div className={styles.infoPrice}>
+            Taxa da bilheteria digital cobrada no momento da compra.
+          </div>
+        </h4>
+        {/* <h3>
           ou <strong>10X de {formatToBRL(Number(BASE_PRICE) / 10)}</strong>
-        </h3>
+        </h3> */}
         <ul>
           <li>Evento com Certificado de 20 horas.</li>
           <li>Garanta o seu ingresso com o menor valor!</li>
@@ -78,6 +86,12 @@ const Item1 = ({ wpp, openChatbot }) => {
           </li>
         </ul>
         <div className={styles.buttons}>
+          <p>
+            Informação Importante: O valor do ingresso refere-se exclusivamente
+            à inscrição no evento. A taxa de serviço da bilheteria digital não
+            está inclusa e será cobrada separadamente pela plataforma, com
+            informação discriminada no momento da compra.
+          </p>
           <div className={styles.button}>
             {!wpp ? (
               <ButtonSecondary
@@ -122,7 +136,7 @@ const Item1 = ({ wpp, openChatbot }) => {
 };
 
 const Item2 = ({ wpp, openChatbot }) => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   return (
     <div className={styles.box} data-active="true">
       <div className={styles.boxContent}>
@@ -278,7 +292,7 @@ const ItemHalf = ({ wpp, openChatbot }) => {
 const Tickets = ({ wpp }) => {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [initialTicketType, setInitialTicketType] = useState("");
-  const [targetDate, setTargetDate] = useState("");
+  // const [targetDate, setTargetDate] = useState("");
 
   const openChatbot = (ticketType) => {
     setInitialTicketType(ticketType);
@@ -346,8 +360,8 @@ const Tickets = ({ wpp }) => {
         <div className={styles.boxes}>
           <img src={panfletoFiqueAtento} alt="Panfleto fique atento" />
           <Item1 wpp={wpp} openChatbot={openChatbot} />
-          {/* <Item2 wpp={wpp} openChatbot={openChatbot} /> */}
-          {/* <ItemHalf wpp={wpp} openChatbot={openChatbot} /> */}
+          {/* <Item2 wpp={wpp} openChatbot={openChatbot} />*/}
+          {/* <ItemHalf wpp={wpp} openChatbot={openChatbot} />*/}
         </div>
       </div>
       <Chatbot

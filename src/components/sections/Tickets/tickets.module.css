@@ -116,6 +116,7 @@
         width: 100%;
         display: flex;
         flex-direction: column;
+        display: flex;
 
         .values {
           margin-bottom: 1rem;
@@ -126,9 +127,9 @@
           font-weight: 600;
         }
 
-        & h4 {
+        & .valueTicket {
           font-size: 2rem;
-          margin: 0.5rem 0;
+          margin: 0 0 1rem 0;
           color: var(--text-dark-2);
 
           & s {
@@ -138,12 +139,15 @@
 
           & span {
             font-size: 0.8rem;
-            color: #c4c4c4;
+            color: #535353;
             font-weight: 500;
           }
 
-          & strong {
-            font-size: 1rem;
+          & .infoPrice {
+            font-size: 0.8rem;
+            color: #535353;
+            font-weight: 500;
+            display: block;
           }
         }
 
@@ -179,6 +183,15 @@
 
       & .buttons {
         margin-top: 1rem;
+
+        & p {
+          font-size: 0.7rem;
+          margin-bottom: 1rem;
+          text-align: center;
+          padding: 1rem;
+          background-color: var(--border-color);
+          border-radius: 1rem;
+        }
 
         & .button {
           margin-bottom: 1rem;

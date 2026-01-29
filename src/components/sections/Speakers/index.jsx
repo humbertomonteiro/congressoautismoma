@@ -12,7 +12,7 @@ import thiagoCastroImg from "../../../assets/speakers/dr-thiago-castro.jpeg";
 import deboraSauressig from "../../../assets/speakers/debora-sauressig.jpeg";
 import drElizangilaLeite from "../../../assets/speakers/dr-elizangila-leite.jpeg";
 
-import imgTShirt from "../../../assets/shared/tshirt.png";
+import imgLogo from "../../../assets/logos/logo-no-text.png";
 
 const speakers = [
   {
@@ -65,10 +65,7 @@ export default function Speakers() {
               Autismo.
             </p>
 
-            <img
-              src={imgTShirt}
-              alt="Promoção de comprar ganha camisa exclusiva."
-            />
+            <img src={imgLogo} alt="Logo Congresso autismo." />
           </div>
 
           {/* Slider de palestrantes */}
