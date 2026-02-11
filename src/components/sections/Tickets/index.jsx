@@ -14,9 +14,9 @@ import { formatToBRL } from "../../../data/functions/formatToBRL";
 import panfletoFiqueAtento from "../../../assets/shared/panfleto-fique-atento.jpeg";
 
 const BASE_PRICE = import.meta.env.VITE_BASE_PRICE;
-// const HALF_PRICE = import.meta.env.VITE_HALF_PRICE;
+const HALF_PRICE = import.meta.env.VITE_HALF_PRICE;
 const SOCIAL_PRICE = import.meta.env.VITE_SOCIAL_PRICE;
-const TAX_PRICE_PERCENTAGE = 10;
+// const TAX_PRICE_PERCENTAGE = 10;
 
 const handleAddToCart = (itemId, itemName, price) => {
   window.dataLayer.push({
@@ -54,20 +54,20 @@ const Item1 = ({ wpp, openChatbot }) => {
     <div className={styles.box} data-active="true">
       <div className={styles.boxContent}>
         <span>Ingresso</span>
-        <h4>INDIVIDUAL - PRÉ-VENDA</h4>
+        <h4>INDIVIDUAL - 2° Lote</h4>
         <h5>Disponível até:</h5>
-        <p>30/01 ou enquanto durar</p>
+        <p>25/02 ou enquanto durar</p>
       </div>
       <div className={styles.boxValue}>
-        <span>
+        {/* <span>
           De <s>{formatToBRL(Number(BASE_PRICE))}</s> por:
-        </span>
+        </span> */}
         <h4 className={styles.valueTicket}>
-          {formatToBRL(Number(SOCIAL_PRICE))}
+          {formatToBRL(Number(BASE_PRICE))}
           {/* <span>À vista</span> */}
-          <div className={styles.infoPrice}>
+          {/* <div className={styles.infoPrice}>
             Taxa da Bilheteria Digital cobrada no momento da compra.
-          </div>
+          </div> */}
         </h4>
         {/* <h3>
           ou <strong>10X de {formatToBRL(Number(BASE_PRICE) / 10)}</strong>
@@ -141,23 +141,21 @@ const Item2 = ({ wpp, openChatbot }) => {
     <div className={styles.box} data-active="true">
       <div className={styles.boxContent}>
         <span>Ingresso</span>
-        <h4>Ingresso GRUPO</h4>
+        <h4>SOCIAL - 2° Lote</h4>
         <h5>Disponível até:</h5>
-        <p>30/01 ou enquanto durar</p>
-        <p>Compre no mínimo 5 ingressos para ter desconto.</p>
+        <p>25/02 ou enquanto durar</p>
+        {/* <p>Compre no mínimo 5 ingressos para ter desconto.</p> */}
       </div>
       <div className={styles.boxValue}>
-        <span>
-          De <s>R$ 798,00</s> por:
-        </span>
-        <h4>R$ 649,00</h4>
-        <h3>
-          ou <strong>10X de R$ 64,90</strong>
-        </h3>
+        <h4 className={styles.valueTicket}>
+          {formatToBRL(Number(SOCIAL_PRICE))}
+          <span>+ 1kg de alimento</span>
+        </h4>
+
         <ul>
           <li>Evento com Certificado de 20 horas.</li>
           <li>Garanta o seu ingresso com o menor valor!</li>
-          {/* <li>Economize mais 40% no valor do ingresso!</li> */}
+
           <li>
             Garanta sua vaga em um evento único com grandes referências da
             Neurodiversidade.
@@ -169,10 +167,12 @@ const Item2 = ({ wpp, openChatbot }) => {
         </ul>
         <div className={styles.buttons}>
           <div className={styles.button}>
-            {/* <span>
-              Clique no botão abaixo e fale com nosso suporte para comprar o
-              ingresso Grupo.
-            </span> */}
+            <p>
+              Informação Importante: O valor do ingresso refere-se
+              exclusivamente à inscrição no evento. A taxa de serviço da
+              Bilheteria Digital não está inclusa e será cobrada separadamente
+              pela plataforma, com informação discriminada no momento da compra.
+            </p>
             {!wpp ? (
               <ButtonSecondary
                 style={{ width: "100%" }}
@@ -184,10 +184,11 @@ const Item2 = ({ wpp, openChatbot }) => {
                 // action="link"
                 // link="https://api.whatsapp.com/send?phone=5598991058908&text=Olá!%20Gostaria%20de%20comprar%20ingresso"
                 // target="_blank"
-                action="button"
-                disabled={true}
+                action="link"
+                link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
+                target="_blank"
               >
-                INGRESSOS ESGOTADOS{" "}
+                Comprar Ingresso{" "}
                 <IoTicketOutline style={{ fontSize: "1.2rem" }} />
               </ButtonSecondary>
             ) : (
@@ -216,9 +217,9 @@ const ItemHalf = ({ wpp, openChatbot }) => {
     <div className={styles.box} data-active="true">
       <div className={styles.boxContent}>
         <span>Ingresso</span>
-        <h4>MEIA-ENTRADA - PRÉ-VENDA</h4>
+        <h4>MEIA-ENTRADA - 2° Lote</h4>
         <h5>Disponível até:</h5>
-        <p>30/01 ou enquanto durar</p>
+        <p>25/02 ou enquanto durar</p>
         <p>
           Lembre-se: os documentos comprobatórios devem ser apresentados na
           entrada do evento.
@@ -226,10 +227,11 @@ const ItemHalf = ({ wpp, openChatbot }) => {
       </div>
       <div className={styles.boxValue}>
         {/* <span>50% de R$ 798,00:</span> */}
-        <h4>R$ 144,50</h4>
-        <h3>
-          ou <strong>10X de R$ 14,45</strong>
-        </h3>
+        <h4 className={styles.valueTicket}>
+          {formatToBRL(Number(HALF_PRICE))}
+          {/* <span>À vista</span> */}
+        </h4>
+
         <h5>Veja se você se encaixa na meia entrada:</h5>
         <ul>
           <li>
@@ -252,6 +254,12 @@ const ItemHalf = ({ wpp, openChatbot }) => {
           <li>Evento com Certificado de 20 horas.</li>
         </ul>
         <div className={styles.buttons}>
+          <p>
+            Informação Importante: O valor do ingresso refere-se exclusivamente
+            à inscrição no evento. A taxa de serviço da Bilheteria Digital não
+            está inclusa e será cobrada separadamente pela plataforma, com
+            informação discriminada no momento da compra.
+          </p>
           <div className={styles.button}>
             <span>
               A meia entrada é um direito que promove a inclusão e o acesso, e
@@ -260,16 +268,25 @@ const ItemHalf = ({ wpp, openChatbot }) => {
             {!wpp ? (
               <ButtonSecondary
                 style={{ width: "100%" }}
-                action="button"
-                onClick={() => {
-                  navigate("/checkout?type=half");
-                  handleAddToCart("half", "Ingresso Meia-Entrada", 399.9);
-                }}
+                action="link"
+                link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
+                target="_blank"
               >
                 Comprar Ingresso{" "}
                 <IoTicketOutline style={{ fontSize: "1.2rem" }} />
               </ButtonSecondary>
             ) : (
+              // <ButtonSecondary
+              //   style={{ width: "100%" }}
+              //   action="button"
+              //   onClick={() => {
+              //     navigate("/checkout?type=half");
+              //     handleAddToCart("half", "Ingresso Meia-Entrada", 399.9);
+              //   }}
+              // >
+              //   Comprar Ingresso{" "}
+              //   <IoTicketOutline style={{ fontSize: "1.2rem" }} />
+              // </ButtonSecondary>
               <ButtonSecondary
                 style={{ width: "100%" }}
                 action="button"
@@ -358,10 +375,10 @@ const Tickets = ({ wpp }) => {
           {/* <CountdownTimer targetDate={new Date().getTime()} /> */}
         </div>
         <div className={styles.boxes}>
-          <img src={panfletoFiqueAtento} alt="Panfleto fique atento" />
+          {/* <img src={panfletoFiqueAtento} alt="Panfleto fique atento" /> */}
           <Item1 wpp={wpp} openChatbot={openChatbot} />
-          {/* <Item2 wpp={wpp} openChatbot={openChatbot} />*/}
-          {/* <ItemHalf wpp={wpp} openChatbot={openChatbot} />*/}
+          <Item2 wpp={wpp} openChatbot={openChatbot} />
+          <ItemHalf wpp={wpp} openChatbot={openChatbot} />
         </div>
       </div>
       <Chatbot

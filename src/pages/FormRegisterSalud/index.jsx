@@ -498,6 +498,29 @@ function FormRegisterSalud() {
 // Componentes para cada step
 const Step1 = ({ formData, handleChange }) => (
   <div className={styles.step}>
+    <h2 className={styles.stepTitle}>Objetivo</h2>{" "}
+    <div className={styles.infoBox}>
+      <p>
+        Seja bem-vindo(a) à Clínica Salud Cuidar Mais! Estamos felizes que você
+        nos escolheu para cuidar do desenvolvimento do seu filho.
+      </p>{" "}
+      <p>
+        Este formulário tem como objetivo coletar informações iniciais para que
+        possamos compreender melhor as necessidades da criança e avaliar a
+        possibilidade de atendimento na nossa clínica.
+      </p>
+      <p>
+        ⚠️ O preenchimento desta ficha não garante vaga ou início imediato do
+        tratamento. Após o envio, nossa equipe técnica irá analisar as
+        informações e entrará em contato para agendar uma visita e/ou anamneses,
+        dando continuidade ao processo de admissão.
+      </p>{" "}
+      <p>Pedimos que responda com atenção e veracidade.</p>{" "}
+      <p>
+        Em caso de dúvidas, entre em contato com nossa equipe de atendimento:
+      </p>{" "}
+      <p>98 988830200</p> <p>Agradecemos a compreensão!</p>
+    </div>
     <h2 className={styles.stepTitle}>
       👶 Precisamos Conhecer Nosso Mini Cliente
     </h2>
@@ -505,7 +528,6 @@ const Step1 = ({ formData, handleChange }) => (
       Espaço destinado para as informações do Cliente e seus responsáveis
       legais.
     </p>
-
     <div className={styles.formSection}>
       <h3 className={styles.sectionTitle}>Informações do Cliente</h3>
 
@@ -667,7 +689,6 @@ const Step1 = ({ formData, handleChange }) => (
         </div>
       </div>
     </div>
-
     <div className={styles.formSection}>
       <h3 className={styles.sectionTitle}>Informações da Mãe</h3>
 
@@ -750,7 +771,6 @@ const Step1 = ({ formData, handleChange }) => (
         </div>
       </div>
     </div>
-
     <div className={styles.formSection}>
       <h3 className={styles.sectionTitle}>Informações do Pai</h3>
 

@@ -26,3 +26,4 @@ dist-ssr
 
 .env
 firebaseConfig.js
+appScriptGoogle.js

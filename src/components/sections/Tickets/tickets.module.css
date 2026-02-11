@@ -38,7 +38,7 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: space-around;
-    margin-top: 1rem;
+    margin-top: 1.5rem;
     gap: 1rem;
 
     & img {
@@ -51,7 +51,7 @@
     & .box {
       display: flex;
       flex-direction: column;
-      flex: 1 1 45%;
+      flex: 1 1 30%;
       position: relative;
       opacity: 0.4;
       max-width: 500px;
@@ -161,7 +161,7 @@
         & h5 {
           color: var(--text-dark-2);
           font-size: 0.8rem;
-          margin: 0.5rem 0;
+          margin: 0 0 0.5rem 0;
         }
 
         & ul {
@@ -252,7 +252,7 @@
 }
 
 .highlightText {
-  background: var(--color-4);
+  background: var(--color-2);
   color: #ffffff;
   padding: 8px 16px;
   border-radius: 14px;
