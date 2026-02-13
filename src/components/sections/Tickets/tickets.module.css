@@ -13,6 +13,18 @@
     flex-direction: column;
     align-items: center;
 
+    & .bannerDesktop {
+      width: 800px;
+      max-width: 100%;
+      margin: 0 auto;
+      margin-bottom: 1.5rem;
+      border-radius: 1rem;
+    }
+
+    & .bannerMobile {
+      display: none;
+    }
+
     & h3 {
       font-size: 1.8rem;
       color: var(--text-dark);
@@ -246,6 +258,16 @@
 
       & p {
         font-size: 0.9rem;
+      }
+      & .bannerDesktop {
+        display: none;
+      }
+
+      & .bannerMobile {
+        display: block;
+        width: 100%;
+        margin-bottom: 1.5rem;
+        border-radius: 1rem;
       }
     }
   }

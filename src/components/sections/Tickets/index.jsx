@@ -10,8 +10,10 @@ import { FaWhatsapp } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 import { formatToBRL } from "../../../data/functions/formatToBRL";
+import bannerDesktopBg from "../../../assets/speakers/banner-desktop-bg.png";
+import bannerMobile from "../../../assets/speakers/banner-mobile.png";
 
-import panfletoFiqueAtento from "../../../assets/shared/panfleto-fique-atento.jpeg";
+// import panfletoFiqueAtento from "../../../assets/shared/panfleto-fique-atento.jpeg";
 
 const BASE_PRICE = import.meta.env.VITE_BASE_PRICE;
 const HALF_PRICE = import.meta.env.VITE_HALF_PRICE;
@@ -368,6 +370,18 @@ const Tickets = ({ wpp }) => {
           </p>
           {/* <strong>⚡ Confira os valores e garanta o melhor preço:</strong> */}
           {/* <CountdownTimer targetDate={"2026-05-30T23:59:59"} /> */}
+
+          <img
+            className={styles.bannerDesktop}
+            src={bannerDesktopBg}
+            alt="Banner dos palestrantes desktop"
+          />
+          <img
+            className={styles.bannerMobile}
+            src={bannerMobile}
+            alt="Banner dos palestrantes mobile"
+          />
+
           <strong className={styles.highlightText}>
             As primeiras 300 inscrições ganharão uma exclusiva camisa do
             Congresso!
