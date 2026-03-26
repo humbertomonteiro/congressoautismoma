@@ -39,12 +39,12 @@ const Local = () => {
                 <li>Comodidade para hospedagem</li>
                 <li>⁠Fácil acesso</li>
                 <li>⁠Estacionamento seguro e amplo</li>
-                <li>
+                {/* <li>
                   Neuropod será gravado ao vivo com nossos patrocinadores!
-                </li>
-                <li>
+                </li> */}
+                {/* <li>
                   <img src={podcast} alt="Podcast Neuropod" />
-                </li>
+                </li> */}
               </ul>
               <ButtonSecondary
                 action={"link"}

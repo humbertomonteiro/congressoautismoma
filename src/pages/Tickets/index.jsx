@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { jsPDF } from "jspdf";
 import { toast } from "react-toastify";
 import { db } from "../../../firebaseConfig";
-import { collection, getDocs, query, where } from "firebase/firestore"; // Removed unused 'query' and 'where'
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { QRCodeSVG } from "qrcode.react";
 import logo from "../../assets/logos/logo-no-text.png";
 import html2canvas from "html2canvas";

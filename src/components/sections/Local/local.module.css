@@ -13,7 +13,7 @@
   width: 33.4%;
   display: flex;
   justify-content: center;
-  background-color: var(--color-1);
+  background-color: var(--color-3);
   padding: 1.5rem;
 
   & video {
@@ -85,13 +85,13 @@
   }
 }
 
-.list ul li:last-child {
+/* .list ul li:last-child {
   list-style: none;
   margin: 0;
   border-radius: 1.5rem;
   overflow: hidden;
   height: 120px;
-}
+} */
 
 @media (max-width: 768px) {
   .boxes {

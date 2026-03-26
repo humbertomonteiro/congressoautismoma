@@ -58,7 +58,7 @@ const Item1 = ({ wpp, openChatbot }) => {
         <span>Ingresso</span>
         <h4>INDIVIDUAL - 2° Lote</h4>
         <h5>Disponível até:</h5>
-        <p>25/02 ou enquanto durar</p>
+        <p>01/04 ou enquanto durar</p>
       </div>
       <div className={styles.boxValue}>
         {/* <span>
@@ -145,7 +145,7 @@ const Item2 = ({ wpp, openChatbot }) => {
         <span>Ingresso</span>
         <h4>SOCIAL - 2° Lote</h4>
         <h5>Disponível até:</h5>
-        <p>25/02 ou enquanto durar</p>
+        <p>01/04 ou enquanto durar</p>
         {/* <p>Compre no mínimo 5 ingressos para ter desconto.</p> */}
       </div>
       <div className={styles.boxValue}>
@@ -221,7 +221,7 @@ const ItemHalf = ({ wpp, openChatbot }) => {
         <span>Ingresso</span>
         <h4>MEIA-ENTRADA - 2° Lote</h4>
         <h5>Disponível até:</h5>
-        <p>25/02 ou enquanto durar</p>
+        <p>01/04 ou enquanto durar</p>
         <p>
           Lembre-se: os documentos comprobatórios devem ser apresentados na
           entrada do evento.

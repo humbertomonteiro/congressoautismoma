@@ -10,7 +10,7 @@ import CarouselScrollInfinit from "../../components/shared/CarouselScrollInfinit
 // import HalfiPrice from "../../components/sections/HalfPrice";
 // import Support from "../../components/sections/Support";
 import BeSupport from "../../components/sections/BeSupport";
-// import Local from "../../components/sections/Local";
+import Local from "../../components/sections/Local";
 import Questions from "../../components/sections/Questions";
 import Politic from "../../components/sections/Politic";
 import Footer from "../../components/templates/Footer";
@@ -64,7 +64,7 @@ const Home = ({ wpp }) => {
       {/* <Support /> */}
       {/* <Timeline /> */}
       <BeSupport />
-      {/* <Local /> */}
+      <Local />
       {/* <CertificateHome /> */}
       <Questions />
       <Politic />
