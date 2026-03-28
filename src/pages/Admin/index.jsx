@@ -67,19 +67,6 @@ const AdminDashboard = () => {
         <ListItem
           button
           className={`${styles.navItem} ${
-            activeSection === "emails" ? styles.active : ""
-          }`}
-          onClick={() => handleSectionChange("emails")}
-        >
-          <ListItemIcon>
-            <MdOutlineMarkEmailRead />
-          </ListItemIcon>
-          <ListItemText primary="Emails" />
-        </ListItem>
-
-        <ListItem
-          button
-          className={`${styles.navItem} ${
             activeSection === "checkout-manual" ? styles.active : ""
           }`}
           onClick={() => handleSectionChange("checkout-manual")}
@@ -88,6 +75,19 @@ const AdminDashboard = () => {
             <IoBagCheckOutline />
           </ListItemIcon>
           <ListItemText primary="Add Checkout" />
+        </ListItem>
+
+        <ListItem
+          button
+          className={`${styles.navItem} ${
+            activeSection === "sellers" ? styles.active : ""
+          }`}
+          onClick={() => handleSectionChange("sellers")}
+        >
+          <ListItemIcon>
+            <MdOutlineBadge />
+          </ListItemIcon>
+          <ListItemText primary="Vendedores" />
         </ListItem>
 
         <ListItem
@@ -119,14 +119,14 @@ const AdminDashboard = () => {
         <ListItem
           button
           className={`${styles.navItem} ${
-            activeSection === "sellers" ? styles.active : ""
+            activeSection === "emails" ? styles.active : ""
           }`}
-          onClick={() => handleSectionChange("sellers")}
+          onClick={() => handleSectionChange("emails")}
         >
           <ListItemIcon>
-            <MdOutlineBadge />
+            <MdOutlineMarkEmailRead />
           </ListItemIcon>
-          <ListItemText primary="Vendedores" />
+          <ListItemText primary="Emails" />
         </ListItem>
 
         <ListItem onClick={logout} className={styles.navItem} data-exit="true">

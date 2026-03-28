@@ -17,6 +17,7 @@ import {
   CircularProgress,
   Badge,
   InputAdornment,
+  LinearProgress,
 } from "@mui/material";
 import InputMask from "react-input-mask";
 import {
@@ -26,6 +27,9 @@ import {
   deleteDoc,
   doc,
   updateDoc,
+  query,
+  where,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../../../../firebaseConfig";
 import { toast } from "react-toastify";
@@ -42,20 +46,22 @@ import {
   MdAttachMoney,
   MdSearch,
   MdClear,
+  MdPayments,
+  MdAdd,
+  MdHistory,
+  MdPercent,
 } from "react-icons/md";
 import { FaWhatsapp, FaPix } from "react-icons/fa6";
 import styles from "./sellerSection.module.css";
 
-const EMPTY_FORM = {
-  name: "",
-  document: "",
-  email: "",
-  phone: "",
-  pix: "",
-  photoBase64: "",
-};
+// ─── helpers ────────────────────────────────────────────────────────────────
 
-// Comprime e converte imagem para base64 (max 700px, qualidade 0.75)
+const fmt = (v) =>
+  Number(v || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+
 const compressToBase64 = (file) =>
   new Promise((resolve, reject) => {
     const img = new Image();
@@ -83,9 +89,24 @@ const compressToBase64 = (file) =>
     img.src = url;
   });
 
+// ─── constantes ─────────────────────────────────────────────────────────────
+
+const EMPTY_FORM = {
+  name: "",
+  document: "",
+  email: "",
+  phone: "",
+  pix: "",
+  photoBase64: "",
+  commission: "",
+};
+
+// ─── componente principal ────────────────────────────────────────────────────
+
 const SellerSection = () => {
   const [sellers, setSellers] = useState([]);
-  const [salesMap, setSalesMap] = useState({});
+  const [salesMap, setSalesMap] = useState({}); // name → { count, totalAmount }
+  const [paymentsMap, setPaymentsMap] = useState({}); // sellerId → totalPaid
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -98,33 +119,64 @@ const SellerSection = () => {
   });
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [search, setSearch] = useState("");
+
+  // modal financeiro
+  const [financeModal, setFinanceModal] = useState(null); // seller object
+  const [payments, setPayments] = useState([]); // histórico do seller aberto
+  const [paymentForm, setPaymentForm] = useState({ amount: "", note: "" });
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentFetching, setPaymentFetching] = useState(false);
+
   const fileInputRef = useRef();
 
-  const fetchSellers = async () => {
+  // ── fetch ──────────────────────────────────────────────────────────────────
+
+  const fetchAll = async () => {
     try {
       setFetching(true);
-      const snap = await getDocs(collection(db, "sellers"));
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+      const [sellerSnap, checkoutSnap, paymentSnap] = await Promise.all([
+        getDocs(collection(db, "sellers")),
+        getDocs(collection(db, "checkouts")),
+        getDocs(collection(db, "sellerPayments")),
+      ]);
+
+      const list = sellerSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
       setSellers(list);
 
-      // Conta vendas por nome do vendedor
-      const checkoutSnap = await getDocs(collection(db, "checkouts"));
-      const counts = {};
+      // vendas por nome
+      const sales = {};
       checkoutSnap.docs.forEach((d) => {
-        const sellerName = d.data()?.seller?.name;
-        if (sellerName) counts[sellerName] = (counts[sellerName] || 0) + 1;
+        const data = d.data();
+        if (data?.seller?.name && data.status === "approved") {
+          const n = data.seller.name;
+          if (!sales[n]) sales[n] = { count: 0, totalAmount: 0 };
+          sales[n].count += 1;
+          sales[n].totalAmount += Number(data.totalAmount || 0);
+        }
       });
-      setSalesMap(counts);
+      setSalesMap(sales);
+
+      // pagamentos enviados por sellerId
+      const paid = {};
+      paymentSnap.docs.forEach((d) => {
+        const data = d.data();
+        paid[data.sellerId] =
+          (paid[data.sellerId] || 0) + Number(data.amount || 0);
+      });
+      setPaymentsMap(paid);
     } catch {
-      toast.error("Erro ao carregar vendedores.");
+      toast.error("Erro ao carregar dados.");
     } finally {
       setFetching(false);
     }
   };
 
   useEffect(() => {
-    fetchSellers();
+    fetchAll();
   }, []);
+
+  // ── foto ───────────────────────────────────────────────────────────────────
 
   const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
@@ -142,6 +194,8 @@ const SellerSection = () => {
     }
   };
 
+  // ── cadastro / edição ──────────────────────────────────────────────────────
+
   const handleSubmit = async () => {
     if (
       !form.name ||
@@ -153,17 +207,24 @@ const SellerSection = () => {
       toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
+    const commission =
+      parseFloat(String(form.commission).replace(",", ".")) || 0;
+    if (commission < 0 || commission > 100) {
+      toast.error("Comissão deve ser entre 0 e 100%.");
+      return;
+    }
     setLoading(true);
     try {
+      const payload = { ...form, commission };
       if (editingId) {
-        await updateDoc(doc(db, "sellers", editingId), form);
-        toast.success("Vendedor atualizado com sucesso!");
+        await updateDoc(doc(db, "sellers", editingId), payload);
+        toast.success("Vendedor atualizado!");
       } else {
-        await addDoc(collection(db, "sellers"), form);
-        toast.success("Vendedor cadastrado com sucesso!");
+        await addDoc(collection(db, "sellers"), payload);
+        toast.success("Vendedor cadastrado!");
       }
       resetForm();
-      fetchSellers();
+      fetchAll();
     } catch (err) {
       toast.error("Erro ao salvar vendedor.");
       console.error(err);
@@ -188,6 +249,7 @@ const SellerSection = () => {
       phone: seller.phone || "",
       pix: seller.pix || "",
       photoBase64: seller.photoBase64 || "",
+      commission: seller.commission ?? "",
     });
     setPhotoPreview(seller.photoBase64 || null);
     setDrawerOpen(true);
@@ -205,20 +267,100 @@ const SellerSection = () => {
     }
   };
 
-  // Métricas
-  const totalVendas = sellers.reduce(
-    (acc, s) => acc + (salesMap[s.name] || 0),
-    0
-  );
+  // ── modal financeiro ───────────────────────────────────────────────────────
+
+  const openFinance = async (seller) => {
+    setFinanceModal(seller);
+    setPaymentFetching(true);
+    try {
+      const snap = await getDocs(
+        query(
+          collection(db, "sellerPayments"),
+          where("sellerId", "==", seller.id)
+        )
+      );
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      list.sort((a, b) => {
+        const ta = a.createdAt?.toDate?.() ?? new Date(a.createdAt ?? 0);
+        const tb = b.createdAt?.toDate?.() ?? new Date(b.createdAt ?? 0);
+        return tb - ta;
+      });
+      setPayments(list);
+    } catch {
+      toast.error("Erro ao carregar lançamentos.");
+    } finally {
+      setPaymentFetching(false);
+    }
+  };
+
+  const closeFinance = () => {
+    setFinanceModal(null);
+    setPayments([]);
+    setPaymentForm({ amount: "", note: "" });
+  };
+
+  const handleAddPayment = async () => {
+    const amount = parseFloat(String(paymentForm.amount).replace(",", "."));
+    if (!amount || amount <= 0) {
+      toast.error("Informe um valor válido.");
+      return;
+    }
+    setPaymentLoading(true);
+    try {
+      const docRef = await addDoc(collection(db, "sellerPayments"), {
+        sellerId: financeModal.id,
+        sellerName: financeModal.name,
+        amount,
+        note: paymentForm.note.trim(),
+        createdAt: serverTimestamp(),
+      });
+      const newPayment = {
+        id: docRef.id,
+        sellerId: financeModal.id,
+        sellerName: financeModal.name,
+        amount,
+        note: paymentForm.note.trim(),
+        createdAt: new Date(),
+      };
+      setPayments((prev) => [newPayment, ...prev]);
+      setPaymentsMap((prev) => ({
+        ...prev,
+        [financeModal.id]: (prev[financeModal.id] || 0) + amount,
+      }));
+      setPaymentForm({ amount: "", note: "" });
+      toast.success("Lançamento registrado!");
+    } catch {
+      toast.error("Erro ao registrar lançamento.");
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
+  const handleDeletePayment = async (paymentId, amount) => {
+    try {
+      await deleteDoc(doc(db, "sellerPayments", paymentId));
+      setPayments((prev) => prev.filter((p) => p.id !== paymentId));
+      setPaymentsMap((prev) => ({
+        ...prev,
+        [financeModal.id]: Math.max(0, (prev[financeModal.id] || 0) - amount),
+      }));
+      toast.success("Lançamento removido.");
+    } catch {
+      toast.error("Erro ao remover lançamento.");
+    }
+  };
+
+  // ── métricas ───────────────────────────────────────────────────────────────
+
+  const totalVendas = Object.values(salesMap).reduce((a, v) => a + v.count, 0);
   const topSeller = sellers.reduce(
     (best, s) => {
-      const count = salesMap[s.name] || 0;
+      const count = salesMap[s.name]?.count || 0;
       return count > best.count ? { name: s.name, count } : best;
     },
     { name: "—", count: 0 }
   );
 
-  // Busca local (nome, email, CPF, telefone, pix)
   const filteredSellers = search.trim()
     ? sellers.filter((s) =>
         [s.name, s.email, s.document, s.phone, s.pix]
@@ -228,6 +370,32 @@ const SellerSection = () => {
       )
     : sellers;
 
+  // ── cálculos por vendedor ──────────────────────────────────────────────────
+
+  const getSellerFinance = (seller) => {
+    const { count = 0, totalAmount = 0 } = salesMap[seller.name] || {};
+    const commission = Number(seller.commission || 0);
+    const toSend = (totalAmount * commission) / 100;
+    const sent = paymentsMap[seller.id] || 0;
+    const remaining = Math.max(0, toSend - sent);
+    const progress = toSend > 0 ? Math.min(100, (sent / toSend) * 100) : 0;
+    return { count, totalAmount, toSend, sent, remaining, progress };
+  };
+
+  const formatDate = (ts) => {
+    if (!ts) return "—";
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────
+
   return (
     <Box className={styles.container}>
       {/* ── Header ── */}
@@ -235,7 +403,7 @@ const SellerSection = () => {
         <Box>
           <Typography className={styles.pageTitle}>Vendedores</Typography>
           <Typography className={styles.pageSubtitle}>
-            Gerencie os vendedores credenciados do evento
+            Gerencie vendedores, comissões e repasses
           </Typography>
         </Box>
         <Button
@@ -273,7 +441,7 @@ const SellerSection = () => {
           <Box>
             <Typography className={styles.statValue}>{totalVendas}</Typography>
             <Typography className={styles.statLabel}>
-              Total de vendas
+              Vendas aprovadas
             </Typography>
           </Box>
         </Box>
@@ -362,11 +530,14 @@ const SellerSection = () => {
       ) : (
         <Box className={styles.sellerGrid}>
           {filteredSellers.map((seller) => {
-            const salesCount = salesMap[seller.name] || 0;
+            const { count, totalAmount, toSend, sent, remaining, progress } =
+              getSellerFinance(seller);
+            const commission = Number(seller.commission || 0);
             return (
               <Box key={seller.id} className={styles.sellerCard}>
                 <Box className={styles.cardAccent} />
                 <Box className={styles.cardBody}>
+                  {/* Avatar + ações */}
                   <Box className={styles.cardTop}>
                     <Badge
                       overlap="circular"
@@ -384,8 +555,16 @@ const SellerSection = () => {
                         {!seller.photoBase64 && <MdPerson size={28} />}
                       </Avatar>
                     </Badge>
-
                     <Box className={styles.cardActions}>
+                      <Tooltip title="Comissões e repasses">
+                        <IconButton
+                          size="small"
+                          className={styles.financeBtn}
+                          onClick={() => openFinance(seller)}
+                        >
+                          <MdPayments size={16} />
+                        </IconButton>
+                      </Tooltip>
                       <IconButton
                         size="small"
                         className={styles.editBtn}
@@ -444,15 +623,111 @@ const SellerSection = () => {
                     </Tooltip>
                   </Box>
 
-                  <Box className={styles.salesBadge}>
-                    <Typography className={styles.salesCount}>
-                      {salesCount}
-                    </Typography>
-                    <Typography className={styles.salesLabel}>
-                      {salesCount === 1
-                        ? "venda realizada"
-                        : "vendas realizadas"}
-                    </Typography>
+                  {/* Financeiro resumido */}
+                  <Box className={styles.financeResume}>
+                    <Box className={styles.financeRow}>
+                      <Box className={styles.financeItem}>
+                        <Typography className={styles.financeLabel}>
+                          Vendas
+                        </Typography>
+                        <Typography className={styles.financeValue}>
+                          {count}
+                        </Typography>
+                      </Box>
+                      <Box className={styles.financeItem}>
+                        <Typography className={styles.financeLabel}>
+                          Total vendido
+                        </Typography>
+                        <Typography className={styles.financeValue}>
+                          {fmt(totalAmount)}
+                        </Typography>
+                      </Box>
+                      <Box className={styles.financeItem}>
+                        <Typography className={styles.financeLabel}>
+                          Comissão
+                        </Typography>
+                        <Typography
+                          className={styles.financeValue}
+                          style={{ color: "#1967d2" }}
+                        >
+                          {commission}%
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Divider sx={{ my: 1 }} />
+
+                    <Box className={styles.financeRow}>
+                      <Box className={styles.financeItem}>
+                        <Typography className={styles.financeLabel}>
+                          A enviar
+                        </Typography>
+                        <Typography
+                          className={styles.financeValue}
+                          style={{ color: "#1e8e3e", fontWeight: 700 }}
+                        >
+                          {fmt(toSend)}
+                        </Typography>
+                      </Box>
+                      <Box className={styles.financeItem}>
+                        <Typography className={styles.financeLabel}>
+                          Enviado
+                        </Typography>
+                        <Typography className={styles.financeValue}>
+                          {fmt(sent)}
+                        </Typography>
+                      </Box>
+                      <Box className={styles.financeItem}>
+                        <Typography className={styles.financeLabel}>
+                          Falta
+                        </Typography>
+                        <Typography
+                          className={styles.financeValue}
+                          style={{
+                            color: remaining > 0 ? "#d93025" : "#1e8e3e",
+                            fontWeight: 700,
+                          }}
+                        >
+                          {remaining > 0 ? fmt(remaining) : "Quitado ✓"}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {toSend > 0 && (
+                      <Box sx={{ mt: 1 }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            mb: 0.3,
+                          }}
+                        >
+                          <Typography
+                            sx={{ fontSize: "0.7rem", color: "#90a4ae" }}
+                          >
+                            Progresso do repasse
+                          </Typography>
+                          <Typography
+                            sx={{ fontSize: "0.7rem", color: "#90a4ae" }}
+                          >
+                            {Math.round(progress)}%
+                          </Typography>
+                        </Box>
+                        <LinearProgress
+                          variant="determinate"
+                          value={progress}
+                          sx={{
+                            borderRadius: 4,
+                            height: 6,
+                            backgroundColor: "#e0e0e0",
+                            "& .MuiLinearProgress-bar": {
+                              backgroundColor:
+                                progress >= 100 ? "#1e8e3e" : "#1967d2",
+                            },
+                          }}
+                        />
+                      </Box>
+                    )}
                   </Box>
                 </Box>
               </Box>
@@ -461,7 +736,9 @@ const SellerSection = () => {
         </Box>
       )}
 
-      {/* ── Drawer Cadastro / Edição ── */}
+      {/* ══════════════════════════════════════════════════════════════════════
+          Drawer: Cadastro / Edição
+      ══════════════════════════════════════════════════════════════════════ */}
       <Drawer
         anchor="right"
         open={drawerOpen}
@@ -476,10 +753,9 @@ const SellerSection = () => {
             <MdClose />
           </IconButton>
         </Box>
-
         <Divider />
-
         <Box className={styles.drawerContent}>
+          {/* Foto */}
           <Box className={styles.photoArea}>
             <Box
               className={styles.photoUploadCircle}
@@ -574,9 +850,29 @@ const SellerSection = () => {
               size="small"
               placeholder="CPF, e-mail, telefone ou chave aleatória"
             />
+            <TextField
+              label="Comissão (%)"
+              value={form.commission}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, commission: e.target.value }))
+              }
+              fullWidth
+              disabled={loading}
+              size="small"
+              placeholder="Ex: 10"
+              type="number"
+              inputProps={{ min: 0, max: 100, step: 0.5 }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <MdPercent size={16} color="#90a4ae" />
+                  </InputAdornment>
+                ),
+              }}
+              helperText="Percentual sobre o valor total de cada venda aprovada"
+            />
           </Box>
         </Box>
-
         <Box className={styles.drawerFooter}>
           <Button
             variant="outlined"
@@ -603,6 +899,270 @@ const SellerSection = () => {
           </Button>
         </Box>
       </Drawer>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          Modal: Financeiro do vendedor
+      ══════════════════════════════════════════════════════════════════════ */}
+      <Dialog
+        open={!!financeModal}
+        onClose={closeFinance}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        {financeModal &&
+          (() => {
+            const { toSend, sent, remaining, progress, totalAmount, count } =
+              getSellerFinance(financeModal);
+            const commission = Number(financeModal.commission || 0);
+            return (
+              <>
+                <DialogTitle sx={{ pb: 0 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Avatar
+                      src={financeModal.photoBase64 || undefined}
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        bgcolor: "#e8f0fe",
+                        color: "#1967d2",
+                      }}
+                    >
+                      {!financeModal.photoBase64 && <MdPerson size={24} />}
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography fontWeight={700} fontSize="1rem">
+                        {financeModal.name}
+                      </Typography>
+                      <Typography fontSize="0.78rem" color="text.secondary">
+                        Comissão: {commission}%
+                      </Typography>
+                    </Box>
+                    <IconButton size="small" onClick={closeFinance}>
+                      <MdClose />
+                    </IconButton>
+                  </Box>
+                </DialogTitle>
+
+                <DialogContent>
+                  {/* Cards de resumo */}
+                  <Box className={styles.financeCards}>
+                    <Box
+                      className={styles.financeCard}
+                      style={{ borderColor: "#1967d2" }}
+                    >
+                      <Typography className={styles.fcLabel}>
+                        Total vendido
+                      </Typography>
+                      <Typography className={styles.fcValue}>
+                        {fmt(totalAmount)}
+                      </Typography>
+                      <Typography className={styles.fcSub}>
+                        {count} venda{count !== 1 ? "s" : ""} aprovada
+                        {count !== 1 ? "s" : ""}
+                      </Typography>
+                    </Box>
+                    <Box
+                      className={styles.financeCard}
+                      style={{ borderColor: "#1e8e3e" }}
+                    >
+                      <Typography className={styles.fcLabel}>
+                        Comissão total
+                      </Typography>
+                      <Typography
+                        className={styles.fcValue}
+                        style={{ color: "#1e8e3e" }}
+                      >
+                        {fmt(toSend)}
+                      </Typography>
+                      <Typography className={styles.fcSub}>
+                        {commission}% sobre vendas
+                      </Typography>
+                    </Box>
+                    <Box
+                      className={styles.financeCard}
+                      style={{
+                        borderColor: remaining > 0 ? "#d93025" : "#1e8e3e",
+                      }}
+                    >
+                      <Typography className={styles.fcLabel}>
+                        Saldo restante
+                      </Typography>
+                      <Typography
+                        className={styles.fcValue}
+                        style={{ color: remaining > 0 ? "#d93025" : "#1e8e3e" }}
+                      >
+                        {remaining > 0 ? fmt(remaining) : "Quitado ✓"}
+                      </Typography>
+                      <Typography className={styles.fcSub}>
+                        Enviado: {fmt(sent)}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Barra de progresso */}
+                  {toSend > 0 && (
+                    <Box sx={{ mb: 2 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          mb: 0.5,
+                        }}
+                      >
+                        <Typography fontSize="0.78rem" color="text.secondary">
+                          Progresso do repasse
+                        </Typography>
+                        <Typography fontSize="0.78rem" color="text.secondary">
+                          {Math.round(progress)}%
+                        </Typography>
+                      </Box>
+                      <LinearProgress
+                        variant="determinate"
+                        value={progress}
+                        sx={{
+                          borderRadius: 4,
+                          height: 8,
+                          backgroundColor: "#e0e0e0",
+                          "& .MuiLinearProgress-bar": {
+                            backgroundColor:
+                              progress >= 100 ? "#1e8e3e" : "#1967d2",
+                          },
+                        }}
+                      />
+                    </Box>
+                  )}
+
+                  <Divider sx={{ my: 2 }} />
+
+                  {/* Novo lançamento */}
+                  <Typography fontWeight={700} fontSize="0.9rem" mb={1.5}>
+                    Registrar envio
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 1, mb: 1 }}>
+                    <TextField
+                      label="Valor enviado (R$)"
+                      value={paymentForm.amount}
+                      onChange={(e) =>
+                        setPaymentForm((p) => ({
+                          ...p,
+                          amount: e.target.value,
+                        }))
+                      }
+                      size="small"
+                      type="number"
+                      inputProps={{ min: 0, step: 0.01 }}
+                      sx={{ flex: 1 }}
+                      disabled={paymentLoading}
+                    />
+                    <Button
+                      variant="contained"
+                      onClick={handleAddPayment}
+                      disabled={paymentLoading}
+                      startIcon={
+                        paymentLoading ? (
+                          <CircularProgress size={14} color="inherit" />
+                        ) : (
+                          <MdAdd size={18} />
+                        )
+                      }
+                      sx={{
+                        textTransform: "none",
+                        borderRadius: 2,
+                        whiteSpace: "nowrap",
+                        bgcolor: "#1967d2",
+                      }}
+                    >
+                      Lançar
+                    </Button>
+                  </Box>
+                  <TextField
+                    label="Observação (opcional)"
+                    value={paymentForm.note}
+                    onChange={(e) =>
+                      setPaymentForm((p) => ({ ...p, note: e.target.value }))
+                    }
+                    size="small"
+                    fullWidth
+                    disabled={paymentLoading}
+                    sx={{ mb: 2 }}
+                  />
+
+                  <Divider sx={{ mb: 2 }} />
+
+                  {/* Histórico */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 1.5,
+                    }}
+                  >
+                    <MdHistory size={18} color="#90a4ae" />
+                    <Typography fontWeight={700} fontSize="0.9rem">
+                      Histórico de envios
+                    </Typography>
+                  </Box>
+
+                  {paymentFetching ? (
+                    <Box
+                      sx={{ display: "flex", justifyContent: "center", py: 2 }}
+                    >
+                      <CircularProgress size={24} />
+                    </Box>
+                  ) : payments.length === 0 ? (
+                    <Typography
+                      fontSize="0.85rem"
+                      color="text.secondary"
+                      textAlign="center"
+                      py={2}
+                    >
+                      Nenhum envio registrado ainda.
+                    </Typography>
+                  ) : (
+                    <Box className={styles.paymentList}>
+                      {payments.map((p) => (
+                        <Box key={p.id} className={styles.paymentItem}>
+                          <Box>
+                            <Typography
+                              fontWeight={700}
+                              fontSize="0.9rem"
+                              color="#1e8e3e"
+                            >
+                              + {fmt(p.amount)}
+                            </Typography>
+                            {p.note && (
+                              <Typography
+                                fontSize="0.78rem"
+                                color="text.secondary"
+                              >
+                                {p.note}
+                              </Typography>
+                            )}
+                            <Typography
+                              fontSize="0.72rem"
+                              color="text.secondary"
+                            >
+                              {formatDate(p.createdAt)}
+                            </Typography>
+                          </Box>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleDeletePayment(p.id, p.amount)}
+                          >
+                            <MdDelete size={16} />
+                          </IconButton>
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
+                </DialogContent>
+              </>
+            );
+          })()}
+      </Dialog>
 
       {/* ── Dialog confirmar exclusão ── */}
       <Dialog
