@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import styles from "./adminDashboard.module.css";
 import { IoExitOutline, IoMenuOutline } from "react-icons/io5";
 import {
   MdOutlineSpaceDashboard,
   MdOutlineMarkEmailRead,
+  MdOutlineBadge,
 } from "react-icons/md";
 import { IoBagCheckOutline } from "react-icons/io5";
 import { MdOutlineQrCode } from "react-icons/md";
@@ -27,6 +28,7 @@ import EmailSection from "../../components/admin/email/EmailSection";
 import AddManualPayment from "../../components/admin/dashboard/AddManualPayment";
 import CertificateContainer from "../../components/certificateGenerator/CertificateContainer";
 import Scanner from "../../components/admin/Scanner";
+import SellerSection from "../../components/admin/SellerSection";
 
 import { DashboardProvider } from "../../data/contexts/DashboardContext";
 
@@ -114,6 +116,19 @@ const AdminDashboard = () => {
           <ListItemText primary="Credenciamento" />
         </ListItem>
 
+        <ListItem
+          button
+          className={`${styles.navItem} ${
+            activeSection === "sellers" ? styles.active : ""
+          }`}
+          onClick={() => handleSectionChange("sellers")}
+        >
+          <ListItemIcon>
+            <MdOutlineBadge />
+          </ListItemIcon>
+          <ListItemText primary="Vendedores" />
+        </ListItem>
+
         <ListItem onClick={logout} className={styles.navItem} data-exit="true">
           <ListItemIcon>
             <IoExitOutline />
@@ -183,6 +198,7 @@ const AdminDashboard = () => {
             <CertificateContainer />
           )}
           {activeSection === "accreditation" && <Scanner />}
+          {activeSection === "sellers" && <SellerSection />}
         </Box>
       </Box>
     </DashboardProvider>

@@ -1,5 +1,5 @@
 // src/components/admin/AddManualPayment/index.jsx
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./addManualPayment.module.css";
 import {
   TextField,
@@ -10,9 +10,10 @@ import {
   InputLabel,
   Typography,
   Box,
+  Avatar,
 } from "@mui/material";
 import InputMask from "react-input-mask";
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, getDocs } from "firebase/firestore";
 import { db } from "../../../../../firebaseConfig";
 import ParticipantsList from "../../../checkout/ParticipantsList";
 import usePaymentForm from "../../../../data/hooks/usePaymentForm";
@@ -20,6 +21,7 @@ import Modal from "../../../checkout/Modal";
 import PaymentService from "../../../../data/services/PaymentService";
 import { useDashboard } from "../../../../data/contexts/DashboardContext";
 import { toast } from "react-toastify";
+import { MdPerson, MdVerified } from "react-icons/md";
 
 const AddManualPayment = () => {
   const {
@@ -42,6 +44,16 @@ const AddManualPayment = () => {
   const { updateMetrics } = useDashboard();
   const [installments, setInstallments] = useState("1");
   const [cardBrand, setCardBrand] = useState("Visa");
+  const [sellers, setSellers] = useState([]);
+  const [selectedSeller, setSelectedSeller] = useState("");
+
+  useEffect(() => {
+    getDocs(collection(db, "sellers"))
+      .then((snap) =>
+        setSellers(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+      )
+      .catch(() => {});
+  }, []);
 
   const paymentMethods = [
     { value: "creditCard", label: "Cartão de Crédito" },
@@ -159,6 +171,14 @@ const AddManualPayment = () => {
         status: "approved",
         paymentMethod: formState.paymentMethod,
         observation: formState.observation,
+        seller: selectedSeller
+          ? (() => {
+              const s = sellers.find((s) => s.id === selectedSeller);
+              return s
+                ? { id: s.id, name: s.name, document: s.document }
+                : null;
+            })()
+          : null,
         totalAmount: updatedTotals.total,
         eventName: "Congresso Autismo MA 2026",
         participants: participants.map((p) => ({
@@ -456,6 +476,63 @@ const AddManualPayment = () => {
             </Box>
           )}
         </Box>
+        {/* Vendedor credenciado */}
+        <Box sx={{ width: "100%" }}>
+          <FormControl sx={{ width: "100%" }} disabled={formState.loading}>
+            <InputLabel>Vendedor credenciado (opcional)</InputLabel>
+            <Select
+              value={selectedSeller}
+              label="Vendedor credenciado (opcional)"
+              onChange={(e) => setSelectedSeller(e.target.value)}
+              renderValue={(value) => {
+                if (!value) return "Nenhum (venda direta)";
+                const s = sellers.find((s) => s.id === value);
+                return s ? (
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Avatar
+                      src={s.photoBase64 || undefined}
+                      sx={{ width: 24, height: 24, fontSize: "0.75rem" }}
+                    >
+                      {!s.photoURL && <MdPerson />}
+                    </Avatar>
+                    <span>{s.name}</span>
+                    <MdVerified color="#1976D2" size={14} />
+                  </Box>
+                ) : (
+                  "Nenhum"
+                );
+              }}
+            >
+              <MenuItem value="">
+                <em>Nenhum (venda direta)</em>
+              </MenuItem>
+              {sellers.map((s) => (
+                <MenuItem key={s.id} value={s.id}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Avatar
+                      src={s.photoBase64 || undefined}
+                      sx={{ width: 32, height: 32 }}
+                    >
+                      {!s.photoURL && <MdPerson />}
+                    </Avatar>
+                    <Box>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                      >
+                        <span style={{ fontWeight: 600 }}>{s.name}</span>
+                        <MdVerified color="#1976D2" size={13} />
+                      </Box>
+                      <Box sx={{ fontSize: "0.75rem", color: "#78909c" }}>
+                        CPF: {s.document}
+                      </Box>
+                    </Box>
+                  </Box>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+
         <Box sx={{ width: "100%" }}>
           <TextField
             sx={{ width: "100%" }}

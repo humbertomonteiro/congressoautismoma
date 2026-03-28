@@ -11,6 +11,7 @@ import ThankYouPage from "../pages/ThankYouPage";
 import Tickets from "../pages/Tickets";
 import CertificateHome from "../components/certificateGenerator/CertificateHome";
 import Certificate from "../pages/Certificate";
+import VendedoresCredenciados from "../pages/VendedoresCredenciados";
 
 import FormRegisterSalud from "../pages/FormRegisterSalud";
 
@@ -51,6 +52,10 @@ const RoutesApp = () => {
         element={<CertificateHome />}
       />
       <Route path="/formulario-pre-inscricao" element={<FormRegisterSalud />} />
+      <Route
+        path="/vendedores-credenciados"
+        element={<VendedoresCredenciados />}
+      />
 
       <Route path="*" element={<Home />} />
     </Routes>

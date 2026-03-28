@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -13,6 +13,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Chip,
 } from "@mui/material";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -20,6 +21,7 @@ import * as XLSX from "xlsx";
 import CheckoutCard from "../CheckoutCard";
 import Filters from "../Filters";
 import { useDashboard } from "../../../../data/contexts/DashboardContext";
+import { MdVerified } from "react-icons/md";
 
 const formatBrazilianCurrency = (value) => {
   if (isNaN(value)) return "R$ 0,00";
@@ -52,78 +54,81 @@ const calculateFee = (
 ) => {
   let totalFee = 0;
   cardBrand = cardBrand.toLowerCase();
-
-  console.log(
-    `Calculando taxa: totalAmount=${totalAmount}, paymentMethod=${paymentMethod}, cardBrand=${cardBrand}, numParticipants=${numParticipants}`
-  );
-
   switch (paymentMethod) {
     case "pix":
       totalFee = totalAmount * 0.0099;
       break;
     case "creditCard":
     case "debitCard":
-      if (["visa", "mastercard", "master"].includes(cardBrand)) {
-        totalFee = totalAmount * 0.0449;
-      } else if (cardBrand === "elo") {
-        totalFee = totalAmount * 0.0509;
-      } else {
-        totalFee = totalAmount * 0.0449;
-      }
+      totalFee = totalAmount * (cardBrand === "elo" ? 0.0509 : 0.0449);
       break;
     case "boleto":
       totalFee = 5.0;
       break;
-    case "courtesy":
-      totalFee = 0;
-      break;
     default:
       totalFee = 0;
-      console.warn(`Método de pagamento desconhecido: ${paymentMethod}`);
   }
-
-  const feePerParticipant =
-    numParticipants > 0 ? totalFee / numParticipants : 0;
-  console.log(
-    `Taxa total=${totalFee}, Taxa por participante=${feePerParticipant}`
-  );
-  return feePerParticipant;
+  return numParticipants > 0 ? totalFee / numParticipants : 0;
 };
 
 const calculateParticipantValue = (checkout, participantIndex) => {
   const { orderDetails, coupon, paymentMethod } = checkout;
   if (paymentMethod === "courtesy") return 0;
-  const { fullTickets, halfTickets } = orderDetails || {};
+  const { fullTickets = 0, halfTickets = 0 } = orderDetails || {};
   const isGroupCoupon = coupon === "grupo" && fullTickets + halfTickets >= 5;
-
-  let value;
-  if (participantIndex < fullTickets) {
-    value = 499;
-    if (isGroupCoupon) {
-      value -= 50;
-    }
-  } else {
-    value = 399;
-  }
+  let value = participantIndex < fullTickets ? 499 : 399;
+  if (isGroupCoupon && participantIndex < fullTickets) value -= 50;
   return value;
 };
+
+// Normaliza checkouts para tolerar campos ausentes em vendas manuais
+const normalizeCheckout = (checkout) => ({
+  ...checkout,
+  participants: Array.isArray(checkout.participants)
+    ? checkout.participants
+    : [],
+  orderDetails: checkout.orderDetails || { fullTickets: 0, halfTickets: 0 },
+  timestamp: checkout.timestamp || new Date().toISOString(),
+});
+
+const ROWS_PER_PAGE = 6;
 
 const CheckoutListCards = ({
   isMobile,
   setOpenFiltersDrawer,
   openFiltersDrawer,
 }) => {
-  const {
-    filteredCheckouts: allFilteredCheckouts,
-    filteredMetrics,
-    loadMoreCheckouts,
-  } = useDashboard();
+  const { filteredCheckouts: rawFilteredCheckouts, filteredMetrics } =
+    useDashboard();
+
   const [page, setPage] = useState(0);
-  const [rowsPerPage] = useState(6);
-  const [paginatedCheckouts, setPaginatedCheckouts] = useState([]);
   const [viewMode, setViewMode] = useState(
     localStorage.getItem("checkoutViewMode") || "cards"
   );
+
+  // Normaliza e ordena — sem filtrar por campos ausentes
+  const allCheckouts = useMemo(() => {
+    if (!rawFilteredCheckouts) return [];
+    return [...rawFilteredCheckouts]
+      .filter((c) => c && c.id)
+      .map(normalizeCheckout)
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  }, [rawFilteredCheckouts]);
+
+  // Reset de página ao mudar a lista
+  useEffect(() => {
+    setPage(0);
+  }, [rawFilteredCheckouts]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(allCheckouts.length / ROWS_PER_PAGE)
+  );
+
+  const paginatedCheckouts = useMemo(() => {
+    const start = page * ROWS_PER_PAGE;
+    return allCheckouts.slice(start, start + ROWS_PER_PAGE);
+  }, [allCheckouts, page]);
 
   const handleToggleViewMode = () => {
     const newMode = viewMode === "cards" ? "table" : "cards";
@@ -132,560 +137,106 @@ const CheckoutListCards = ({
   };
 
   const prepareTableData = (checkouts) => {
-    const participantData = [];
+    const rows = [];
     checkouts.forEach((checkout) => {
-      const { paymentMethod, timestamp, participants, orderDetails } = checkout;
-      const isCourtesy = paymentMethod === "courtesy";
-      const totalAmount = isCourtesy
-        ? 0
-        : parseFloat(checkout.totalAmount) || 0;
-      const cardBrand = checkout.paymentDetails?.creditCard?.brand || "unknown";
-      const numParticipants = participants?.length || 1;
-
-      console.log(
-        `Processando checkout: id=${
-          checkout.id
-        }, paymentMethod=${paymentMethod}, courtesyTickets=${
-          orderDetails?.courtesyTickets || 0
-        }, numParticipants=${numParticipants}`
-      );
-
-      participants?.forEach((participant, index) => {
-        const participantValue = calculateParticipantValue(checkout, index);
+      const norm = normalizeCheckout(checkout);
+      const isCourtesy = norm.paymentMethod === "courtesy";
+      const totalAmount = isCourtesy ? 0 : parseFloat(norm.totalAmount) || 0;
+      const cardBrand = norm.paymentDetails?.creditCard?.brand || "unknown";
+      const numParticipants = norm.participants.length || 1;
+      norm.participants.forEach((participant, index) => {
+        const participantValue = calculateParticipantValue(norm, index);
         const fee = isCourtesy
           ? 0
           : calculateFee(
               totalAmount,
-              paymentMethod,
+              norm.paymentMethod,
               cardBrand,
               numParticipants
             );
-        const netAmount = participantValue - fee;
-
-        participantData.push([
+        rows.push([
           participant.name || "N/A",
           participant.document || participant.cpf || "N/A",
           participant.email || "N/A",
-          participant.number || "N/A", // Adiciona número de telefone
-          formatBrazilianDate(timestamp, true),
-          paymentMethod,
+          participant.number || "N/A",
+          formatBrazilianDate(norm.timestamp, true),
+          norm.paymentMethod,
+          norm.seller?.name || "—",
           formatBrazilianCurrency(participantValue),
           formatBrazilianCurrency(fee),
-          formatBrazilianCurrency(netAmount),
+          formatBrazilianCurrency(participantValue - fee),
         ]);
       });
     });
-    return participantData;
+    return rows;
   };
 
   const exportToExcel = () => {
-    if (!allFilteredCheckouts) {
-      console.error("allFilteredCheckouts não está definido");
-      alert("Erro: Dados de checkouts não disponíveis. Tente novamente.");
-      return;
-    }
+    const approved = allCheckouts.filter((c) => c.status === "approved");
+    const pending = allCheckouts.filter((c) => c.status === "pending");
+    const errors = allCheckouts.filter((c) => c.status === "error");
 
-    const validCheckouts = (allFilteredCheckouts || []).filter(
-      (checkout) =>
-        checkout &&
-        checkout.id &&
-        Array.isArray(checkout.participants) &&
-        checkout.timestamp &&
-        checkout.orderDetails
-    );
-
-    const approvedCheckouts = validCheckouts.filter(
-      (c) => c.status === "approved"
-    );
-    const pendingCheckouts = validCheckouts.filter(
-      (c) => c.status === "pending"
-    );
-    const errorCheckouts = validCheckouts.filter((c) => c.status === "error");
-
-    const sortByDate = (a, b) => new Date(b.timestamp) - new Date(a.timestamp);
-    const sortedApproved = [...approvedCheckouts].sort(sortByDate);
-    const sortedPending = [...pendingCheckouts].sort(sortByDate);
-    const sortedErrors = [...errorCheckouts].sort(sortByDate);
-
-    const approvedData = prepareTableData(sortedApproved).map((row) => ({
-      "Nome do Participante": row[0],
+    const toObj = (row) => ({
+      Nome: row[0],
       CPF: row[1],
       Email: row[2],
-      Telefone: row[3], // Adiciona telefone
-      "Data da Compra": row[4],
+      Telefone: row[3],
+      Data: row[4],
       Método: row[5],
-      "Valor Bruto": row[6],
-      Taxa: row[7],
-      "Valor Líquido": row[8],
-    }));
-    const pendingData = prepareTableData(sortedPending).map((row) => ({
-      "Nome do Participante": row[0],
-      CPF: row[1],
-      Email: row[2],
-      Telefone: row[3], // Adiciona telefone
-      "Data da Compra": row[4],
-      Método: row[5],
-      "Valor Bruto": row[6],
-      Taxa: row[7],
-      "Valor Líquido": row[8],
-    }));
-    const errorData = prepareTableData(sortedErrors).map((row) => ({
-      "Nome do Participante": row[0],
-      CPF: row[1],
-      Email: row[2],
-      Telefone: row[3], // Adiciona telefone
-      "Data da Compra": row[4],
-      Método: row[5],
-      "Valor Bruto": row[6],
-      Taxa: row[7],
-      "Valor Líquido": row[8],
-    }));
-
-    const totalGross = sortedApproved.reduce((sum, checkout) => {
-      const total =
-        checkout.paymentMethod === "courtesy"
-          ? 0
-          : parseFloat(checkout.totalAmount) || 0;
-      return sum + total;
-    }, 0);
-    const totalFees = sortedApproved.reduce((sum, checkout) => {
-      const total =
-        checkout.paymentMethod === "courtesy"
-          ? 0
-          : parseFloat(checkout.totalAmount) || 0;
-      const numParticipants = checkout.participants?.length || 1;
-      const fee =
-        calculateFee(
-          total,
-          checkout.paymentMethod,
-          checkout.paymentDetails?.creditCard?.brand,
-          numParticipants
-        ) * numParticipants;
-      return sum + fee;
-    }, 0);
-    const totalNet = totalGross - totalFees;
-
-    const totalFullTickets = sortedApproved.reduce(
-      (sum, checkout) =>
-        sum + (parseInt(checkout.orderDetails?.fullTickets) || 0),
-      0
-    );
-    const totalHalfTickets = sortedApproved.reduce(
-      (sum, checkout) =>
-        sum + (parseInt(checkout.orderDetails?.halfTickets) || 0),
-      0
-    );
-    const totalCourtesyTickets = sortedApproved.reduce((sum, checkout) => {
-      const courtesyCount =
-        parseInt(checkout.orderDetails?.courtesyTickets) ||
-        (checkout.paymentMethod === "courtesy"
-          ? checkout.participants.length
-          : 0);
-      console.log(
-        `Checkout ${checkout.id}: courtesyTickets=${courtesyCount}, paymentMethod=${checkout.paymentMethod}`
-      );
-      return sum + courtesyCount;
-    }, 0);
-
-    const approvedWithTotals = [
-      ...approvedData,
-      {},
-      {
-        "Nome do Participante": "Total Bruto (Aprovados)",
-        CPF: "",
-        Email: "",
-        Telefone: "", // Adiciona telefone
-        "Data da Compra": "",
-        Método: "",
-        "Valor Bruto": formatBrazilianCurrency(totalGross),
-        Taxa: formatBrazilianCurrency(totalFees),
-        "Valor Líquido": formatBrazilianCurrency(totalNet),
-      },
-      {
-        "Nome do Participante": "Ingressos Inteiros",
-        CPF: "",
-        Email: "",
-        Telefone: "", // Adiciona telefone
-        "Data da Compra": "",
-        Método: "",
-        "Valor Bruto": totalFullTickets.toString(),
-        Taxa: "",
-        "Valor Líquido": "",
-      },
-      {
-        "Nome do Participante": "Ingressos Meia",
-        CPF: "",
-        Email: "",
-        Telefone: "", // Adiciona telefone
-        "Data da Compra": "",
-        Método: "",
-        "Valor Bruto": totalHalfTickets.toString(),
-        Taxa: "",
-        "Valor Líquido": "",
-      },
-      {
-        "Nome do Participante": "Ingressos Cortesias",
-        CPF: "",
-        Email: "",
-        Telefone: "", // Adiciona telefone
-        "Data da Compra": "",
-        Método: "",
-        "Valor Bruto": totalCourtesyTickets.toString(),
-        Taxa: "",
-        "Valor Líquido": "",
-      },
-    ];
+      Vendedor: row[6],
+      "Valor Bruto": row[7],
+      Taxa: row[8],
+      "Valor Líquido": row[9],
+    });
 
     const wb = XLSX.utils.book_new();
-
-    // Função auxiliar para aplicar estilos à planilha
-    const styleWorksheet = (ws, dataLength) => {
-      const range = XLSX.utils.decode_range(ws["!ref"]);
-      for (let R = range.s.r; R <= range.e.r; ++R) {
-        for (let C = range.s.c; C <= range.e.c; ++C) {
-          const cellAddress = { c: C, r: R };
-          const cellRef = XLSX.utils.encode_cell(cellAddress);
-          if (!ws[cellRef]) continue;
-
-          ws[cellRef].s = {
-            border: {
-              top: { style: "thin", color: { rgb: "000000" } },
-              bottom: { style: "thin", color: { rgb: "000000" } },
-              left: { style: "thin", color: { rgb: "000000" } },
-              right: { style: "thin", color: { rgb: "000000" } },
-            },
-            alignment: {
-              vertical: "center",
-              horizontal: C >= 6 ? "right" : "left",
-            },
-          };
-
-          if (R === 0) {
-            ws[cellRef].s = {
-              ...ws[cellRef].s,
-              font: { bold: true, color: { rgb: "FFFFFF" } },
-              fill: { fgColor: { rgb: "16A085" } },
-            };
-          } else if (R <= dataLength) {
-            ws[cellRef].s = {
-              ...ws[cellRef].s,
-              fill: { fgColor: { rgb: R % 2 === 1 ? "F5F5F5" : "FFFFFF" } },
-            };
-          } else {
-            ws[cellRef].s = {
-              ...ws[cellRef].s,
-              font: { bold: true },
-              fill: { fgColor: { rgb: "E0F7FA" } },
-            };
-          }
-        }
-      }
-      ws["!cols"] = [
-        { wch: 30 }, // Nome
-        { wch: 15 }, // CPF
-        { wch: 25 }, // Email
-        { wch: 15 }, // Telefone
-        { wch: 20 }, // Data
-        { wch: 12 }, // Método
-        { wch: 15 }, // Valor Bruto
-        { wch: 15 }, // Taxa
-        { wch: 15 }, // Valor Líquido
-      ];
-    };
-
-    const wsApproved = XLSX.utils.json_to_sheet(approvedWithTotals);
-    styleWorksheet(wsApproved, approvedData.length);
-    const wsPending = XLSX.utils.json_to_sheet(pendingData);
-    styleWorksheet(wsPending, pendingData.length);
-    const wsErrors = XLSX.utils.json_to_sheet(errorData);
-    styleWorksheet(wsErrors, errorData.length);
-
-    XLSX.utils.book_append_sheet(wb, wsApproved, "Aprovados");
-    if (pendingData.length > 0) {
-      XLSX.utils.book_append_sheet(wb, wsPending, "Pendentes");
+    const wsA = XLSX.utils.json_to_sheet(prepareTableData(approved).map(toObj));
+    XLSX.utils.book_append_sheet(wb, wsA, "Aprovados");
+    if (pending.length) {
+      const wsP = XLSX.utils.json_to_sheet(
+        prepareTableData(pending).map(toObj)
+      );
+      XLSX.utils.book_append_sheet(wb, wsP, "Pendentes");
     }
-    if (errorData.length > 0) {
-      XLSX.utils.book_append_sheet(wb, wsErrors, "Erros");
+    if (errors.length) {
+      const wsE = XLSX.utils.json_to_sheet(prepareTableData(errors).map(toObj));
+      XLSX.utils.book_append_sheet(wb, wsE, "Erros");
     }
-
-    XLSX.writeFile(wb, "relatorio_participantes_completo.xlsx");
+    XLSX.writeFile(wb, "relatorio_participantes.xlsx");
   };
 
   const exportToPDF = () => {
-    if (!allFilteredCheckouts) {
-      console.error("allFilteredCheckouts não está definido");
-      alert("Erro: Dados de checkouts não disponíveis. Tente novamente.");
-      return;
-    }
-
     const doc = new jsPDF();
-    const currentDate = formatBrazilianDate(new Date());
-    doc.setFontSize(16);
+    doc.setFontSize(14);
     doc.text(
-      `Relatório de Participantes até dia ${currentDate} - Congresso Autismo MA`,
+      `Relatório - Congresso Autismo MA (${formatBrazilianDate(new Date())})`,
       10,
-      10
+      12
     );
-
-    const validCheckouts = (allFilteredCheckouts || []).filter(
-      (checkout) =>
-        checkout &&
-        checkout.id &&
-        Array.isArray(checkout.participants) &&
-        checkout.timestamp &&
-        checkout.orderDetails
-    );
-
-    const approvedCheckouts = validCheckouts.filter(
-      (c) => c.status === "approved"
-    );
-    const pendingCheckouts = validCheckouts.filter(
-      (c) => c.status === "pending"
-    );
-    const errorCheckouts = validCheckouts.filter((c) => c.status === "error");
-
-    const sortByDate = (a, b) => new Date(b.timestamp) - new Date(a.timestamp);
-    const sortedApproved = [...approvedCheckouts].sort(sortByDate);
-    const sortedPending = [...pendingCheckouts].sort(sortByDate);
-    const sortedErrors = [...errorCheckouts].sort(sortByDate);
-
-    const totalGross = sortedApproved.reduce((sum, checkout) => {
-      const total =
-        checkout.paymentMethod === "courtesy"
-          ? 0
-          : parseFloat(checkout.totalAmount) || 0;
-      return sum + total;
-    }, 0);
-    const totalFees = sortedApproved.reduce((sum, checkout) => {
-      const total =
-        checkout.paymentMethod === "courtesy"
-          ? 0
-          : parseFloat(checkout.totalAmount) || 0;
-      const numParticipants = checkout.participants?.length || 1;
-      const fee =
-        calculateFee(
-          total,
-          checkout.paymentMethod,
-          checkout.paymentDetails?.creditCard?.brand,
-          numParticipants
-        ) * numParticipants;
-      return sum + fee;
-    }, 0);
-    const totalNet = totalGross - totalFees;
-
-    const totalFullTickets = sortedApproved.reduce(
-      (sum, checkout) =>
-        sum + (parseInt(checkout.orderDetails?.fullTickets) || 0),
-      0
-    );
-    const totalHalfTickets = sortedApproved.reduce(
-      (sum, checkout) =>
-        sum + (parseInt(checkout.orderDetails?.halfTickets) || 0),
-      0
-    );
-    const totalCourtesyTickets = sortedApproved.reduce((sum, checkout) => {
-      const courtesyCount =
-        parseInt(checkout.orderDetails?.courtesyTickets) ||
-        (checkout.paymentMethod === "courtesy"
-          ? checkout.participants.length
-          : 0);
-      console.log(
-        `Checkout ${checkout.id}: courtesyTickets=${courtesyCount}, paymentMethod=${checkout.paymentMethod}`
-      );
-      return sum + courtesyCount;
-    }, 0);
-
-    doc.setFontSize(12);
-    doc.text("Totais (Aprovados)", 10, 20);
+    const approved = allCheckouts.filter((c) => c.status === "approved");
     autoTable(doc, {
-      startY: 25,
-      head: [["Descrição", "Valor"]],
-      body: [
-        ["Total Bruto", formatBrazilianCurrency(totalGross)],
-        ["Total Taxas", formatBrazilianCurrency(totalFees)],
-        ["Total Líquido", formatBrazilianCurrency(totalNet)],
-        ["Ingressos Inteiros", totalFullTickets.toString()],
-        ["Ingressos Meia", totalHalfTickets.toString()],
-        ["Ingressos Cortesias", totalCourtesyTickets.toString()],
-      ],
-      theme: "grid",
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [22, 160, 133], textColor: [255, 255, 255] },
-      columnStyles: { 1: { halign: "right" } },
-      margin: { left: 10, right: 10 },
-    });
-
-    let finalY = doc.lastAutoTable.finalY + 10;
-    doc.setFontSize(12);
-    doc.text("Participantes Aprovados", 10, finalY);
-    const approvedTableData = prepareTableData(sortedApproved);
-
-    autoTable(doc, {
-      startY: finalY + 5,
+      startY: 18,
       head: [
         [
-          "Nome do Participante",
+          "Nome",
           "CPF",
           "Email",
-          "Telefone",
-          "Data da Compra",
+          "Tel",
+          "Data",
           "Método",
-          "Valor Bruto",
+          "Vendedor",
+          "Bruto",
           "Taxa",
-          "Valor Líquido",
+          "Líquido",
         ],
       ],
-      body: approvedTableData,
+      body: prepareTableData(approved),
       theme: "grid",
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [22, 160, 133], textColor: [255, 255, 255] },
-      columnStyles: {
-        0: { cellWidth: 35 }, // Nome
-        1: { cellWidth: 20 }, // CPF
-        2: { cellWidth: 30 }, // Email
-        3: { cellWidth: 20 }, // Telefone
-        4: { cellWidth: 25 }, // Data
-        5: { cellWidth: 15 }, // Método
-        6: { halign: "right", cellWidth: 15 }, // Valor Bruto
-        7: { halign: "right", cellWidth: 15 }, // Taxa
-        8: { halign: "right", cellWidth: 15 }, // Valor Líquido
-      },
+      styles: { fontSize: 7, cellPadding: 1.5 },
+      headStyles: { fillColor: [22, 160, 133] },
     });
-
-    finalY = doc.lastAutoTable.finalY + 10;
-    const pageHeight = doc.internal.pageSize.height;
-    if (sortedPending.length > 0) {
-      if (finalY + 20 > pageHeight - 10) {
-        doc.addPage();
-        finalY = 20;
-      }
-      doc.setFontSize(12);
-      doc.text("Participantes Pendentes", 10, finalY);
-      const pendingTableData = prepareTableData(sortedPending);
-
-      autoTable(doc, {
-        startY: finalY + 5,
-        head: [
-          [
-            "Nome do Participante",
-            "CPF",
-            "Email",
-            "Telefone",
-            "Data da Compra",
-            "Método",
-            "Valor Bruto",
-            "Taxa",
-            "Valor Líquido",
-          ],
-        ],
-        body: pendingTableData,
-        theme: "grid",
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [255, 179, 0], textColor: [255, 255, 255] },
-        columnStyles: {
-          0: { cellWidth: 35 },
-          1: { cellWidth: 20 },
-          2: { cellWidth: 30 },
-          3: { cellWidth: 20 },
-          4: { cellWidth: 25 },
-          5: { cellWidth: 15 },
-          6: { halign: "right", cellWidth: 15 },
-          7: { halign: "right", cellWidth: 15 },
-          8: { halign: "right", cellWidth: 15 },
-        },
-      });
-      finalY = doc.lastAutoTable.finalY;
-    }
-
-    if (sortedErrors.length > 0) {
-      finalY += 10;
-      if (finalY + 20 > pageHeight - 10) {
-        doc.addPage();
-        finalY = 20;
-      }
-      doc.setFontSize(12);
-      doc.text("Participantes com Erro", 10, finalY);
-      const errorTableData = prepareTableData(sortedErrors);
-
-      autoTable(doc, {
-        startY: finalY + 5,
-        head: [
-          [
-            "Nome do Participante",
-            "CPF",
-            "Email",
-            "Telefone",
-            "Data da Compra",
-            "Método",
-            "Valor Bruto",
-            "Taxa",
-            "Valor Líquido",
-          ],
-        ],
-        body: errorTableData,
-        theme: "grid",
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [211, 47, 47], textColor: [255, 255, 255] },
-        columnStyles: {
-          0: { cellWidth: 35 },
-          1: { cellWidth: 20 },
-          2: { cellWidth: 30 },
-          3: { cellWidth: 20 },
-          4: { cellWidth: 25 },
-          5: { cellWidth: 15 },
-          6: { halign: "right", cellWidth: 15 },
-          7: { halign: "right", cellWidth: 15 },
-          8: { halign: "right", cellWidth: 15 },
-        },
-      });
-    }
-
-    doc.save("relatorio_participantes_completo.pdf");
+    doc.save("relatorio_participantes.pdf");
   };
-
-  useEffect(() => {
-    setPage(0);
-  }, [allFilteredCheckouts]);
-
-  useEffect(() => {
-    if (!allFilteredCheckouts) {
-      console.warn("allFilteredCheckouts está indefinido no useEffect");
-      setPaginatedCheckouts([]);
-      return;
-    }
-
-    const validCheckouts = (allFilteredCheckouts || []).filter(
-      (checkout) =>
-        checkout &&
-        checkout.id &&
-        Array.isArray(checkout.participants) &&
-        checkout.timestamp &&
-        checkout.orderDetails
-    );
-
-    const sortedCheckouts = [...validCheckouts].sort((a, b) => {
-      return new Date(b.timestamp) - new Date(a.timestamp);
-    });
-
-    const startIndex = page * rowsPerPage;
-    const endIndex = startIndex + rowsPerPage;
-    const newPaginatedCheckouts = sortedCheckouts.slice(startIndex, endIndex);
-    setPaginatedCheckouts(newPaginatedCheckouts);
-  }, [page, allFilteredCheckouts, rowsPerPage]);
-
-  const handleChangePage = (newPage) => {
-    setPage(newPage);
-  };
-
-  const validCheckoutsCount = (allFilteredCheckouts || []).filter(
-    (checkout) =>
-      checkout &&
-      checkout.id &&
-      Array.isArray(checkout.participants) &&
-      checkout.timestamp &&
-      checkout.orderDetails
-  ).length;
-  const totalPages = Math.ceil(validCheckoutsCount / rowsPerPage);
 
   return (
     <Card
@@ -696,327 +247,293 @@ const CheckoutListCards = ({
       }}
     >
       <CardContent sx={{ p: "20px" }}>
-        <Box>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              mb: 2,
-              gap: 2,
-            }}
-          >
+        {/* Header */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            flexWrap: "wrap",
+            mb: 2,
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Typography variant="h6" sx={{ color: "#333333", fontWeight: 500 }}>
+              {allCheckouts.length} Checkouts
+            </Typography>
             <Box
               sx={{
-                width: "100%",
                 display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
+                flexWrap: "wrap",
+                gap: isMobile ? 0.5 : 2,
+                mt: 0.5,
               }}
             >
               <Typography
-                variant="h6"
-                sx={{ color: "#333333", fontWeight: 500 }}
+                variant="body2"
+                sx={{ fontWeight: 500, fontSize: ".80rem", color: "#666" }}
               >
-                {validCheckoutsCount} - Checkouts
-                <Box
-                  sx={{
-                    width: "100%",
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 2,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      flex: "1 1 30%",
-                      color: "#666666",
-                      borderRadius: "8px",
-                      display: "flex",
-                      alignItems: isMobile ? "flex-start" : "center",
-                      gap: isMobile ? 0 : 2,
-                      flexDirection: isMobile ? "column" : "row",
-                    }}
-                  >
-                    <Typography
-                      variant="body2"
-                      sx={{ fontWeight: 500, fontSize: ".80rem" }}
-                    >
-                      Aprovados: {filteredMetrics?.approvedCount || 0}
-                      {/* {filteredMetrics?.approvedValue || 0} */}
-                    </Typography>
-                    {!isMobile && <Typography>|</Typography>}
-                    <Typography
-                      variant="body2"
-                      sx={{ fontWeight: 500, fontSize: ".80rem" }}
-                    >
-                      Pendentes: {filteredMetrics?.pendingCount || 0}
-                      {/* {filteredMetrics?.pendingValue || 0} */}
-                    </Typography>
-                    {!isMobile && <Typography>|</Typography>}
-                    <Typography
-                      variant="body2"
-                      sx={{ fontWeight: 500, fontSize: ".80rem" }}
-                    >
-                      Erros: {filteredMetrics?.errorCount || 0}
-                    </Typography>
-                  </Box>
-                </Box>
+                Aprovados: {filteredMetrics?.approvedCount || 0}
               </Typography>
-              {isMobile && (
-                <>
-                  <Button
-                    variant="outlined"
-                    onClick={() => setOpenFiltersDrawer(true)}
-                    sx={{
-                      borderColor: "#1976D2",
-                      color: "#1976D2",
-                      borderRadius: "8px",
-                      textTransform: "none",
-                    }}
-                  >
-                    Filtros
-                  </Button>
-                  <Drawer
-                    anchor="left"
-                    open={openFiltersDrawer}
-                    onClose={() => setOpenFiltersDrawer(false)}
-                    sx={{
-                      "& .MuiDrawer-paper": {
-                        width: "80%",
-                        maxWidth: 300,
-                        backgroundColor: "#FFFFFF",
-                      },
-                    }}
-                  >
-                    <Filters
-                      isMobile={isMobile}
-                      setOpenFiltersDrawer={setOpenFiltersDrawer}
-                    />
-                  </Drawer>
-                </>
-              )}
-            </Box>
-            <Box
-              sx={{
-                display: "flex",
-                gap: 1,
-                flexWrap: "wrap",
-                mb: 1,
-              }}
-            >
-              <Button
-                variant="outlined"
-                onClick={exportToExcel}
-                sx={{
-                  borderColor: "#1976D2",
-                  color: "#1976D2",
-                  borderRadius: "8px",
-                  textTransform: "none",
-                  "&:hover": { borderColor: "#1565C0", color: "#1565C0" },
-                }}
+              {!isMobile && <Typography color="#ccc">|</Typography>}
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 500, fontSize: ".80rem", color: "#666" }}
               >
-                Exportar Excel
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={exportToPDF}
-                sx={{
-                  borderColor: "#1976D2",
-                  color: "#1976D2",
-                  borderRadius: "8px",
-                  textTransform: "none",
-                  "&:hover": { borderColor: "#1565C0", color: "#1565C0" },
-                }}
+                Pendentes: {filteredMetrics?.pendingCount || 0}
+              </Typography>
+              {!isMobile && <Typography color="#ccc">|</Typography>}
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 500, fontSize: ".80rem", color: "#666" }}
               >
-                Exportar PDF
-              </Button>
-              <Button
-                variant="contained"
-                onClick={handleToggleViewMode}
-                sx={{
-                  borderColor: "#1976D2",
-                  color: "#FFF",
-                  borderRadius: "8px",
-                  textTransform: "none",
-                }}
-              >
-                {viewMode === "cards" ? "Ver como Tabela" : "Ver como Cards"}
-              </Button>
+                Erros: {filteredMetrics?.errorCount || 0}
+              </Typography>
             </Box>
           </Box>
 
-          {viewMode === "cards" ? (
-            <Box
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1,
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
+            {isMobile && (
+              <>
+                <Button
+                  variant="outlined"
+                  onClick={() => setOpenFiltersDrawer(true)}
+                  sx={{
+                    borderColor: "#1976D2",
+                    color: "#1976D2",
+                    borderRadius: "8px",
+                    textTransform: "none",
+                  }}
+                >
+                  Filtros
+                </Button>
+                <Drawer
+                  anchor="left"
+                  open={openFiltersDrawer}
+                  onClose={() => setOpenFiltersDrawer(false)}
+                  sx={{ "& .MuiDrawer-paper": { width: "80%", maxWidth: 300 } }}
+                >
+                  <Filters
+                    isMobile={isMobile}
+                    setOpenFiltersDrawer={setOpenFiltersDrawer}
+                  />
+                </Drawer>
+              </>
+            )}
+            <Button
+              variant="outlined"
+              onClick={exportToExcel}
               sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 2,
-                flexWrap: "wrap",
+                borderColor: "#1976D2",
+                color: "#1976D2",
+                borderRadius: "8px",
+                textTransform: "none",
               }}
             >
-              {paginatedCheckouts.map((checkout) => (
+              Excel
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={exportToPDF}
+              sx={{
+                borderColor: "#1976D2",
+                color: "#1976D2",
+                borderRadius: "8px",
+                textTransform: "none",
+              }}
+            >
+              PDF
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleToggleViewMode}
+              sx={{ borderRadius: "8px", textTransform: "none" }}
+            >
+              {viewMode === "cards" ? "Ver Tabela" : "Ver Cards"}
+            </Button>
+          </Box>
+        </Box>
+
+        {/* Cards view */}
+        {viewMode === "cards" ? (
+          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+            {paginatedCheckouts.length === 0 ? (
+              <Typography
+                sx={{
+                  color: "#999",
+                  py: 4,
+                  width: "100%",
+                  textAlign: "center",
+                }}
+              >
+                Nenhum checkout encontrado.
+              </Typography>
+            ) : (
+              paginatedCheckouts.map((checkout) => (
                 <Box
                   sx={{ flex: "1 1 29%", minWidth: "250px" }}
                   key={checkout.id}
                 >
                   <CheckoutCard checkout={checkout} isMobile={isMobile} />
                 </Box>
-              ))}
-            </Box>
-          ) : (
-            <TableContainer
-              component={Paper}
-              sx={{ maxHeight: 400, overflowX: "auto" }}
-            >
-              <Table stickyHeader sx={{ minWidth: isMobile ? 700 : "auto" }}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell
-                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                    >
-                      Nome do Participante
-                    </TableCell>
-                    <TableCell
-                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                    >
-                      CPF
-                    </TableCell>
-                    <TableCell
-                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                    >
-                      Email
-                    </TableCell>
-                    <TableCell
-                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                    >
-                      Telefone
-                    </TableCell>
-                    <TableCell
-                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                    >
-                      Data e Hora
-                    </TableCell>
-                    <TableCell
-                      sx={{ backgroundColor: "#F5F5F5", fontWeight: "bold" }}
-                    >
-                      Método
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        backgroundColor: "#F5F5F5",
-                        fontWeight: "bold",
-                        textAlign: "right",
-                      }}
-                    >
-                      Valor Bruto
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        backgroundColor: "#F5F5F5",
-                        fontWeight: "bold",
-                        textAlign: "right",
-                      }}
-                    >
-                      Taxa
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        backgroundColor: "#F5F5F5",
-                        fontWeight: "bold",
-                        textAlign: "right",
-                      }}
-                    >
-                      Valor Líquido
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {paginatedCheckouts.map((checkout) => {
-                    const totalAmount =
-                      checkout.paymentMethod === "courtesy"
-                        ? 0
-                        : parseFloat(checkout.totalAmount) || 0;
-                    const paymentMethod = checkout.paymentMethod || "unknown";
-                    const cardBrand =
-                      checkout.paymentDetails?.creditCard?.brand || "unknown";
-                    const numParticipants = checkout.participants?.length || 1;
-                    return checkout.participants.map((participant, index) => {
-                      const participantValue = calculateParticipantValue(
-                        checkout,
-                        index
-                      );
-                      const fee = calculateFee(
-                        totalAmount,
-                        paymentMethod,
-                        cardBrand,
-                        numParticipants
-                      );
-                      const netAmount = participantValue - fee;
-                      return (
-                        <TableRow key={`${checkout.id}-${index}`}>
-                          <TableCell>{participant.name || "N/A"}</TableCell>
-                          <TableCell>{participant.document || "N/A"}</TableCell>
-                          <TableCell>{participant.email || "N/A"}</TableCell>
-                          <TableCell>{participant.phone || "N/A"}</TableCell>
-                          <TableCell>
-                            {formatBrazilianDate(checkout.timestamp, true)}
-                          </TableCell>
-                          <TableCell>{paymentMethod}</TableCell>
-                          <TableCell sx={{ textAlign: "right" }}>
-                            {formatBrazilianCurrency(participantValue)}
-                          </TableCell>
-                          <TableCell sx={{ textAlign: "right" }}>
-                            {formatBrazilianCurrency(fee)}
-                          </TableCell>
-                          <TableCell sx={{ textAlign: "right" }}>
-                            {formatBrazilianCurrency(netAmount)}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    });
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-            <Button
-              disabled={page === 0}
-              onClick={() => handleChangePage(page - 1)}
-              sx={{
-                color: "#1976D2",
-                "&:hover": { color: "#1565C0" },
-                "&:disabled": { color: "#B0BEC5" },
-              }}
-            >
-              Anterior
-            </Button>
-            <Typography
-              sx={{
-                mx: 2,
-                color: "#333333",
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
-              Página {page + 1} de {totalPages}
-            </Typography>
-            <Button
-              // disabled={page + 1 >= totalPages}
-              // onClick={() => handleChangePage(page + 1)}
-              onClick={() => loadMoreCheckouts()}
-              sx={{
-                color: "#1976D2",
-                "&:hover": { color: "#1565C0" },
-                "&:disabled": { color: "#B0BEC5" },
-              }}
-            >
-              Próxima
-            </Button>
+              ))
+            )}
           </Box>
+        ) : (
+          /* Table view */
+          <TableContainer
+            component={Paper}
+            sx={{ maxHeight: 420, overflowX: "auto" }}
+          >
+            <Table stickyHeader sx={{ minWidth: isMobile ? 800 : "auto" }}>
+              <TableHead>
+                <TableRow>
+                  {[
+                    "Nome",
+                    "CPF",
+                    "Email",
+                    "Telefone",
+                    "Data e Hora",
+                    "Método",
+                    "Vendedor",
+                    "Valor Bruto",
+                    "Taxa",
+                    "Líquido",
+                  ].map((h) => (
+                    <TableCell
+                      key={h}
+                      sx={{
+                        backgroundColor: "#F5F5F5",
+                        fontWeight: "bold",
+                        fontSize: "0.8rem",
+                      }}
+                    >
+                      {h}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {paginatedCheckouts.map((checkout) => {
+                  const norm = normalizeCheckout(checkout);
+                  const isCourtesy = norm.paymentMethod === "courtesy";
+                  const totalAmount = isCourtesy
+                    ? 0
+                    : parseFloat(norm.totalAmount) || 0;
+                  const cardBrand =
+                    norm.paymentDetails?.creditCard?.brand || "unknown";
+                  const numParticipants = norm.participants.length || 1;
+
+                  return norm.participants.map((participant, index) => {
+                    const participantValue = calculateParticipantValue(
+                      norm,
+                      index
+                    );
+                    const fee = isCourtesy
+                      ? 0
+                      : calculateFee(
+                          totalAmount,
+                          norm.paymentMethod,
+                          cardBrand,
+                          numParticipants
+                        );
+                    return (
+                      <TableRow key={`${checkout.id}-${index}`} hover>
+                        <TableCell>{participant.name || "N/A"}</TableCell>
+                        <TableCell>{participant.document || "N/A"}</TableCell>
+                        <TableCell>{participant.email || "N/A"}</TableCell>
+                        <TableCell>{participant.number || "N/A"}</TableCell>
+                        <TableCell>
+                          {formatBrazilianDate(norm.timestamp, true)}
+                        </TableCell>
+                        <TableCell>{norm.paymentMethod}</TableCell>
+                        <TableCell>
+                          {norm.seller ? (
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                              }}
+                            >
+                              <MdVerified size={13} color="#1976D2" />
+                              <span style={{ fontSize: "0.82rem" }}>
+                                {norm.seller.name}
+                              </span>
+                            </Box>
+                          ) : (
+                            <Typography
+                              sx={{ fontSize: "0.8rem", color: "#aaa" }}
+                            >
+                              —
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell sx={{ textAlign: "right" }}>
+                          {formatBrazilianCurrency(participantValue)}
+                        </TableCell>
+                        <TableCell sx={{ textAlign: "right" }}>
+                          {formatBrazilianCurrency(fee)}
+                        </TableCell>
+                        <TableCell sx={{ textAlign: "right" }}>
+                          {formatBrazilianCurrency(participantValue - fee)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  });
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+
+        {/* Paginação */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            mt: 3,
+            gap: 1,
+          }}
+        >
+          <Button
+            variant="outlined"
+            size="small"
+            disabled={page === 0}
+            onClick={() => setPage((p) => p - 1)}
+            sx={{ borderRadius: "8px", textTransform: "none", minWidth: 90 }}
+          >
+            ← Anterior
+          </Button>
+          <Typography
+            sx={{
+              mx: 1,
+              color: "#555",
+              fontSize: "0.85rem",
+              minWidth: 100,
+              textAlign: "center",
+            }}
+          >
+            Página {page + 1} de {totalPages}
+          </Typography>
+          <Button
+            variant="outlined"
+            size="small"
+            disabled={page + 1 >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            sx={{ borderRadius: "8px", textTransform: "none", minWidth: 90 }}
+          >
+            Próxima →
+          </Button>
         </Box>
       </CardContent>
     </Card>

@@ -9,6 +9,7 @@ import {
   Modal,
 } from "@mui/material";
 import { FaWhatsapp } from "react-icons/fa";
+import { MdVerified } from "react-icons/md";
 import { useState } from "react";
 import ModalCheckoutDetails from "../ModalCheckoutDetails";
 import PaymentService from "../../../../data/services/PaymentService";
@@ -162,6 +163,18 @@ const CheckoutCard = ({ checkout, isMobile }) => {
           <Typography sx={{ color: "#666666", fontSize: "0.9rem", mb: 0.5 }}>
             <strong>Valor:</strong> R$ {checkout.totalAmount}
           </Typography>
+          {checkout.seller && (
+            <Box
+              sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.5 }}
+            >
+              <MdVerified size={14} color="#1976D2" />
+              <Typography
+                sx={{ color: "#1976D2", fontSize: "0.82rem", fontWeight: 600 }}
+              >
+                {checkout.seller.name}
+              </Typography>
+            </Box>
+          )}
         </CardContent>
         <CardActions
           sx={{ justifyContent: "space-between", gap: 1, padding: 0 }}

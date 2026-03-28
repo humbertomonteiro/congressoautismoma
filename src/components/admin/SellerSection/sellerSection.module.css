@@ -1,0 +1,359 @@
+/* ── Layout geral ── */
+.container {
+  padding: 28px 24px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* ── Header ── */
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pageTitle {
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  color: #1a237e;
+  line-height: 1.2 !important;
+}
+
+.pageSubtitle {
+  font-size: 0.875rem !important;
+  color: #78909c !important;
+  margin-top: 2px !important;
+}
+
+.addBtn {
+  background-color: #1967d2 !important;
+  border-radius: 10px !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+  padding: 10px 20px !important;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(25, 103, 210, 0.3) !important;
+}
+
+/* ── Stats ── */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 600px) {
+  .statsRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.statCard {
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.07);
+  border: 1px solid #f0f0f0;
+}
+
+.statIcon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statValue {
+  font-size: 1.6rem !important;
+  font-weight: 700 !important;
+  color: #1a237e;
+  line-height: 1 !important;
+}
+
+.statLabel {
+  font-size: 0.75rem !important;
+  color: #90a4ae !important;
+  margin-top: 2px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+/* ── Busca ── */
+.searchRow {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.searchResult {
+  font-size: 0.78rem !important;
+  color: #90a4ae !important;
+  padding-left: 4px;
+}
+
+/* ── Loading / Empty ── */
+.loadingBox {
+  display: flex;
+  justify-content: center;
+  padding: 60px 0;
+}
+
+.emptyBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 0;
+  gap: 8px;
+}
+
+.emptyMsg {
+  color: #90a4ae;
+  font-size: 0.95rem !important;
+}
+
+/* ── Grid de cards ── */
+.sellerGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 480px) {
+  .sellerGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Card vendedor ── */
+.sellerCard {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f0f0f0;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.sellerCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.cardAccent {
+  height: 4px;
+  background: linear-gradient(90deg, #1967d2 0%, #42a5f5 100%);
+}
+
+.cardBody {
+  padding: 20px;
+}
+
+.cardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.sellerAvatar {
+  width: 60px !important;
+  height: 60px !important;
+  background: #e8f0fe !important;
+  color: #1967d2 !important;
+  font-size: 1.4rem !important;
+}
+
+.verifiedBadge {
+  background: #fff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.cardActions {
+  display: flex;
+  gap: 4px;
+}
+
+.editBtn {
+  color: #5c6bc0 !important;
+  background: #f0f4ff !important;
+  border-radius: 8px !important;
+  padding: 6px !important;
+}
+
+.editBtn:hover {
+  background: #e3eaff !important;
+}
+
+.deleteBtn {
+  color: #e53935 !important;
+  background: #fce8e6 !important;
+  border-radius: 8px !important;
+  padding: 6px !important;
+}
+
+.deleteBtn:hover {
+  background: #f9c8c5 !important;
+}
+
+.sellerName {
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  color: #1a237e;
+  margin-bottom: 2px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sellerDoc {
+  font-size: 0.78rem !important;
+  color: #90a4ae !important;
+}
+
+.sellerEmail {
+  font-size: 0.8rem !important;
+  color: #607d8b !important;
+  margin-top: 2px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contactChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+/* ── Badge de vendas ── */
+.salesBadge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8faff;
+  border: 1px solid #e3eaff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-top: 14px;
+}
+
+.salesCount {
+  font-size: 1.5rem !important;
+  font-weight: 800 !important;
+  color: #1967d2;
+  line-height: 1 !important;
+}
+
+.salesLabel {
+  font-size: 0.78rem !important;
+  color: #78909c !important;
+  line-height: 1.2 !important;
+}
+
+/* ── Drawer ── */
+.drawerPaper {
+  width: 400px !important;
+  max-width: 95vw;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+}
+
+.drawerTitle {
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  color: #1a237e;
+}
+
+.drawerContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.photoArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 24px;
+}
+
+.photoUploadCircle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 2px dashed #90caf9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  background: #f5f7fa;
+  transition: border-color 0.2s;
+}
+
+.photoUploadCircle:hover {
+  border-color: #1976d2;
+}
+
+.photoPreviewAvatar {
+  width: 100px !important;
+  height: 100px !important;
+}
+
+.photoPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.fieldsStack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.drawerFooter {
+  padding: 16px 24px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: #fff;
+}
+
+.saveBtn {
+  background-color: #1967d2 !important;
+  border-radius: 8px !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+  padding: 8px 22px !important;
+}
