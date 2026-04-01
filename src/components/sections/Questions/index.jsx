@@ -5,6 +5,7 @@ import { useState } from "react";
 // import { FaWhatsapp } from "react-icons/fa";
 // import ButtonSecondary from "../../shared/ButtonSecondary";
 import Section from "../../shared/Section";
+import { Link } from "react-router-dom";
 
 // import { FaArrowRight } from "react-icons/fa";
 
@@ -16,7 +17,7 @@ const Questions = () => {
   const [item5, setItem5] = useState(false);
   const [item6, setItem6] = useState(false);
   const [item7, setItem7] = useState(false);
-  // const [item8, setItem8] = useState(false);
+  const [item8, setItem8] = useState(false);
   return (
     <Section>
       <Title text="Perguntas frequentes" align="center" />
@@ -190,24 +191,22 @@ const Questions = () => {
               )}
             </div>
           </li>
-          {/* <li>
+          <li>
             <div>
               <h4 onClick={() => setItem8(!item8)}>
-                Meia entrada <TiArrowDown />
+                Como faço para emitir meu certificado? <TiArrowDown />
               </h4>
               {item8 && (
                 <div>
                   <p>
-                    Para obter meia-entrada, é necessário apresentar a Carteira
-                    de Identificação Estudantil (CIE) ou documento equivalente.
-                    Também são elegíveis pessoas com deficiência e seus
-                    acompanhantes, famílias atípicas, idosos, jovens de baixa
-                    renda e educadores, mediante documentação comprobatória
+                    Certificado fica disponível por 90 dias corridos{" "}
+                    <Link to="/certificado">Clicando Aqui!</Link> você pode
+                    emitir.
                   </p>
                 </div>
               )}
             </div>
-          </li> */}
+          </li>
         </ul>
       </div>
     </Section>
