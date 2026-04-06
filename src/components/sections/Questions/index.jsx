@@ -196,12 +196,14 @@ const Questions = () => {
               <h4 onClick={() => setItem8(!item8)}>
                 Como faço para emitir meu certificado? <TiArrowDown />
               </h4>
+
               {item8 && (
                 <div>
                   <p>
-                    Certificado fica disponível por 90 dias corridos{" "}
-                    <Link to="/certificado">Clicando Aqui!</Link> você pode
-                    emitir.
+                    O certificado fica disponível por 90 dias corridos{" "}
+                    <strong>depois</strong> do evento.
+                    <Link to="/certificado">Clicando aqui</Link> você pode
+                    emitir o seu.
                   </p>
                 </div>
               )}
