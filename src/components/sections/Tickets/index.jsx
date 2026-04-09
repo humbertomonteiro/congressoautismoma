@@ -51,7 +51,7 @@ const handleViewContent = (itemId, itemName, price) => {
 };
 
 const Item1 = ({ wpp, openChatbot }) => {
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
   return (
     <div className={styles.box} data-active="true">
       <div className={styles.boxContent}>
@@ -98,9 +98,9 @@ const Item1 = ({ wpp, openChatbot }) => {
             {!wpp ? (
               <ButtonSecondary
                 style={{ width: "100%" }}
-                action="link"
-                link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
-                target="_blank"
+                // action="link"
+                // link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
+                // target="_blank"
                 // action="button"
                 // onClick={() => {
                 //   navigate("/checkout");
@@ -109,7 +109,15 @@ const Item1 = ({ wpp, openChatbot }) => {
                 // action="link"
                 // link="https://api.whatsapp.com/send?phone=5598991058908&text=Olá!%20Gostaria%20de%20comprar%20ingresso"
                 // target="_blank"
-                // action="button"
+                action="button"
+                onClick={() => {
+                  navigate("/checkout?all=1");
+                  handleAddToCart(
+                    "individual",
+                    "Ingresso Individual",
+                    Number(BASE_PRICE)
+                  );
+                }}
                 // disabled={true}
               >
                 Comprar Ingresso
@@ -138,7 +146,7 @@ const Item1 = ({ wpp, openChatbot }) => {
 };
 
 const Item2 = ({ wpp, openChatbot }) => {
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
   return (
     <div className={styles.box} data-active="true">
       <div className={styles.boxContent}>
@@ -186,9 +194,18 @@ const Item2 = ({ wpp, openChatbot }) => {
                 // action="link"
                 // link="https://api.whatsapp.com/send?phone=5598991058908&text=Olá!%20Gostaria%20de%20comprar%20ingresso"
                 // target="_blank"
-                action="link"
-                link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
-                target="_blank"
+                // action="link"
+                // link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
+                // target="_blank"
+                action="button"
+                onClick={() => {
+                  navigate("/checkout?social=1");
+                  handleAddToCart(
+                    "social",
+                    "Ingresso Social",
+                    Number(SOCIAL_PRICE)
+                  );
+                }}
               >
                 Comprar Ingresso{" "}
                 <IoTicketOutline style={{ fontSize: "1.2rem" }} />
@@ -270,9 +287,18 @@ const ItemHalf = ({ wpp, openChatbot }) => {
             {!wpp ? (
               <ButtonSecondary
                 style={{ width: "100%" }}
-                action="link"
-                link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
-                target="_blank"
+                // action="link"
+                // link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
+                // target="_blank"
+                action="button"
+                onClick={() => {
+                  navigate("/checkout?half=1");
+                  handleAddToCart(
+                    "half",
+                    "Ingresso Meia-Entrada",
+                    Number(HALF_PRICE)
+                  );
+                }}
               >
                 Comprar Ingresso{" "}
                 <IoTicketOutline style={{ fontSize: "1.2rem" }} />

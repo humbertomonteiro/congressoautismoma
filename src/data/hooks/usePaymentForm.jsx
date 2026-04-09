@@ -1,8 +1,15 @@
 // src/hooks/usePaymentForm.js
 import { useState, useEffect } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import PaymentService from "../services/PaymentService";
 
 const EMAIL_FROM = import.meta.env.VITE_EMAIL_FROM;
+
+const TICKET_TYPE_LABELS = {
+  all: "Inteiro",
+  half: "Meia-entrada",
+  social: "Social",
+};
 
 const normalizeBrand = (brand) => {
   const brandMap = {
@@ -20,12 +27,20 @@ const normalizeBrand = (brand) => {
   return brandMap[lowerBrand] || brand;
 };
 
+/** Dado um índice de participante e as contagens, retorna "full" | "half" | "social" */
+const deriveTicketType = (index, allTickets, halfTickets) => {
+  if (index < allTickets) return "full";
+  if (index < allTickets + halfTickets) return "half";
+  return "social";
+};
+
 const usePaymentForm = () => {
   const [formState, setFormState] = useState({
     paymentMethod: "creditCard",
     loading: false,
-    ticketQuantity: 1,
+    allTickets: 1,
     halfTickets: 0,
+    socialTickets: 0,
     coupon: { code: "", isApplied: false },
     observation: "",
   });
@@ -34,10 +49,9 @@ const usePaymentForm = () => {
   const [currentParticipant, setCurrentParticipant] = useState({
     name: "",
     email: "",
-    number: "",
+    phone: "",
     document: "",
     documentType: "cpf",
-    isHalfPrice: false,
   });
 
   const [creditCardData, setCreditCardData] = useState({
@@ -69,16 +83,22 @@ const usePaymentForm = () => {
   const [totals, setTotals] = useState({
     valueTicketsAll: "0.00",
     valueTicketsHalf: "0.00",
+    valueTicketsSocial: "0.00",
     discount: "0.00",
     total: "0.00",
     totalInCents: 0,
   });
+
+  // Total de ingressos derivado das 3 categorias
+  const ticketQuantity =
+    formState.allTickets + formState.halfTickets + formState.socialTickets;
 
   const fetchTotals = async () => {
     if (formState.paymentMethod === "courtesy") {
       setTotals({
         valueTicketsAll: "0.00",
         valueTicketsHalf: "0.00",
+        valueTicketsSocial: "0.00",
         discount: "0.00",
         total: "0.00",
         totalInCents: 0,
@@ -86,17 +106,23 @@ const usePaymentForm = () => {
       return;
     }
 
-    const ticketQty = Number(formState.ticketQuantity) || 0;
-    const halfQty = Number(formState.halfTickets) || 0;
-    if (isNaN(ticketQty) || isNaN(halfQty)) {
-      console.error("Valores inválidos para cálculo:", { ticketQty, halfQty });
+    if (ticketQuantity === 0) {
+      setTotals({
+        valueTicketsAll: "0.00",
+        valueTicketsHalf: "0.00",
+        valueTicketsSocial: "0.00",
+        discount: "0.00",
+        total: "0.00",
+        totalInCents: 0,
+      });
       return;
     }
 
     try {
       const response = await PaymentService.calculateTotals({
-        ticketQuantity: ticketQty,
-        halfTickets: halfQty,
+        allTickets: formState.allTickets,
+        halfTickets: formState.halfTickets,
+        socialTickets: formState.socialTickets,
         coupon: formState.coupon.isApplied ? formState.coupon.code : "",
       });
       setTotals(response);
@@ -105,6 +131,7 @@ const usePaymentForm = () => {
       setTotals({
         valueTicketsAll: "0.00",
         valueTicketsHalf: "0.00",
+        valueTicketsSocial: "0.00",
         discount: "0.00",
         total: "0.00",
         totalInCents: 0,
@@ -112,13 +139,13 @@ const usePaymentForm = () => {
     }
   };
 
-  // Calcular totais sempre que ticketQuantity, halfTickets ou coupon mudar
   useEffect(() => {
     fetchTotals();
   }, [
     formState.paymentMethod,
-    formState.ticketQuantity,
+    formState.allTickets,
     formState.halfTickets,
+    formState.socialTickets,
     formState.coupon,
   ]);
 
@@ -129,19 +156,17 @@ const usePaymentForm = () => {
   };
 
   const validateParticipants = () => {
-    if (participants.length !== formState.ticketQuantity) {
+    if (participants.length !== ticketQuantity) {
       setModalError(
         "Participantes Incompletos",
-        `Você adicionou ${participants.length} participante(s), mas selecionou ${formState.ticketQuantity} ingresso(s).`
+        `Você adicionou ${participants.length} participante(s), mas selecionou ${ticketQuantity} ingresso(s).`
       );
       return false;
     }
     return true;
   };
 
-  const validatePayer = (payer, paymentMethod) => {
-    // Para crédito e PIX, só precisamos de nome e documento
-
+  const validatePayer = (payer) => {
     if (!payer) {
       setModalError(
         "Pagador Não Selecionado",
@@ -149,81 +174,51 @@ const usePaymentForm = () => {
       );
       return false;
     }
-
-    const requiredFields = ["name", "document"];
-
-    // Para boleto, precisamos de todos os campos de endereço
-    // if (paymentMethod === "boleto") {
-    //   requiredFields.push(
-    //     "zipCode",
-    //     "street",
-    //     "addressNumber",
-    //     "district",
-    //     "city",
-    //     "state"
-    //   );
-    // }
-
-    // Verifica campos obrigatórios
-    // const missingFields = requiredFields.filter(
-    //   (field) => !payer[field] || payer[field].trim() === ""
-    // );
-    // if (missingFields.length > 0) {
-    //   setModalError(
-    //     "Dados do Pagador Incompletos",
-    //     `Preencha os seguintes campos: ${missingFields
-    //       .map((f) => (f === "state" ? "Estado" : f))
-    //       .join(", ")}.`
-    //   );
-    //   return false;
-    // }
-
-    // Validação específica do estado (UF) para boleto
-    // if (paymentMethod === "boleto") {
-    //   const stateRegex = /^[A-Z]{2}$/; // Apenas 2 letras maiúsculas
-    //   if (!stateRegex.test(payer.state)) {
-    //     setModalError(
-    //       "Estado Inválido",
-    //       "O estado deve ser uma sigla de 2 letras maiúsculas (ex.: SP)."
-    //     );
-    //     return false;
-    //   }
-    // }
-
     return true;
   };
 
   // Handlers
-  const handleTicketQuantityChange = (e) => {
-    const newQuantity = Number(e.target.value);
-    if (newQuantity < participants.length) {
+  const handleTicketTypeChange = (type, value) => {
+    const newValue = Math.max(0, Number(value));
+    const counts = {
+      allTickets: formState.allTickets,
+      halfTickets: formState.halfTickets,
+      socialTickets: formState.socialTickets,
+    };
+    const fieldMap = {
+      all: "allTickets",
+      half: "halfTickets",
+      social: "socialTickets",
+    };
+    counts[fieldMap[type]] = newValue;
+    const newTotal =
+      counts.allTickets + counts.halfTickets + counts.socialTickets;
+
+    if (newTotal < participants.length) {
       setModalError(
         "Quantidade Inválida",
-        `Você já adicionou ${participants.length} participante(s). Remova participantes excedentes.`
+        `Você já adicionou ${participants.length} participante(s). Remova participantes antes de diminuir.`
       );
       return;
     }
-
     if (
       formState.coupon.isApplied &&
       formState.coupon.code === "grupo" &&
-      newQuantity < 5
+      counts.allTickets < 5
     ) {
       setModalError(
         "Cupom de grupo aplicado",
-        "Para diminuir para menos de 5 ingressos, remova o cupom."
+        "Para diminuir ingressos inteiros para menos de 5, remova o cupom."
       );
       return;
     }
-
-    setFormState((prev) => ({ ...prev, ticketQuantity: newQuantity }));
+    setFormState((prev) => ({ ...prev, [fieldMap[type]]: newValue }));
   };
 
   const handleAddParticipant = (e) => {
     e.preventDefault();
 
-    // Validação adicional para chamadas automáticas
-    const requiredFields = ["name", "email", "number", "document"];
+    const requiredFields = ["name", "email", "phone", "document"];
     const missingFields = requiredFields.filter(
       (field) =>
         !currentParticipant[field] || currentParticipant[field].trim() === ""
@@ -237,37 +232,28 @@ const usePaymentForm = () => {
       return;
     }
 
-    if (participants.length >= formState.ticketQuantity) {
+    if (participants.length >= ticketQuantity) {
       setModalError(
         "Limite Atingido",
         "Todos os participantes já foram adicionados!"
       );
       return;
     }
-    if (
-      Object.values(currentParticipant).some(
-        (val) => !val && typeof val !== "boolean"
-      )
-    ) {
-      setModalError(
-        "Campos Incompletos",
-        "Preencha todos os campos do participante!"
-      );
-      return;
-    }
 
-    setParticipants((prev) => [...prev, currentParticipant]);
-    setFormState((prev) => ({
-      ...prev,
-      halfTickets: prev.halfTickets + (currentParticipant.isHalfPrice ? 1 : 0),
-    }));
+    // Determina o tipo do ingresso pela posição na fila
+    const ticketType = deriveTicketType(
+      participants.length,
+      formState.allTickets,
+      formState.halfTickets
+    );
+
+    setParticipants((prev) => [...prev, { ...currentParticipant, ticketType }]);
     setCurrentParticipant({
       name: "",
       email: "",
-      number: "",
+      phone: "",
       document: "",
-      documentType: "cpf", //
-      isHalfPrice: false,
+      documentType: "cpf",
     });
   };
 
@@ -284,28 +270,18 @@ const usePaymentForm = () => {
       return;
     }
 
-    console.log("Cupom: " + trimmedCoupon);
-
-    // if (
-    //   trimmedCoupon !== "grupo" ||
-    //   trimmedCoupon !== "terapeuta" ||
-    //   trimmedCoupon !== "cupom50"
-    // ) {
-    //   setModalError(`Cupom: ${trimmedCoupon} não existe.`);
-    //   return;
-    // }
-
     try {
       const response = await PaymentService.calculateTotals({
-        ticketQuantity: formState.ticketQuantity,
+        allTickets: formState.allTickets,
         halfTickets: formState.halfTickets,
+        socialTickets: formState.socialTickets,
         coupon: trimmedCoupon,
       });
-      console.log("Resposta ao aplicar cupom:", response);
       setFormState((prev) => ({
         ...prev,
         coupon: { code: trimmedCoupon, isApplied: true },
       }));
+      setTotals(response);
       setModalState({
         isOpen: true,
         title: "Cupom Aplicado",
@@ -334,13 +310,14 @@ const usePaymentForm = () => {
     setFormState((prev) => ({ ...prev, loading: true }));
 
     if (!validateParticipants()) return;
-    if (!validatePayer(selectedPayer, formState.paymentMethod)) return;
+    if (!validatePayer(selectedPayer)) return;
 
     const normalizedBrand = normalizeBrand(creditCardData.brand);
 
     const paymentData = {
-      ticketQuantity: formState.ticketQuantity,
+      allTickets: formState.allTickets,
       halfTickets: formState.halfTickets,
+      socialTickets: formState.socialTickets,
       coupon: formState.coupon.isApplied ? formState.coupon.code : "",
       participants,
       payer: {
@@ -392,27 +369,27 @@ const usePaymentForm = () => {
           throw new Error("Método de pagamento inválido.");
       }
 
-      console.log("Resposta do backend para pagamento:", response);
-      // setFormState((prev) => ({ ...prev, loading: false }));
-
-      console.log(response.paymentId);
-
       if (response.success) {
         if (formState.paymentMethod === "creditCard") {
           const emailResponses = [];
-          for (const participant of participants) {
+          for (let i = 0; i < participants.length; i++) {
+            const participant = participants[i];
+            const participantId = response.participantIds?.[i];
             const emailData = {
               checkoutId: response.checkoutId,
+              participantId,
               from: EMAIL_FROM,
               to: participant.email,
               subject: "Confirmação de Pagamento - Congresso Autismo MA 2026",
               data: {
                 name: participant.name,
                 transactionId: response.transactionId,
-                fullTickets: formState.ticketQuantity - formState.halfTickets,
+                fullTickets: formState.allTickets,
                 valueTicketsAll: totals.valueTicketsAll,
                 halfTickets: formState.halfTickets,
                 valueTicketsHalf: totals.valueTicketsHalf,
+                socialTickets: formState.socialTickets,
+                valueTicketsSocial: totals.valueTicketsSocial,
                 coupon: formState.coupon.isApplied ? formState.coupon.code : "",
                 discount: formState.coupon.isApplied ? totals.discount : "0.00",
                 total: totals.total,
@@ -420,17 +397,13 @@ const usePaymentForm = () => {
               },
             };
 
-            console.log(
-              "EmailData construído para:",
-              participant.email,
-              emailData
-            );
             if (
               !emailData.from ||
               !emailData.to ||
               !emailData.subject ||
               !emailData.data ||
-              !emailData.checkoutId
+              !emailData.checkoutId ||
+              !emailData.participantId
             ) {
               console.error(
                 "Campos obrigatórios faltando no emailData:",
@@ -441,19 +414,9 @@ const usePaymentForm = () => {
               );
             }
 
-            console.log(
-              "Enviando email de confirmação para:",
-              participant.email
-            );
             try {
               const emailResponse = await PaymentService.sendConfirmationEmail(
                 emailData
-              );
-              console.log(
-                "Resposta do envio de email para",
-                participant.email,
-                ":",
-                emailResponse
               );
               emailResponses.push(emailResponse);
             } catch (emailError) {
@@ -466,28 +429,119 @@ const usePaymentForm = () => {
             }
           }
 
-          setFormState((prev) => ({ ...prev }));
-
           navigate("/thanks-you", {
             state: { total: totals.total, paymentMethod: "creditCard" },
           });
         } else if (formState.paymentMethod === "pix") {
+          const expiresAt = response.expirationDate
+            ? new Date(response.expirationDate).toLocaleTimeString("pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : null;
+
           setModalState({
             isOpen: true,
             title: "PIX Gerado",
-            message: "Escaneie o QR Code ou copie o código abaixo.",
+            message: "Escaneie o QR Code ou copie o código Pix abaixo.",
             type: "pending",
             content: (
               <div style={{ textAlign: "center" }}>
-                <img src={response.qrCodeLink} alt="QR Code PIX" />
-                <p>
-                  <strong>Código Pix:</strong> {response.qrCodeString}
+                {response.qrCodeString && (
+                  <div
+                    style={{
+                      display: "inline-block",
+                      padding: "12px",
+                      background: "#fff",
+                      borderRadius: "8px",
+                      border: "1px solid #ddd",
+                      marginBottom: "12px",
+                    }}
+                  >
+                    <QRCodeSVG
+                      value={response.qrCodeString}
+                      size={200}
+                      level="M"
+                    />
+                  </div>
+                )}
+                {expiresAt && (
+                  <p
+                    style={{
+                      color: "#e67e22",
+                      fontSize: "13px",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    ⏳ Expira às {expiresAt}
+                  </p>
+                )}
+                <div
+                  style={{ display: "flex", gap: "8px", marginBottom: "12px" }}
+                >
+                  <input
+                    readOnly
+                    value={response.qrCodeString || ""}
+                    style={{
+                      flex: 1,
+                      padding: "8px",
+                      fontSize: "11px",
+                      border: "1px solid #ccc",
+                      borderRadius: "4px",
+                      background: "#f9f9f9",
+                    }}
+                  />
+                  <button
+                    onClick={() =>
+                      navigator.clipboard.writeText(response.qrCodeString || "")
+                    }
+                    style={{
+                      padding: "8px 14px",
+                      background: "#2c3e50",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "13px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Copiar
+                  </button>
+                </div>
+                <p
+                  style={{
+                    color: "#555",
+                    fontSize: "12px",
+                    marginBottom: "12px",
+                  }}
+                >
+                  Após o pagamento, você receberá o e-mail de confirmação com o
+                  link para seu ingresso.
                 </p>
+                <button
+                  onClick={() =>
+                    navigate("/thanks-you", {
+                      state: { total: totals.total, paymentMethod: "pix" },
+                    })
+                  }
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    background: "#27ae60",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "15px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Já paguei — aguardar confirmação
+                </button>
               </div>
             ),
           });
-        } else if (formState.paymentMethod === "boleto") {
-          setFormState((prev) => ({ ...prev }));
         }
       } else {
         throw new Error(
@@ -538,11 +592,14 @@ const usePaymentForm = () => {
     setModalState,
     totals,
     setTotals,
-    handleTicketQuantityChange,
+    ticketQuantity,
+    handleTicketTypeChange,
     handleAddParticipant,
     handleApplyCoupon,
     handleRemoveCoupon,
     handlePayment,
+    TICKET_TYPE_LABELS,
+    deriveTicketType,
   };
 };
 

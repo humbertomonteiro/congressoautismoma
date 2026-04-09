@@ -72,11 +72,11 @@ class PaymentService {
     }
   }
 
-  async validateCoupon(coupon, ticketQuantity) {
+  async validateCoupon(coupon, allTickets) {
     try {
       const response = await axios.post(`${baseUrl}/payments/validate-coupon`, {
         coupon,
-        ticketQuantity,
+        allTickets: Number(allTickets) || 1,
       });
       const { success, message, data } = response.data;
       if (!success) throw new Error(message);
@@ -87,22 +87,23 @@ class PaymentService {
     }
   }
 
-  async calculateTotals({ ticketQuantity, halfTickets, coupon }) {
+  async calculateTotals({ allTickets, halfTickets, socialTickets, coupon }) {
     try {
       const response = await axios.post(
         `${baseUrl}/payments/calculate-totals`,
         {
-          ticketQuantity: Number(ticketQuantity) || 0,
+          allTickets: Number(allTickets) || 0,
           halfTickets: Number(halfTickets) || 0,
+          socialTickets: Number(socialTickets) || 0,
           coupon: coupon || "",
         }
       );
-      console.log("Resposta de calculateTotals:", response.data);
       const { success, message, data } = response.data;
       if (!success) throw new Error(message);
       return {
         valueTicketsAll: data.valueTicketsAll || "0.00",
         valueTicketsHalf: data.valueTicketsHalf || "0.00",
+        valueTicketsSocial: data.valueTicketsSocial || "0.00",
         discount: data.discount || "0.00",
         total: data.total || "0.00",
         totalInCents: data.totalInCents || 0,
@@ -112,10 +113,11 @@ class PaymentService {
       return {
         valueTicketsAll: "0.00",
         valueTicketsHalf: "0.00",
+        valueTicketsSocial: "0.00",
         discount: "0.00",
         total: "0.00",
         totalInCents: 0,
-      }; // Retorno padrão em caso de erro
+      };
     }
   }
 
@@ -153,7 +155,7 @@ class PaymentService {
     try {
       console.log("Dados enviados para /send-confirmation-email:", emailData);
       const response = await axios.post(
-        `${baseUrl}/email/send-confirmation-email`,
+        `${baseUrl}/email/send-confirmation`,
         emailData
       );
       const { success, message } = response.data;
@@ -173,6 +175,23 @@ class PaymentService {
     return `https://wa.me/${
       PaymentService.WHATSAPP_NUMBER
     }?text=${encodeURIComponent(errorMessage)}`;
+  }
+
+  async createManualCheckout(checkoutData) {
+    try {
+      const response = await axios.post(
+        `${baseUrl}/payments/manual`,
+        checkoutData
+      );
+      const { success, message, data } = response.data;
+      if (!success) throw new Error(message);
+      return data; // { checkoutId, participantIds }
+    } catch (error) {
+      console.error("Erro ao criar checkout manual:", error);
+      throw new Error(
+        error.response?.data?.error || "Erro ao criar checkout manual"
+      );
+    }
   }
 
   async addAllTemplatesToPendingEmails(checkoutId, status) {

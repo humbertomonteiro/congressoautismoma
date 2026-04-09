@@ -1,4 +1,3 @@
-// export default useDashboardData;
 import { useState, useEffect } from "react";
 import { db } from "../../../firebaseConfig";
 import {
@@ -10,24 +9,50 @@ import {
   setDoc,
   where,
   Timestamp,
-  limit,
-  startAfter,
 } from "firebase/firestore";
 import PaymentService from "../services/PaymentService";
 import { toast } from "react-toastify";
 
 const formatToBrazilianCurrency = (value) => {
   const num = parseFloat(value) || 0;
-  return num.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
+  return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+};
+
+/**
+ * Busca participantes da subcoleção checkouts/{id}/participants.
+ * Se o checkout ainda tiver participants embutido (legado), retorna ele.
+ */
+// ─── CORRIGIDO: sem where inválido dentro do collection() ───────────────────
+const fetchParticipantsForCheckout = async (checkoutId) => {
+  try {
+    const snap = await getDocs(
+      collection(db, "checkouts", checkoutId, "participants")
+    );
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch {
+    return [];
+  }
+};
+
+const enrichCheckoutsWithParticipants = async (checkouts) => {
+  return Promise.all(
+    checkouts.map(async (checkout) => {
+      // Legado: já tem array inline com dados → mantém
+      if (
+        Array.isArray(checkout.participants) &&
+        checkout.participants.length > 0
+      ) {
+        return checkout;
+      }
+      const participants = await fetchParticipantsForCheckout(checkout.id);
+      return { ...checkout, participants };
+    })
+  );
 };
 
 const useDashboardData = () => {
   const [checkouts, setCheckouts] = useState([]);
   const [filteredCheckouts, setFilteredCheckouts] = useState([]);
-  // const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
   const [payerSearchQuery, setPayerSearchQuery] = useState("");
@@ -35,107 +60,31 @@ const useDashboardData = () => {
   const [startDateFilter, setStartDateFilter] = useState("");
   const [endDateFilter, setEndDateFilter] = useState("");
   const [attendedFilter, setAttendedFilter] = useState(false);
-  const [eventFilter, setEventFilter] = useState("Congresso Autismo MA 2025");
+  const [eventFilter, setEventFilter] = useState("Congresso Autismo MA 2026");
   const [eventOptions, setEventOptions] = useState([]);
   const [metrics, setMetrics] = useState(null);
   const [filteredMetrics, setFilteredMetrics] = useState(null);
   const [qrCodeData, setQrCodeData] = useState({});
   const [lastUpdated, setLastUpdated] = useState(null);
-  // const [lastDoc, setLastDoc] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const loadInitialData = async (forceUpdate = false) => {
-    // setLoading(true);
-
-    try {
-      await updateMetrics(true);
-    } catch (error) {
-      toast.error("Erro ao carregar dados iniciais:", error);
-      setErrorMessage(
-        "Erro ao carregar dados iniciais. Exibindo dados disponíveis."
-      );
-    }
-    // finally {
-    //   setLoading(false);
-    // }
-  };
-
   useEffect(() => {
-    loadInitialData();
+    updateMetrics(true);
   }, []);
-
-  // useEffect(() => {
-  //   setCheckouts([]);
-  //   setLastDoc(null);
-  //   loadInitialCheckouts();
-  // }, [eventFilter]);
-
-  const buildBaseQuery = (limitNumber = 6, lastDoc = null) => {
-    let q = query(
-      collection(db, "checkouts"),
-      // where("eventName", "==", eventFilter),
-      orderBy("timestamp", "desc")
-      // limit(limitNumber)
-    );
-
-    if (lastDoc) {
-      q = query(q, startAfter(lastDoc));
-    }
-
-    return q;
-  };
-
-  // const loadInitialCheckouts = async () => {
-  //   const snapshot = await getDocs(buildBaseQuery(6));
-
-  //   const initialCheckouts = snapshot.docs.map((doc) => ({
-  //     id: doc.id,
-  //     ...doc.data(),
-  //   }));
-
-  //   const lastVisible =
-  //     snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
-
-  //   setCheckouts(initialCheckouts);
-  //   setLastDoc(lastVisible);
-  // };
-
-  const loadMoreCheckouts = async () => {
-    if (!lastDoc) return;
-
-    const snapshot = await getDocs(buildBaseQuery(6, lastDoc));
-
-    if (snapshot.empty) return;
-
-    const newCheckouts = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    const newLastDoc = snapshot.docs[snapshot.docs.length - 1] || null;
-
-    setCheckouts((prev) => [...prev, ...newCheckouts]);
-    setLastDoc(newLastDoc);
-  };
 
   const applyFilters = (data) => {
     let filteredData = [...data];
 
-    // Filtro por status
     if (statusFilter) {
-      filteredData = filteredData.filter(
-        (checkout) => checkout.status === statusFilter
-      );
+      filteredData = filteredData.filter((c) => c.status === statusFilter);
     }
 
-    // Filtro por método de pagamento
     if (methodFilter) {
       filteredData = filteredData.filter(
-        (checkout) => checkout.paymentMethod === methodFilter
+        (c) => c.paymentMethod === methodFilter
       );
     }
 
-    // Filtro por data
     if (startDateFilter || endDateFilter) {
       filteredData = filteredData.filter((checkout) => {
         const checkoutDate = new Date(checkout.timestamp);
@@ -143,125 +92,104 @@ const useDashboardData = () => {
         let endDate = endDateFilter ? new Date(endDateFilter) : null;
         if (startDate) startDate.setHours(0, 0, 0, 0);
         if (endDate) endDate.setHours(23, 59, 59, 999);
-        if (startDate && endDate) {
+        if (startDate && endDate)
           return checkoutDate >= startDate && checkoutDate <= endDate;
-        } else if (startDate) {
-          return checkoutDate >= startDate;
-        } else if (endDate) {
-          return checkoutDate <= endDate;
-        }
+        if (startDate) return checkoutDate >= startDate;
+        if (endDate) return checkoutDate <= endDate;
         return true;
       });
     }
 
-    const normalizeText = (text) => {
-      return text
+    const normalizeText = (text) =>
+      text
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "");
-    };
 
-    // Filtro por busca do comprador (nome ou documento)
     if (payerSearchQuery) {
-      const cleanPayerQuery = payerSearchQuery.toLowerCase().trim();
+      const cleanQuery = payerSearchQuery.toLowerCase().trim();
       filteredData = filteredData.filter((checkout) => {
-        const document =
-          checkout.document && typeof checkout.document === "string"
-            ? checkout.document.replace(/[^\d]/g, "")
-            : "";
-        const payerName = normalizeText(checkout.participants[0]?.name || "");
-        const isNumericQuery = /^\d+$/.test(cleanPayerQuery);
-        const match = isNumericQuery
-          ? document.includes(cleanPayerQuery)
-          : payerName.includes(cleanPayerQuery);
-        return match;
+        const firstP = (checkout.participants || [])[0] || {};
+        // suporte a 'document' (novo) e 'cpf' (legado)
+        const docStr = (firstP.document || firstP.cpf || "").replace(/\D/g, "");
+        const nameStr = normalizeText(firstP.name || "");
+        return /^\d+$/.test(cleanQuery)
+          ? docStr.includes(cleanQuery)
+          : nameStr.includes(cleanQuery);
       });
     }
 
-    // Filtro por busca dos participantes (nome, documento ou email)
     if (participantSearchQuery) {
-      const cleanParticipantQuery = normalizeText(participantSearchQuery);
-      filteredData = filteredData.filter((checkout) => {
-        return checkout.participants.some((participant) => {
-          const participantName = normalizeText(participant.name || "");
-          const participantCpf = (participant.cpf || "").replace(/[^\d]/g, "");
-          const participantEmail = normalizeText(participant.email || "");
-          const isNumericQuery = /^\d+$/.test(cleanParticipantQuery);
-          if (isNumericQuery) {
-            return participantCpf.includes(cleanParticipantQuery);
-          } else {
-            return (
-              participantName.includes(cleanParticipantQuery) ||
-              participantEmail.includes(cleanParticipantQuery)
-            );
-          }
-        });
-      });
+      const cleanQuery = normalizeText(participantSearchQuery);
+      filteredData = filteredData.filter((checkout) =>
+        (checkout.participants || []).some((p) => {
+          const name = normalizeText(p.name || "");
+          const docStr = (p.document || p.cpf || "").replace(/\D/g, "");
+          const email = normalizeText(p.email || "");
+          return /^\d+$/.test(cleanQuery)
+            ? docStr.includes(cleanQuery)
+            : name.includes(cleanQuery) || email.includes(cleanQuery);
+        })
+      );
     }
 
     if (attendedFilter) {
-      filteredData = filteredData.filter((checkout) => {
-        return checkout.participants.some(
-          (participant) =>
-            participant.validated &&
-            participant.validated["2026-05-31"] === true
-        );
-      });
+      filteredData = filteredData.filter((checkout) =>
+        (checkout.participants || []).some(
+          (p) =>
+            p.checkedIn === true ||
+            (p.validated && Object.values(p.validated).some(Boolean))
+        )
+      );
     }
 
-    // Filtro por evento
     if (eventFilter) {
-      filteredData = filteredData.filter(
-        (checkout) => checkout.eventName === eventFilter
-      );
+      filteredData = filteredData.filter((c) => c.eventName === eventFilter);
     }
 
     setFilteredCheckouts(filteredData);
 
-    // Cálculo de métricas filtradas
     const approvedCheckouts = filteredData.filter(
       (c) => c.status === "approved"
     );
     const pendingCheckouts = filteredData.filter((c) => c.status === "pending");
     const errorCheckouts = filteredData.filter((c) => c.status === "error");
 
-    const approvedValue = approvedCheckouts.reduce(
-      (acc, curr) => acc + parseFloat(curr.totalAmount || 0),
-      0
-    );
-    const pendingValue = pendingCheckouts.reduce(
-      (acc, curr) => acc + parseFloat(curr.totalAmount || 0),
-      0
-    );
+    const totalAmount = (c) =>
+      parseFloat(c.totalAmount) || parseFloat(c.orderDetails?.total) || 0;
 
     setFilteredMetrics({
-      approvedValue: formatToBrazilianCurrency(approvedValue),
+      approvedValue: formatToBrazilianCurrency(
+        approvedCheckouts.reduce((a, c) => a + totalAmount(c), 0)
+      ),
       approvedCount: approvedCheckouts.length,
-      pendingValue: formatToBrazilianCurrency(pendingValue),
+      pendingValue: formatToBrazilianCurrency(
+        pendingCheckouts.reduce((a, c) => a + totalAmount(c), 0)
+      ),
       pendingCount: pendingCheckouts.length,
       errorCount: errorCheckouts.length,
     });
 
     const qrData = {};
     filteredData.forEach((checkout) => {
-      checkout.participants.forEach((p, index) => {
-        if (p.qrRawData) {
-          qrData[`${checkout.id}-${index}`] = p.qrRawData;
-        }
+      (checkout.participants || []).forEach((p, index) => {
+        if (p.qrRawData) qrData[`${checkout.id}-${index}`] = p.qrRawData;
       });
     });
     setQrCodeData(qrData);
   };
 
-  const updateMetrics = async (fullUpdate = false) => {
-    // setLoading(true);
+  const updateMetrics = async (
+    fullUpdate = false,
+    currentEventFilter = eventFilter
+  ) => {
     const id = toast.loading(
       "Verificando boletos, novos checkouts e atualizando métricas...",
       { position: "bottom-right" }
     );
-    setErrorMessage(""); // Limpa mensagens de erro anteriores
+    setErrorMessage("");
+
     try {
-      // Tenta verificar o status dos boletos, mas continua mesmo em caso de erro
       try {
         await PaymentService.verifyAllPayments();
       } catch (paymentError) {
@@ -271,100 +199,102 @@ const useDashboardData = () => {
         );
       }
 
-      let allCheckouts = [];
+      let rawCheckouts = [];
+
       if (fullUpdate || !lastUpdated) {
-        const snapshot = await getDocs(buildBaseQuery(6));
-
-        // const lastVisible =
-        //   snapshot.docs.length > 0
-        //     ? snapshot.docs[snapshot.docs.length - 1]
-        //     : null;
-
-        // setLastDoc(lastVisible);
-
-        allCheckouts = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-      } else {
-        const q = query(
-          collection(db, "checkouts"),
-          where("timestamp", ">", Timestamp.fromMillis(lastUpdated)),
-          orderBy("timestamp", "desc")
+        const snapshot = await getDocs(
+          query(
+            collection(db, "checkouts"),
+            where("eventName", "==", currentEventFilter),
+            orderBy("timestamp", "desc")
+          )
         );
-        const snapshot = await getDocs(q);
-        const newCheckouts = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        allCheckouts = [...newCheckouts, ...checkouts];
+        rawCheckouts = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      } else {
+        const snapshot = await getDocs(
+          query(
+            collection(db, "checkouts"),
+            where("eventName", "==", currentEventFilter),
+            where("timestamp", ">", Timestamp.fromMillis(lastUpdated)),
+            orderBy("timestamp", "desc")
+          )
+        );
+        const newRaw = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        rawCheckouts = [
+          ...newRaw,
+          ...checkouts.filter((c) => !newRaw.find((n) => n.id === c.id)),
+        ];
       }
+
+      // ── Busca participantes das subcoleções (novo modelo) ──────────────────
+      const allCheckouts = await enrichCheckoutsWithParticipants(rawCheckouts);
 
       const updatedMetrics = allCheckouts.reduce(
         (acc, data) => {
-          const totalAmount = parseFloat(data.totalAmount) || 0;
+          const amount =
+            parseFloat(data.totalAmount) ||
+            parseFloat(data.orderDetails?.total) ||
+            0;
           const fullTickets = data.orderDetails?.fullTickets || 0;
           const halfTickets = data.orderDetails?.halfTickets || 0;
 
           if (data.status === "approved") {
             acc.successTicketsFull += fullTickets;
             acc.successTicketsHalf += halfTickets;
-            acc.successValueGross += totalAmount;
+            acc.successValueGross += amount;
             acc.successCount += 1;
 
             let fee = 0;
-            const paymentMethod = data.paymentMethod || "unknown";
-            const cardBrand = (
+            // 'credit' = novo backend; 'creditCard' = legado
+            const method = data.paymentMethod || "unknown";
+            const brand = (
               data.paymentDetails?.creditCard?.brand || "unknown"
             ).toLowerCase();
 
-            if (
-              paymentMethod === "creditCard" ||
-              paymentMethod === "debitCard"
-            ) {
-              if (["visa", "mastercard", "master"].includes(cardBrand)) {
-                fee = totalAmount * 0.0449;
+            if (["credit", "creditCard", "debitCard"].includes(method)) {
+              if (["visa", "mastercard", "master"].includes(brand)) {
+                fee = amount * 0.0449;
                 acc.totalFeeMasterVisa += fee;
-                acc.totalGrossMasterVisa += totalAmount;
+                acc.totalGrossMasterVisa += amount;
                 acc.totalTicketsMasterVisa =
                   (acc.totalTicketsMasterVisa || 0) + fullTickets + halfTickets;
-              } else if (cardBrand === "elo") {
-                fee = totalAmount * 0.0509;
+              } else if (brand === "elo") {
+                fee = amount * 0.0509;
                 acc.totalFeeElo += fee;
-                acc.totalGrossElo += totalAmount;
+                acc.totalGrossElo += amount;
                 acc.totalTicketsElo =
                   (acc.totalTicketsElo || 0) + fullTickets + halfTickets;
               } else {
-                fee = totalAmount * 0.0449;
-                acc.totalGrossOthers += totalAmount;
+                fee = amount * 0.0449;
+                acc.totalGrossOthers += amount;
                 acc.totalTicketsOthers =
                   (acc.totalTicketsOthers || 0) + fullTickets + halfTickets;
               }
-            } else if (paymentMethod === "pix") {
-              fee = totalAmount * 0.0099;
+            } else if (method === "pix") {
+              fee = amount * 0.0099;
               acc.totalFeePix += fee;
-              acc.totalGrossPix += totalAmount;
+              acc.totalGrossPix += amount;
               acc.totalTicketsPix =
                 (acc.totalTicketsPix || 0) + fullTickets + halfTickets;
-            } else if (paymentMethod === "boleto") {
+            } else if (method === "boleto") {
               fee = 5.0;
               acc.totalFeeBoleto += fee;
-              acc.totalGrossBoleto += totalAmount;
+              acc.totalGrossBoleto += amount;
               acc.totalTicketsBoleto =
                 (acc.totalTicketsBoleto || 0) + fullTickets + halfTickets;
             } else {
-              acc.totalGrossOthers += totalAmount;
+              acc.totalGrossOthers += amount;
               acc.totalTicketsOthers =
                 (acc.totalTicketsOthers || 0) + fullTickets + halfTickets;
             }
 
-            acc.successValueNet += totalAmount - fee;
+            acc.successValueNet += amount - fee;
           } else if (data.status === "pending") {
             acc.pendingCount += 1;
-            acc.pendingValue += totalAmount;
+            acc.pendingValue += amount;
           } else if (data.status === "error") {
             acc.errorCount += 1;
-            acc.errorValue += totalAmount;
+            acc.errorValue += amount;
           }
           return acc;
         },
@@ -421,6 +351,7 @@ const useDashboardData = () => {
       setLastUpdated(updatedMetrics.lastUpdated);
       setEventOptions(updatedMetrics.events || []);
       applyFilters(allCheckouts);
+
       toast.update(id, {
         render: "Atualização concluída",
         type: "success",
@@ -473,7 +404,6 @@ const useDashboardData = () => {
     setCheckouts,
     filteredCheckouts,
     setFilteredCheckouts,
-    // loading,
     statusFilter,
     setStatusFilter,
     methodFilter,
@@ -497,8 +427,7 @@ const useDashboardData = () => {
     updateMetrics,
     chartData,
     formatToBrazilianCurrency,
-    // loadInitialData,
-    loadMoreCheckouts,
+    loadMoreCheckouts: () => {},
     errorMessage,
   };
 };

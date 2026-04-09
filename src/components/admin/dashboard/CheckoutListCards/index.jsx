@@ -31,12 +31,18 @@ const formatBrazilianCurrency = (value) => {
     .replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
 };
 
-const formatBrazilianDate = (isoString, includeTime = false) => {
-  if (!isoString) return "N/A";
-  const date = new Date(isoString);
+const formatBrazilianDate = (value, includeTime = false) => {
+  if (!value) return "N/A";
+
+  // ✅ Firestore Timestamp
+  const date = value?.toDate ? value.toDate() : new Date(value);
+
+  if (isNaN(date)) return "N/A";
+
   const day = date.getDate().toString().padStart(2, "0");
   const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const year = date.getFullYear();
+
   if (includeTime) {
     const hours = date.getHours().toString().padStart(2, "0");
     const minutes = date.getMinutes().toString().padStart(2, "0");
@@ -82,14 +88,23 @@ const calculateParticipantValue = (checkout, participantIndex) => {
 };
 
 // Normaliza checkouts para tolerar campos ausentes em vendas manuais
-const normalizeCheckout = (checkout) => ({
-  ...checkout,
-  participants: Array.isArray(checkout.participants)
-    ? checkout.participants
-    : [],
-  orderDetails: checkout.orderDetails || { fullTickets: 0, halfTickets: 0 },
-  timestamp: checkout.timestamp || new Date().toISOString(),
-});
+const normalizeCheckout = (checkout) => {
+  const rawTs = checkout.timestamp || checkout.createdAt;
+  const timestamp = rawTs?.toDate
+    ? rawTs.toDate().toISOString() // Firestore Timestamp
+    : rawTs
+    ? new Date(rawTs).toISOString() // string ISO legado
+    : new Date().toISOString(); // fallback
+
+  return {
+    ...checkout,
+    participants: Array.isArray(checkout.participants)
+      ? checkout.participants
+      : [],
+    orderDetails: checkout.orderDetails || { fullTickets: 0, halfTickets: 0 },
+    timestamp,
+  };
+};
 
 const ROWS_PER_PAGE = 6;
 

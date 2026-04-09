@@ -22,13 +22,13 @@ const PaymentMethods = ({ setPaymentMethod }) => {
           <FaCreditCard />
           <strong>Cartão de Crédito</strong>
         </button>
-        {/* <button
+        <button
           onClick={() => handlePaymentSelection("pix")}
           className={`${activeMethod === "pix" ? styles.active : ""}`}
         >
           <FaPix />
           <strong>PIX</strong>
-        </button> */}
+        </button>
         <button
           onClick={() => handlePaymentSelection("boleto")}
           className={`${activeMethod === "boleto" ? styles.active : ""}`}

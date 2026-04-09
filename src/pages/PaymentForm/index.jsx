@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
 import InputMask from "react-input-mask";
-import axios from "axios";
 
 import { FaUser, FaEnvelope, FaPhone, FaIdCard, FaLock } from "react-icons/fa";
-import { MdDelete } from "react-icons/md";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 
 import styles from "./paymentForm.module.css";
@@ -13,14 +11,25 @@ import Modal from "../../components/checkout/Modal";
 import logo from "../../assets/logos/logo-no-text.png";
 import usePaymentForm from "../../data/hooks/usePaymentForm";
 import AnimatedButton from "../../components/shared/AnimatedButton";
-import { useLocation } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import ButtonWhatsapp from "../../components/sections/ButtonWhatsapp";
 
-import { formatToBRL } from "../../data/functions/formatToBRL";
+const TICKET_PRICES = {
+  all: "R$ 674,00",
+  half: "R$ 337,00",
+  social: "R$ 347,00",
+};
+const TICKET_LABELS = {
+  all: "Inteiro",
+  half: "Meia-entrada",
+  social: "Social",
+};
 
-const BASE_PRICE = import.meta.env.VITE_BASE_PRICE;
-// const HALF_PRICE = import.meta.env.VITE_HALF_PRICE;
+const TICKET_TYPE_BADGE = {
+  full: "Inteiro",
+  half: "Meia-entrada",
+  social: "Social",
+};
 
 const PaymentForm = () => {
   const {
@@ -35,31 +44,28 @@ const PaymentForm = () => {
     modalState,
     setModalState,
     totals,
-    handleTicketQuantityChange,
+    ticketQuantity,
+    handleTicketTypeChange,
     handleAddParticipant,
     handleApplyCoupon,
     handleRemoveCoupon,
     handlePayment,
+    deriveTicketType,
   } = usePaymentForm();
 
   const [step, setStep] = useState(1);
-  const [cepError, setCepError] = useState("");
   const [documentError, setDocumentError] = useState("");
   const [payerType, setPayerType] = useState("participant");
   const [selectedPayer, setSelectedPayer] = useState(null);
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [isCouponAppliedInitially, setIsCouponAppliedInitially] =
     useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [hasShownHalfPriceModal, setHasShownHalfPriceModal] = useState(false);
-  const [typeTicket, setTypeTicket] = useState("full");
-  const [basePrice, setBasePrice] = useState(formatToBRL(BASE_PRICE));
 
   const brands = ["Visa", "Mastercard", "Amex", "Elo"];
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Inicializar selectedPayer com o primeiro participante quando participants mudar
+  // Inicializar selectedPayer com o primeiro participante
   useEffect(() => {
     if (
       payerType === "participant" &&
@@ -70,118 +76,83 @@ const PaymentForm = () => {
     }
   }, [participants, payerType, selectedPayer]);
 
-  // useEffect para tickets e coupon
+  // Inicializar quantidades e cupom a partir da URL
   useEffect(() => {
+    if (isInitialized) return;
     const searchParams = new URLSearchParams(location.search);
-    const tickets = searchParams.get("tickets");
-    const coupon = searchParams.get("coupon");
 
-    if (!isInitialized) {
-      if (tickets && formState.ticketQuantity !== parseInt(tickets, 10)) {
-        handleTicketQuantityChange({
-          target: { value: parseInt(tickets, 10) },
-        });
-      }
+    const allParam = parseInt(searchParams.get("all")) || 0;
+    const halfParam = parseInt(searchParams.get("half")) || 0;
+    const socialParam = parseInt(searchParams.get("social")) || 0;
+    const couponParam = searchParams.get("coupon");
 
-      if (coupon && !isCouponAppliedInitially) {
+    // Suporte legado: ?tickets=N&type=half
+    const legacyTickets = parseInt(searchParams.get("tickets")) || 0;
+    const legacyType = searchParams.get("type");
+
+    if (allParam > 0 || halfParam > 0 || socialParam > 0) {
+      setFormState((prev) => ({
+        ...prev,
+        allTickets: allParam,
+        halfTickets: halfParam,
+        socialTickets: socialParam,
+      }));
+    } else if (legacyTickets > 0) {
+      if (legacyType === "half") {
         setFormState((prev) => ({
           ...prev,
-          coupon: { ...prev.coupon, code: coupon, isApplied: true },
+          allTickets: 0,
+          halfTickets: legacyTickets,
         }));
-        handleApplyCoupon(null, coupon);
-        setIsCouponAppliedInitially(true);
+      } else if (legacyType === "social") {
+        setFormState((prev) => ({
+          ...prev,
+          allTickets: 0,
+          socialTickets: legacyTickets,
+        }));
+      } else {
+        setFormState((prev) => ({ ...prev, allTickets: legacyTickets }));
       }
-
-      setIsInitialized(true);
     }
-  }, [
-    location.search,
-    formState.ticketQuantity,
-    handleTicketQuantityChange,
-    handleApplyCoupon,
-    setFormState,
-    isCouponAppliedInitially,
-    isInitialized,
-  ]);
 
-  // useEffect para ativar o toggle de meia-entrada no primeiro participante
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const type = searchParams.get("type");
-    setTypeTicket(type);
-
-    if (
-      type === "half" &&
-      isFirstLoad &&
-      currentParticipant.isHalfPrice !== true
-    ) {
-      setCurrentParticipant((prev) => ({
+    if (couponParam && !isCouponAppliedInitially) {
+      setFormState((prev) => ({
         ...prev,
-        isHalfPrice: true,
+        coupon: { code: couponParam, isApplied: true },
       }));
-      setIsFirstLoad(false);
+      handleApplyCoupon(null, couponParam);
+      setIsCouponAppliedInitially(true);
     }
-  }, [
-    location.search,
-    isFirstLoad,
-    currentParticipant.isHalfPrice,
-    setCurrentParticipant,
-  ]);
 
-  // useEffect para o modal de meia-entrada no step 2
+    setIsInitialized(true);
+  }, [location.search, isInitialized]);
+
+  // GTM
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const type = searchParams.get("type");
-    setTypeTicket(type);
-
-    if (type === "half" && step === 2 && !hasShownHalfPriceModal) {
-      setModalState({
-        isOpen: true,
-        title: "Atenção: Ingresso Meia-Entrada",
-        message:
-          "Você selecionou um ingresso meia-entrada. O toggle 'Meia entrada?' está ativado por padrão para o primeiro participante. Para os próximos, ative manualmente se necessário. Lembre-se: será necessário apresentar documento comprobatório (como carteira de estudante, identidade para idosos, laudo para PcD ou comprovante de vínculo para professores/pais de autistas) na entrada do evento.",
-        type: "info",
+    if (window.dataLayer) {
+      window.dataLayer.push({
+        event: "add_payment_info",
+        timestamp: new Date().toISOString(),
       });
-      setHasShownHalfPriceModal(true);
     }
-  }, [step, location.search, hasShownHalfPriceModal, setModalState]);
-
-  // Chamar o evento na montagem do componente
-  useEffect(() => {
-    handleAddPaymentInfo();
   }, []);
-
-  const handleAddPaymentInfo = (itemId, itemName, price) => {
-    window.dataLayer.push({
-      event: "add_payment_info",
-      items: [
-        {
-          item_id: itemId,
-          item_name: itemName,
-          price: price,
-          quantity: 1,
-        },
-      ],
-      timestamp: new Date().toISOString(),
-    });
-  };
 
   const handleParticipantChange = (field, value) => {
     setCurrentParticipant((prev) => ({ ...prev, [field]: value }));
     if (field === "document") {
       const cleanDoc = value.replace(/\D/g, "");
       if (currentParticipant.documentType === "cpf") {
-        if (cleanDoc.length > 0 && cleanDoc.length !== 11) {
-          setDocumentError("O CPF deve ter 11 dígitos.");
-        } else {
-          setDocumentError("");
-        }
+        setDocumentError(
+          cleanDoc.length > 0 && cleanDoc.length !== 11
+            ? "O CPF deve ter 11 dígitos."
+            : ""
+        );
       } else if (currentParticipant.documentType === "cnpj") {
-        if (cleanDoc.length > 0 && cleanDoc.length !== 14) {
-          setDocumentError("O CNPJ deve ter 14 dígitos.");
-        } else {
-          setDocumentError("");
-        }
+        setDocumentError(
+          cleanDoc.length > 0 && cleanDoc.length !== 14
+            ? "O CNPJ deve ter 14 dígitos."
+            : ""
+        );
       }
     }
   };
@@ -190,38 +161,39 @@ const PaymentForm = () => {
     setCreditCardData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // const fetchAddressFromCep = async (cep) => {
-  //   try {
-  //     const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
-  //     if (!response.data.erro) {
-  //       setSelectedPayer((prev) => ({
-  //         ...prev,
-  //         street: response.data.logradouro,
-  //         district: response.data.bairro,
-  //         city: response.data.localidade,
-  //         state: response.data.uf,
-  //       }));
-  //       setCepError("");
-  //     } else {
-  //       setCepError("CEP não encontrado.");
-  //     }
-  //   } catch (error) {
-  //     setCepError("Erro ao buscar o CEP.");
-  //   }
-  // };
+  // Tipo do ingresso do próximo participante a ser adicionado
+  const nextParticipantType = (() => {
+    const pos = participants.length;
+    const raw = deriveTicketType(
+      pos,
+      formState.allTickets,
+      formState.halfTickets
+    );
+    return { raw, label: TICKET_TYPE_BADGE[raw] || "Inteiro" };
+  })();
 
   const nextStep = () => {
-    let automaticallyAddedParticipant = false;
-    if (step === 2) {
-      if (formState.ticketQuantity === 1 && participants.length === 0) {
-        automaticallyAddedParticipant = true;
-        const requiredFields = ["name", "email", "number", "document"];
-        const missingFields = requiredFields.filter(
-          (field) =>
-            !currentParticipant[field] ||
-            currentParticipant[field].trim() === ""
-        );
+    if (step === 1) {
+      if (ticketQuantity === 0) {
+        setModalState({
+          isOpen: true,
+          title: "Nenhum ingresso selecionado",
+          message: "Selecione ao menos 1 ingresso antes de continuar.",
+          type: "error",
+        });
+        return;
+      }
+    }
 
+    if (step === 2) {
+      let automaticallyAdded = false;
+
+      if (ticketQuantity === 1 && participants.length === 0) {
+        automaticallyAdded = true;
+        const requiredFields = ["name", "email", "phone", "document"];
+        const missingFields = requiredFields.filter(
+          (f) => !currentParticipant[f] || currentParticipant[f].trim() === ""
+        );
         if (missingFields.length > 0) {
           setModalState({
             isOpen: true,
@@ -233,7 +205,6 @@ const PaymentForm = () => {
           });
           return;
         }
-
         const cleanDoc = currentParticipant.document.replace(/\D/g, "");
         if (
           currentParticipant.documentType === "cpf" &&
@@ -259,18 +230,14 @@ const PaymentForm = () => {
           });
           return;
         }
-
         handleAddParticipant({ preventDefault: () => {} });
       }
 
-      if (
-        participants.length < formState.ticketQuantity &&
-        !automaticallyAddedParticipant
-      ) {
+      if (participants.length < ticketQuantity && !automaticallyAdded) {
         setModalState({
           isOpen: true,
           title: "Participantes Insuficientes",
-          message: `Você adicionou ${participants.length} participante(s), mas selecionou ${formState.ticketQuantity} ingresso(s). Adicione todos os participantes antes de continuar.`,
+          message: `Você adicionou ${participants.length} de ${ticketQuantity} participante(s). Adicione todos antes de continuar.`,
           type: "error",
         });
         return;
@@ -320,42 +287,86 @@ const PaymentForm = () => {
               <span>Checkout Seguro</span>
               <h2>Descrição</h2>
               <p>
-                Passaporte para dois dias: 31 de maio e 1º de junho! Participe
-                do maior congresso sobre Neurodiversidade.
+                Passaporte para dois dias: 16 e 17 de maio! Participe do maior
+                congresso sobre Neurodiversidade.
               </p>
             </div>
           </div>
 
+          {/* ── STEP 1: Quantidade ── */}
           {step === 1 && (
             <div className={`${styles.orderSummary} ${styles.card}`}>
               <h2>Quantidade de Ingressos</h2>
-              <label>
-                <p>Quantidade de ingresso(s)</p>
-                <select
-                  value={formState.ticketQuantity}
-                  onChange={handleTicketQuantityChange}
+
+              {["all", "half", "social"].map((type) => {
+                const fieldMap = {
+                  all: "allTickets",
+                  half: "halfTickets",
+                  social: "socialTickets",
+                };
+                const field = fieldMap[type];
+                const value = formState[field];
+
+                return (
+                  <div key={type} className={styles.ticketRow}>
+                    <div className={styles.ticketInfo}>
+                      <span className={styles.ticketName}>
+                        {TICKET_LABELS[type]}
+                      </span>
+                      <span className={styles.ticketPrice}>
+                        {TICKET_PRICES[type]}{" "}
+                        {type === "social" &&
+                          " + 1kg de alimento para cada ingresso"}
+                      </span>
+                    </div>
+                    <div className={styles.counter}>
+                      <button
+                        type="button"
+                        className={styles.counterBtn}
+                        onClick={() =>
+                          handleTicketTypeChange(
+                            type,
+                            String(Math.max(0, value - 1))
+                          )
+                        }
+                        disabled={value === 0}
+                      >
+                        −
+                      </button>
+                      <span className={styles.counterVal}>{value}</span>
+                      <button
+                        type="button"
+                        className={styles.counterBtn}
+                        onClick={() =>
+                          handleTicketTypeChange(type, String(value + 1))
+                        }
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {ticketQuantity > 0 && (
+                <p
+                  style={{ marginTop: "8px", fontSize: "13px", color: "#555" }}
                 >
-                  {Array.from({ length: 60 }, (_, i) => (
-                    <option key={i + 1} value={i + 1}>
-                      {i + 1} ingresso(s)
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  Total de ingressos: <strong>{ticketQuantity}</strong>
+                </p>
+              )}
+
+              {formState.coupon.isApplied && (
+                <p>
+                  Cupom <strong>{formState.coupon.code}</strong> aplicado —
+                  Desconto: R$ {totals.discount}
+                </p>
+              )}
+
               <p className={styles.total}>
-                <strong>
-                  Total: R${" "}
-                  {typeTicket === "half" && formState.ticketQuantity <= 1
-                    ? "144,50"
-                    : totals.total}
-                </strong>
-                {formState.coupon.isApplied && (
-                  <p>
-                    Cupom {formState.coupon.code} aplicado - Desconto: R${" "}
-                    {totals.discount}
-                  </p>
-                )}
+                <strong>Total: R$ {totals.total}</strong>
               </p>
+
               <button
                 onClick={nextStep}
                 data-primary-button-next="true"
@@ -365,15 +376,34 @@ const PaymentForm = () => {
               </button>
             </div>
           )}
-
+          {/* ── STEP 2: Participantes ── */}
           {step === 2 && (
             <>
-              {participants.length < formState.ticketQuantity ? (
+              {participants.length < ticketQuantity ? (
                 <div className={styles.participantForm}>
                   <h2>
                     Adicionar Participante ({participants.length}/
-                    {formState.ticketQuantity})
+                    {ticketQuantity})
                   </h2>
+                  <p
+                    style={{
+                      fontSize: "13px",
+                      color: "#2c3e50",
+                      marginBottom: "8px",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Tipo do ingresso:{" "}
+                    <span
+                      style={{
+                        background: "#eaf4ff",
+                        padding: "2px 8px",
+                        borderRadius: "4px",
+                      }}
+                    >
+                      {nextParticipantType.label}
+                    </span>
+                  </p>
                   <form className={styles.form} onSubmit={handleAddParticipant}>
                     <label>
                       <p>
@@ -407,9 +437,9 @@ const PaymentForm = () => {
                       </p>
                       <InputMask
                         mask="(99) 99999-9999"
-                        value={currentParticipant.number}
+                        value={currentParticipant.phone}
                         onChange={(e) =>
-                          handleParticipantChange("number", e.target.value)
+                          handleParticipantChange("phone", e.target.value)
                         }
                         required
                       >
@@ -441,30 +471,7 @@ const PaymentForm = () => {
                         <span className={styles.error}>{documentError}</span>
                       )}
                     </label>
-                    {/* {typeTicket === "half" ||
-                      (formState.ticketQuantity >= 2 && ( */}
-                    {/* <label className={styles.toggleLabel}>
-                      <p>Meia entrada?</p>
-                      <div
-                        className={`${styles.toggle} ${
-                          currentParticipant.isHalfPrice
-                            ? styles.toggleActive
-                            : ""
-                        }`}
-                        onClick={() =>
-                          handleParticipantChange(
-                            "isHalfPrice",
-                            !currentParticipant.isHalfPrice
-                          )
-                        }
-                      >
-                        <span>
-                          {currentParticipant.isHalfPrice ? "Sim" : "Não"}
-                        </span>
-                      </div>
-                    </label> */}
-                    {/* ))} */}
-                    {formState.ticketQuantity > 1 && (
+                    {ticketQuantity > 1 && (
                       <button
                         type="submit"
                         className={`${styles.addButton} ${styles.primaryButton}`}
@@ -478,21 +485,19 @@ const PaymentForm = () => {
                 <div className={styles.card}>
                   <h2>Todos os Participantes Adicionados</h2>
                   <p>
-                    Você adicionou todos os {formState.ticketQuantity}{" "}
-                    participantes necessários.
+                    Você adicionou todos os {ticketQuantity} participantes
+                    necessários.
                   </p>
                 </div>
               )}
+
               {participants.length > 0 && (
                 <ParticipantsList
                   participants={participants}
                   setParticipants={setParticipants}
-                  halfTickets={formState.halfTickets}
-                  setHalfTickets={(value) =>
-                    setFormState((prev) => ({ ...prev, halfTickets: value }))
-                  }
                 />
               )}
+
               <div className={styles.navigation}>
                 <button onClick={prevStep} className={styles.backButton}>
                   <IoIosArrowBack /> Voltar
@@ -507,6 +512,7 @@ const PaymentForm = () => {
             </>
           )}
 
+          {/* ── STEP 3: Pagamento ── */}
           {step === 3 && (
             <div>
               <PaymentMethodsComponent
@@ -516,25 +522,35 @@ const PaymentForm = () => {
               />
               <div className={`${styles.paymentSummary} ${styles.card}`}>
                 <h2>Resumo do Pedido</h2>
-                <p>
-                  Ingressos {formState.ticketQuantity - formState.halfTickets} x{" "}
-                  {basePrice}
-                </p>
+                {formState.allTickets > 0 && (
+                  <p>
+                    Inteiro: {formState.allTickets} × R$ 674,00 ={" "}
+                    <strong>R$ {totals.valueTicketsAll}</strong>
+                  </p>
+                )}
                 {formState.halfTickets > 0 && (
                   <p>
-                    Ingressos meia: {formState.halfTickets} x R${" "}
-                    {totals.valueTicketsHalf}
+                    Meia-entrada: {formState.halfTickets} × R$ 337,00 ={" "}
+                    <strong>R$ {totals.valueTicketsHalf}</strong>
+                  </p>
+                )}
+                {formState.socialTickets > 0 && (
+                  <p>
+                    Social: {formState.socialTickets} × R$ 347,00 ={" "}
+                    <strong>R$ {totals.valueTicketsSocial}</strong>
                   </p>
                 )}
                 {formState.coupon.isApplied && (
                   <p>
-                    Desconto ({formState.coupon.code}): R$ {totals.discount}
+                    Desconto ({formState.coupon.code}): -{" "}
+                    <strong>R$ {totals.discount}</strong>
                   </p>
                 )}
                 <p className={styles.total}>
                   <strong>Total: R$ {totals.total}</strong>
                 </p>
               </div>
+
               <form className={styles.payment} onSubmit={handleFormSubmit}>
                 {formState.paymentMethod === "creditCard" ? (
                   <>
@@ -561,9 +577,8 @@ const PaymentForm = () => {
                           <select
                             value={selectedPayer?.document || ""}
                             onChange={(e) => {
-                              const selectedDocument = e.target.value;
                               const payer = participants.find(
-                                (p) => p.document === selectedDocument
+                                (p) => p.document === e.target.value
                               );
                               setSelectedPayer(payer);
                             }}
@@ -572,12 +587,9 @@ const PaymentForm = () => {
                             <option value="" disabled>
                               Selecione um participante
                             </option>
-                            {participants.map((participant) => (
-                              <option
-                                key={participant.document}
-                                value={participant.document}
-                              >
-                                {participant.name}
+                            {participants.map((p) => (
+                              <option key={p.document} value={p.document}>
+                                {p.name}
                               </option>
                             ))}
                           </select>
@@ -744,9 +756,8 @@ const PaymentForm = () => {
                         <select
                           value={selectedPayer?.document || ""}
                           onChange={(e) => {
-                            const selectedDocument = e.target.value;
                             const payer = participants.find(
-                              (p) => p.document === selectedDocument
+                              (p) => p.document === e.target.value
                             );
                             setSelectedPayer({
                               name: payer?.name || "",
@@ -765,12 +776,9 @@ const PaymentForm = () => {
                           <option value="" disabled>
                             Selecione um participante
                           </option>
-                          {participants.map((participant) => (
-                            <option
-                              key={participant.document}
-                              value={participant.document}
-                            >
-                              {participant.name}
+                          {participants.map((p) => (
+                            <option key={p.document} value={p.document}>
+                              {p.name}
                             </option>
                           ))}
                         </select>
@@ -835,106 +843,9 @@ const PaymentForm = () => {
                         </label>
                       </>
                     )}
-                    {/* <label>
-                      <p>CEP</p>
-                      <InputMask
-                        mask="99999-999"
-                        value={selectedPayer?.zipCode || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setSelectedPayer((prev) => ({
-                            ...prev,
-                            zipCode: value,
-                          }));
-                          const cleanCep = value.replace(/\D/g, "");
-                          if (cleanCep.length === 8) {
-                            fetchAddressFromCep(cleanCep);
-                          }
-                        }}
-                        required
-                      >
-                        {(inputProps) => <input {...inputProps} type="text" />}
-                      </InputMask>
-                      {cepError && (
-                        <span className={styles.error}>{cepError}</span>
-                      )}
-                    </label>
-                    <label>
-                      <p>Rua</p>
-                      <input
-                        type="text"
-                        value={selectedPayer?.street || ""}
-                        onChange={(e) =>
-                          setSelectedPayer((prev) => ({
-                            ...prev,
-                            street: e.target.value,
-                          }))
-                        }
-                        required
-                      />
-                    </label>
-                    <label>
-                      <p>Número</p>
-                      <input
-                        type="text"
-                        value={selectedPayer?.addressNumber || ""}
-                        onChange={(e) =>
-                          setSelectedPayer((prev) => ({
-                            ...prev,
-                            addressNumber: e.target.value,
-                          }))
-                        }
-                        required
-                      />
-                    </label>
-                    <label>
-                      <p>Bairro</p>
-                      <input
-                        type="text"
-                        value={selectedPayer?.district || ""}
-                        onChange={(e) =>
-                          setSelectedPayer((prev) => ({
-                            ...prev,
-                            district: e.target.value,
-                          }))
-                        }
-                        required
-                      />
-                    </label>
-                    <label>
-                      <p>Cidade</p>
-                      <input
-                        type="text"
-                        value={selectedPayer?.city || ""}
-                        onChange={(e) =>
-                          setSelectedPayer((prev) => ({
-                            ...prev,
-                            city: e.target.value,
-                          }))
-                        }
-                        required
-                      />
-                    </label>
-                    <label>
-                      <p>Estado (ex.: SP)</p>
-                      <InputMask
-                        mask="aa"
-                        formatChars={{ a: "[A-Za-z]" }}
-                        value={selectedPayer?.state || ""}
-                        onChange={(e) => {
-                          const value = e.target.value.toUpperCase();
-                          setSelectedPayer((prev) => ({
-                            ...prev,
-                            state: value,
-                          }));
-                        }}
-                        required
-                      >
-                        {(inputProps) => <input {...inputProps} type="text" />}
-                      </InputMask>
-                    </label> */}
                   </div>
                 )}
+
                 <div className={styles.navigation}>
                   <button onClick={prevStep} className={styles.backButton}>
                     <IoIosArrowBack /> Voltar
@@ -959,6 +870,7 @@ const PaymentForm = () => {
           )}
         </div>
       </div>
+
       <Modal
         isOpen={modalState.isOpen}
         onClose={() =>
@@ -969,6 +881,7 @@ const PaymentForm = () => {
         type={modalState.type}
         content={modalState.content}
       />
+
       {formState.loading && (
         <div className={styles.loadingOverlay}>
           <div className={styles.loadingContent}>

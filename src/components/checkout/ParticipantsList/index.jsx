@@ -1,22 +1,14 @@
-// src/components/checkout/ParticipantsList.js
 import styles from "./ParticipantsList.module.css";
 
-const ParticipantsList = ({
-  participants,
-  setParticipants,
-  halfTickets,
-  setHalfTickets,
-}) => {
-  const handleRemoveParticipant = (index) => {
-    const participantToRemove = participants[index];
-    const updatedParticipants = participants.filter((_, i) => i !== index);
-    setParticipants(updatedParticipants);
+const TICKET_TYPE_LABEL = {
+  full: "Inteiro",
+  half: "Meia-entrada",
+  social: "Social",
+};
 
-    const newHalfTickets = updatedParticipants.reduce(
-      (count, p) => count + (p.isHalfPrice ? 1 : 0),
-      0
-    );
-    setHalfTickets(newHalfTickets);
+const ParticipantsList = ({ participants, setParticipants }) => {
+  const handleRemoveParticipant = (index) => {
+    setParticipants((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -27,11 +19,10 @@ const ParticipantsList = ({
           <li key={index} className={styles.participantItem}>
             <div className={styles.participantInfo}>
               <span>
-                {participant.name} - {participant.email}
+                {participant.name} — {participant.email}
               </span>
               <span className={styles.ticketType}>
-                Ingresso
-                {participant.isHalfPrice ? " meia entrada" : " valor integral"}
+                {TICKET_TYPE_LABEL[participant.ticketType] || "Inteiro"}
               </span>
             </div>
             <button

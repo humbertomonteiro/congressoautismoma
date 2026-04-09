@@ -161,7 +161,8 @@ const CheckoutCard = ({ checkout, isMobile }) => {
             <strong>Data e Hora:</strong> {formatTimestamp(checkout.timestamp)}
           </Typography>
           <Typography sx={{ color: "#666666", fontSize: "0.9rem", mb: 0.5 }}>
-            <strong>Valor:</strong> R$ {checkout.totalAmount}
+            <strong>Valor:</strong> R${" "}
+            {checkout.orderDetails.total || checkout.totalAmount}
           </Typography>
           {checkout.seller && (
             <Box
@@ -216,11 +217,11 @@ const CheckoutCard = ({ checkout, isMobile }) => {
               Excluir
             </Button>
           </Box>
-          {checkout.participants[0]?.number && (
+          {checkout.participants[0]?.phone && (
             <IconButton
               onClick={() =>
                 handleContactParticipant(
-                  checkout.participants[0].number,
+                  checkout.participants[0].phone,
                   checkout.paymentMethod
                 )
               }

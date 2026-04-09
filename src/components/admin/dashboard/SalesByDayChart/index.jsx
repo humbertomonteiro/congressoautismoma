@@ -55,7 +55,9 @@ const SalesByDayChart = ({ checkouts, formatToBrazilianCurrency }) => {
 
     const salesByDay = {};
     approvedCheckouts.forEach((checkout) => {
-      const date = parseISO(checkout.timestamp); // Converte para Date corretamente
+      const date = checkout.timestamp?.toDate
+        ? checkout.timestamp.toDate() // Firestore Timestamp
+        : new Date(checkout.timestamp); // Converte para Date corretamente
       const dayKey = format(date, "yyyy-MM-dd", { locale: ptBR });
 
       if (date >= startDate && date <= endDate) {

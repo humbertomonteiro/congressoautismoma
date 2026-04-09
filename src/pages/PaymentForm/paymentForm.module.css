@@ -512,3 +512,74 @@ input[type="checkbox"] {
     transform: rotate(360deg);
   }
 }
+
+.ticketRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 0.5px solid #e0e0e0;
+}
+
+.ticketRow:last-of-type {
+  border-bottom: none;
+}
+
+.ticketInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ticketName {
+  font-size: 15px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.ticketPrice {
+  font-size: 13px;
+  color: #7f8c8d;
+}
+
+.counter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.counterBtn {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  border: 1px solid #ddd !important;
+  background: #fff !important;
+  color: #2c3e50 !important;
+  font-size: 18px !important;
+  font-weight: 400 !important;
+  cursor: pointer;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  box-shadow: none !important;
+  line-height: 1;
+}
+
+.counterBtn:hover {
+  background: #f4f4f4 !important;
+  transform: none !important;
+}
+
+.counterBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.counterVal {
+  font-size: 16px;
+  font-weight: 500;
+  min-width: 20px;
+  text-align: center;
+  color: #2c3e50;
+}

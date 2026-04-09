@@ -15,11 +15,18 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 import { IoIosArrowDown } from "react-icons/io";
 import { useState } from "react";
-import { doc, updateDoc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  updateDoc,
+  getDoc,
+  collection,
+  writeBatch,
+} from "firebase/firestore";
 import { db } from "../../../../../firebaseConfig";
 import PaymentService from "../../../../data/services/PaymentService";
 import { toast } from "react-toastify";
 import { FaRegEdit } from "react-icons/fa";
+import { data } from "react-router-dom";
 
 const EMAIL_FROM = import.meta.env.VITE_EMAIL_FROM;
 
@@ -57,8 +64,8 @@ const ModalCheckoutDetails = ({
     status: checkout.status || "",
     paymentMethod: checkout.paymentMethod || "",
     observation: checkout.observation || "Sem observações...",
-    totalAmount: checkout.totalAmount || "0.00",
     paymentId: checkout.paymentId,
+    total: checkout.orderDetails.total || checkout.totalAmount,
     orderDetails: {
       fullTickets: checkout.orderDetails.fullTickets || 0,
       halfTickets: checkout.orderDetails.halfTickets || 0,
@@ -83,7 +90,7 @@ const ModalCheckoutDetails = ({
     setParticipants(updatedParticipants);
   };
 
-  const handleOrderDataChange = (field, value, nestedField = null) => {
+  const handleOrderDataChange = (field, nestedField = null) => {
     const updatedOrderData = { ...orderData };
 
     if (nestedField) {
@@ -118,8 +125,19 @@ const ModalCheckoutDetails = ({
   const saveChanges = async () => {
     try {
       const checkoutRef = doc(db, "checkouts", checkout.id);
+
+      // Atualiza cada participante na subcoleção (novo modelo)
+      const batch = writeBatch(db);
+      participants.forEach((p) => {
+        if (p.id) {
+          const pRef = doc(db, "checkouts", checkout.id, "participants", p.id);
+          const { id: _id, ...pData } = p;
+          batch.update(pRef, pData);
+        }
+      });
+      await batch.commit();
+
       await updateDoc(checkoutRef, {
-        participants,
         document: orderData.document,
         status: orderData.status,
         paymentMethod: orderData.paymentMethod,
@@ -472,7 +490,8 @@ const ModalCheckoutDetails = ({
                       <strong>E-mail:</strong> {p.email}
                     </Typography>
                     <Typography sx={{ color: "#666666" }}>
-                      <strong>Número:</strong> {p.number || "Não informado"}
+                      <strong>Número:</strong>{" "}
+                      {p.phone || p.number || "Não informado"}
                     </Typography>
                     {renderCertificateInfo(p)}
                   </Box>
@@ -680,7 +699,7 @@ const ModalCheckoutDetails = ({
                 <TextField
                   label="Valor Total (R$)"
                   type="number"
-                  value={orderData.totalAmount}
+                  value={orderData.total}
                   onChange={(e) =>
                     handleOrderDataChange("totalAmount", e.target.value)
                   }
@@ -750,7 +769,7 @@ const ModalCheckoutDetails = ({
                   <strong>Observação:</strong> {orderData.observation}
                 </Typography>
                 <Typography sx={{ color: "#333333", fontWeight: 500 }}>
-                  <strong>Valor Total:</strong> R$ {orderData.totalAmount}
+                  <strong>Valor Total:</strong> R$ {orderData.total}
                 </Typography>
               </Box>
             )}
