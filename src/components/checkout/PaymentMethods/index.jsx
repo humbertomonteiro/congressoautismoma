@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import styles from "./paymentMethods.module.css";
-import { FaCreditCard, FaPix } from "react-icons/fa6";
+import { FaCreditCard } from "react-icons/fa6";
+// import { FaCreditCard, FaPix } from "react-icons/fa6";
 import { IoDocumentText } from "react-icons/io5";
 
 const PaymentMethods = ({ setPaymentMethod }) => {
@@ -22,13 +23,13 @@ const PaymentMethods = ({ setPaymentMethod }) => {
           <FaCreditCard />
           <strong>Cartão de Crédito</strong>
         </button>
-        <button
+        {/* <button
           onClick={() => handlePaymentSelection("pix")}
           className={`${activeMethod === "pix" ? styles.active : ""}`}
         >
           <FaPix />
           <strong>PIX</strong>
-        </button>
+        </button> */}
         <button
           onClick={() => handlePaymentSelection("boleto")}
           className={`${activeMethod === "boleto" ? styles.active : ""}`}
