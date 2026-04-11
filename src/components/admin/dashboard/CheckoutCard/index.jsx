@@ -1,19 +1,27 @@
 import {
   Card,
   CardContent,
-  Typography,
   CardActions,
+  Typography,
+  Box,
   Button,
   IconButton,
-  Box,
+  Chip,
   Modal,
+  Tooltip,
+  Divider,
 } from "@mui/material";
 import { FaWhatsapp } from "react-icons/fa";
-import { MdVerified } from "react-icons/md";
+import {
+  MdVerified,
+  MdDeleteOutline,
+  MdOpenInNew,
+  MdConfirmationNumber,
+  MdHandshake,
+} from "react-icons/md";
 import { useState } from "react";
 import ModalCheckoutDetails from "../ModalCheckoutDetails";
-import PaymentService from "../../../../data/services/PaymentService";
-import { doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "../../../../../firebaseConfig";
 import { useDashboard } from "../../../../data/contexts/DashboardContext";
 import { format } from "date-fns";
@@ -21,230 +29,246 @@ import { ptBR } from "date-fns/locale";
 import toast from "react-hot-toast";
 import useRole from "../../../../data/hooks/useRole";
 
+// ── Config visual de status ────────────────────────────────────────────────
+const STATUS_CONFIG = {
+  approved: { label: "Aprovado", color: "#16a34a", bg: "#dcfce7", border: "#bbf7d0" },
+  pending:  { label: "Pendente", color: "#d97706", bg: "#fef9c3", border: "#fde68a" },
+  error:    { label: "Erro",     color: "#dc2626", bg: "#fee2e2", border: "#fca5a5" },
+  expired:  { label: "Expirado", color: "#64748b", bg: "#f1f5f9", border: "#cbd5e1" },
+  canceled: { label: "Cancelado",color: "#64748b", bg: "#f1f5f9", border: "#cbd5e1" },
+  test:     { label: "Teste",    color: "#7c3aed", bg: "#ede9fe", border: "#c4b5fd" },
+};
+
+const PAYMENT_LABEL = {
+  creditCard: "Cartão de Crédito",
+  pix:        "PIX",
+  boleto:     "Boleto",
+  cash:       "Dinheiro",
+  internal:   "Pagamento Interno",
+  courtesy:   "Cortesia",
+  debitCard:  "Cartão de Débito",
+};
+
+const formatTimestamp = (timestamp) => {
+  try {
+    return format(new Date(timestamp), "dd/MM/yy HH:mm", { locale: ptBR });
+  } catch {
+    return timestamp;
+  }
+};
+
 const CheckoutCard = ({ checkout, isMobile }) => {
   const [openDetailsModal, setOpenDetailsModal] = useState(null);
-  const { setCheckouts, setFilteredCheckouts } = useDashboard();
   const [showModalDelete, setShowModalDelete] = useState(false);
+  const { setCheckouts, setFilteredCheckouts } = useDashboard();
   const { canDelete } = useRole();
 
-  const handleContactParticipant = (participantPhone, paymentMethod) => {
-    const cleanPhone = participantPhone.replace(/\D/g, "");
-    const formattedPhone = cleanPhone.startsWith("55")
-      ? cleanPhone
-      : `55${cleanPhone}`;
-    const message = `Olá! Vi que houve uma tentativa de pagamento via ${paymentMethod} no Congresso Autismo MA 2026. Podemos ajudar com algo?`;
-    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(
-      message
-    )}`;
-    window.open(whatsappUrl, "_blank");
+  const statusCfg = STATUS_CONFIG[checkout.status] ?? STATUS_CONFIG.expired;
+  const firstParticipant = (checkout.participants || [])[0] ?? {};
+  const fullTickets = checkout.orderDetails?.fullTickets ?? checkout.orderDetails?.allTickets ?? 0;
+  const halfTickets = checkout.orderDetails?.halfTickets ?? 0;
+  const total =
+    parseFloat(checkout.totalAmount) ||
+    parseFloat(checkout.orderDetails?.total) ||
+    0;
+  const isManual   = checkout.manual === true;
+  const isCourtesy = checkout.isCourtesy === true || checkout.paymentMethod === "courtesy";
+
+  const updateCheckoutInContext = (updated) => {
+    setCheckouts((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+    setFilteredCheckouts((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
   };
 
-  const handleCheckPaymentStatus = async (checkoutId, paymentId) => {
+  const handleDelete = async () => {
     try {
-      const response = await PaymentService.verifyPayment(paymentId);
-      console.log(`Status verificado para ${paymentId}:`, response);
-      const { status } = response;
-      if (!response.success) throw new Error(response.message);
-
-      const checkoutRef = doc(db, "checkouts", checkoutId);
-      await updateDoc(checkoutRef, { status });
-      setCheckouts((prev) =>
-        prev.map((c) => (c.id === checkoutId ? { ...c, status } : c))
-      );
-      setFilteredCheckouts((prev) =>
-        prev.map((c) => (c.id === checkoutId ? { ...c, status } : c))
-      );
-
-      setOpenDetailsModal({
-        type: "success",
-        title: "Verificação concluída",
-        message: `O status do pagamento é: "${status}".`,
-      });
-    } catch (error) {
-      console.error("Erro ao verificar status:", error);
-      setOpenDetailsModal({
-        type: "error",
-        title: "Erro ao Verificar Pagamento",
-        message: `Erro: ${error.message}`,
-      });
-    }
-  };
-
-  const handleDelete = async (id) => {
-    const docRef = doc(db, "checkouts", id);
-
-    try {
-      await deleteDoc(docRef);
-      toast.success(`Checkout com o id: ${id} foi deletado.`);
-      setCheckouts((prev) => prev.filter((c) => c.id !== id));
-      setFilteredCheckouts((prev) => prev.filter((c) => c.id !== id));
+      await deleteDoc(doc(db, "checkouts", checkout.id));
+      toast.success("Checkout excluído.");
+      setCheckouts((prev) => prev.filter((c) => c.id !== checkout.id));
+      setFilteredCheckouts((prev) => prev.filter((c) => c.id !== checkout.id));
       setShowModalDelete(false);
-    } catch (error) {
-      toast.error(`Erro ao apagar checkout: ${error}`);
-      setShowModalDelete(false);
+    } catch (err) {
+      toast.error(`Erro ao excluir: ${err.message}`);
     }
   };
 
-  const handleShowModalDelete = () => {
-    setShowModalDelete(true);
-  };
-
-  const handleCloseModalDelete = () => {
-    setShowModalDelete(false);
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "approved": return { borderLeft: "4px solid #16a34a" };
-      case "pending":  return { borderLeft: "4px solid #d97706" };
-      case "error":    return { borderLeft: "4px solid #dc2626" };
-      default:         return { borderLeft: "4px solid #cbd5e1" };
-    }
-  };
-
-  const formatTimestamp = (timestamp) => {
-    try {
-      const date = new Date(timestamp);
-      return format(date, "dd/MM/yyyy HH:mm", { locale: ptBR });
-    } catch (error) {
-      console.error("Erro ao formatar timestamp:", error);
-      return timestamp;
-    }
-  };
-
-  const updateCheckoutInContext = (updatedCheckout) => {
-    setCheckouts((prev) =>
-      prev.map((c) => (c.id === updatedCheckout.id ? updatedCheckout : c))
-    );
-    setFilteredCheckouts((prev) =>
-      prev.map((c) => (c.id === updatedCheckout.id ? updatedCheckout : c))
-    );
+  const handleWhatsApp = () => {
+    const clean = (firstParticipant.phone || "").replace(/\D/g, "");
+    const phone = clean.startsWith("55") ? clean : `55${clean}`;
+    const method = PAYMENT_LABEL[checkout.paymentMethod] || checkout.paymentMethod;
+    const msg = `Olá! Vi que houve uma tentativa de pagamento via ${method} no ${checkout.eventName}. Podemos ajudar com algo?`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
   return (
     <>
       <Card
         sx={{
-          border: "1px solid #e2e8f0",
-          ...getStatusColor(checkout.status),
-          backgroundColor: "#fff",
-          borderRadius: "10px",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-          padding: 2,
-          maxWidth: "100%",
+          borderRadius: "12px",
+          border: "1px solid",
+          borderColor: statusCfg.border,
+          borderLeft: `4px solid ${statusCfg.color}`,
+          boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
+          bgcolor: "#fff",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        <CardContent sx={{ padding: 0 }}>
-          <Typography sx={{
-            color: "#0f172a", fontWeight: 600, fontSize: "0.9rem",
-            mb: 0.75, whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden",
-          }}>
-            {checkout.participants[0].name}
-          </Typography>
-          <Typography sx={{ color: "#64748b", fontSize: "0.8rem" }}>
-            <strong>Status:</strong>{" "}
-            {checkout.status.charAt(0).toUpperCase() + checkout.status.slice(1)}
-          </Typography>
-          <Typography sx={{ color: "#64748b", fontSize: "0.8rem" }}>
-            <strong>Método:</strong> {checkout.paymentMethod}
-          </Typography>
-          <Typography sx={{ color: "#64748b", fontSize: "0.8rem" }}>
-            <strong>Data:</strong> {formatTimestamp(checkout.timestamp)}
-          </Typography>
-          <Typography sx={{ color: "#64748b", fontSize: "0.8rem", mb: 0.5 }}>
-            <strong>Valor:</strong> R$ {checkout.orderDetails.total || checkout.totalAmount}
-          </Typography>
-          {checkout.seller && (
-            <Box
-              sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.5 }}
+        <CardContent sx={{ p: "12px 14px 8px", flexGrow: 1 }}>
+          {/* ── Linha 1: nome + status ─────────────────────────────────── */}
+          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, mb: 0.75 }}>
+            <Typography
+              sx={{
+                flex: 1,
+                fontWeight: 700,
+                fontSize: "0.88rem",
+                color: "#0f172a",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                lineHeight: 1.3,
+              }}
             >
-              <MdVerified size={14} color="#1976D2" />
-              <Typography
-                sx={{ color: "#1976D2", fontSize: "0.82rem", fontWeight: 600 }}
-              >
+              {firstParticipant.name || "—"}
+            </Typography>
+            <Chip
+              label={statusCfg.label}
+              size="small"
+              sx={{
+                height: 20,
+                fontSize: "0.68rem",
+                fontWeight: 700,
+                color: statusCfg.color,
+                bgcolor: statusCfg.bg,
+                border: `1px solid ${statusCfg.border}`,
+                flexShrink: 0,
+              }}
+            />
+          </Box>
+
+          {/* ── Linha 2: badges manual/cortesia ────────────────────────── */}
+          {(isManual || isCourtesy) && (
+            <Box sx={{ display: "flex", gap: 0.5, mb: 0.75 }}>
+              {isManual && (
+                <Chip
+                  icon={<span style={{ display: "flex", paddingLeft: 4 }}><MdHandshake size={11} /></span>}
+                  label="Manual"
+                  size="small"
+                  sx={{ height: 18, fontSize: "0.65rem", fontWeight: 600, bgcolor: "#ede9fe", color: "#6d28d9" }}
+                />
+              )}
+              {isCourtesy && (
+                <Chip
+                  label="Cortesia"
+                  size="small"
+                  sx={{ height: 18, fontSize: "0.65rem", fontWeight: 600, bgcolor: "#fce7f3", color: "#be185d" }}
+                />
+              )}
+            </Box>
+          )}
+
+          <Divider sx={{ my: 0.75 }} />
+
+          {/* ── Linha 3: ingressos + valor ─────────────────────────────── */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+            <MdConfirmationNumber size={13} color="#64748b" />
+            <Box sx={{ display: "flex", gap: 0.5, flex: 1, flexWrap: "wrap" }}>
+              {fullTickets > 0 && (
+                <Typography sx={{ fontSize: "0.75rem", color: "#334155", fontWeight: 600 }}>
+                  {fullTickets} inteira{fullTickets > 1 ? "s" : ""}
+                </Typography>
+              )}
+              {fullTickets > 0 && halfTickets > 0 && (
+                <Typography sx={{ fontSize: "0.75rem", color: "#94a3b8" }}>·</Typography>
+              )}
+              {halfTickets > 0 && (
+                <Typography sx={{ fontSize: "0.75rem", color: "#334155", fontWeight: 600 }}>
+                  {halfTickets} meia{halfTickets > 1 ? "s" : ""}
+                </Typography>
+              )}
+              {fullTickets === 0 && halfTickets === 0 && (
+                <Typography sx={{ fontSize: "0.75rem", color: "#94a3b8" }}>—</Typography>
+              )}
+            </Box>
+            <Typography sx={{ fontSize: "0.8rem", fontWeight: 700, color: "#0f172a", flexShrink: 0 }}>
+              R$ {total.toFixed(2).replace(".", ",")}
+            </Typography>
+          </Box>
+
+          {/* ── Linha 4: método + data ─────────────────────────────────── */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Typography sx={{ fontSize: "0.73rem", color: "#64748b" }}>
+              {PAYMENT_LABEL[checkout.paymentMethod] ?? checkout.paymentMethod}
+            </Typography>
+            <Typography sx={{ fontSize: "0.73rem", color: "#94a3b8" }}>
+              {formatTimestamp(checkout.timestamp)}
+            </Typography>
+          </Box>
+
+          {/* ── Vendedor ──────────────────────────────────────────────── */}
+          {checkout.seller && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.5 }}>
+              <MdVerified size={12} color="#1976d2" />
+              <Typography sx={{ fontSize: "0.72rem", color: "#1976d2", fontWeight: 600 }}>
                 {checkout.seller.name}
               </Typography>
             </Box>
           )}
         </CardContent>
-        <CardActions
-          sx={{ justifyContent: "space-between", gap: 1, padding: 0 }}
-        >
-          <Box sx={{ display: "flex", gap: 1 }}>
+
+        <Divider />
+
+        {/* ── Ações ─────────────────────────────────────────────────────── */}
+        <CardActions sx={{ px: "10px", py: "6px", justifyContent: "space-between", gap: 0.5 }}>
+          <Box sx={{ display: "flex", gap: 0.5 }}>
             <Button
               size="small"
-              sx={{ textTransform: "none", fontSize: "0.75rem", p: ".2rem", color: "#3b82f6" }}
+              startIcon={<MdOpenInNew size={13} />}
               onClick={() => setOpenDetailsModal(checkout.id)}
+              sx={{ textTransform: "none", fontSize: "0.73rem", px: 1, py: 0.3, color: "#3b82f6" }}
             >
               Detalhes
             </Button>
-            {/* {checkout.paymentId &&
-              checkout.status === "pending" &&
-              ["pix", "boleto"].includes(checkout.paymentMethod) && (
-                <Button
-                  size="small"
-                  sx={{
-                    color: "#FFB300",
-                    textTransform: "none",
-                    fontSize: "0.7rem",
-                    p: ".2rem",
-                    "&:hover": { color: "#F57C00" },
-                  }}
-                  onClick={() =>
-                    handleCheckPaymentStatus(checkout.id, checkout.paymentId)
-                  }
-                >
-                  Verificar Pagamento
-                </Button>
-              )} */}
             {canDelete && (
-              <Button
-                color="error"
-                size="small"
-                sx={{ textTransform: "none", fontSize: "0.7rem", p: ".2rem" }}
-                onClick={handleShowModalDelete}
-              >
-                Excluir
-              </Button>
+              <Tooltip title="Excluir checkout">
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => setShowModalDelete(true)}
+                  sx={{ p: 0.4 }}
+                >
+                  <MdDeleteOutline size={16} />
+                </IconButton>
+              </Tooltip>
             )}
           </Box>
-          {checkout.participants[0]?.phone && (
-            <IconButton
-              onClick={() =>
-                handleContactParticipant(
-                  checkout.participants[0].phone,
-                  checkout.paymentMethod
-                )
-              }
-              sx={{ color: "#25D366", "&:hover": { color: "#1EBE56" } }}
-            >
-              <FaWhatsapp />
-            </IconButton>
+          {firstParticipant.phone && (
+            <Tooltip title={`WhatsApp: ${firstParticipant.phone}`}>
+              <IconButton
+                size="small"
+                onClick={handleWhatsApp}
+                sx={{ color: "#25D366", "&:hover": { color: "#1EBE56" }, p: 0.4 }}
+              >
+                <FaWhatsapp size={18} />
+              </IconButton>
+            </Tooltip>
           )}
         </CardActions>
       </Card>
 
-      <Modal
-        open={!!openDetailsModal}
-        onClose={() => setOpenDetailsModal(null)}
-      >
+      {/* ── Modal de detalhes ──────────────────────────────────────────── */}
+      <Modal open={!!openDetailsModal} onClose={() => setOpenDetailsModal(null)}>
         <Box
           sx={{
             position: "absolute",
             top: "50%",
             left: "50%",
-            maxHeight: "90vh",
-            overflowY: "scroll",
             transform: "translate(-50%, -50%)",
-            width: isMobile
-              ? "85%"
-              : typeof openDetailsModal === "string"
-              ? 500
-              : 400,
-            bgcolor: "#FFFFFF",
-            borderRadius: "12px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-            p: 2,
+            width: isMobile ? "92%" : 560,
+            maxHeight: "92vh",
+            overflowY: "auto",
+            bgcolor: "#fff",
+            borderRadius: "14px",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
           }}
         >
           {typeof openDetailsModal === "string" ? (
@@ -266,44 +290,35 @@ const CheckoutCard = ({ checkout, isMobile }) => {
         </Box>
       </Modal>
 
-      <Modal open={showModalDelete} onClose={handleCloseModalDelete}>
+      {/* ── Modal de confirmação de exclusão ──────────────────────────── */}
+      <Modal open={showModalDelete} onClose={() => setShowModalDelete(false)}>
         <Box
           sx={{
             position: "absolute",
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            width: isMobile ? "85%" : 400,
-            bgcolor: "#FFFFFF",
-            borderRadius: "12px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            width: isMobile ? "85%" : 380,
+            bgcolor: "#fff",
+            borderRadius: "14px",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
             p: 3,
             textAlign: "center",
           }}
         >
-          <Typography variant="h6" sx={{ mb: 2, color: "#333333" }}>
+          <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 700, color: "#0f172a" }}>
             Confirmar Exclusão
           </Typography>
-          <Typography sx={{ mb: 3, color: "#666666" }}>
-            Tem certeza que deseja excluir este checkout? Os dados serão
-            perdidos permanentemente.
+          <Typography sx={{ mb: 3, color: "#64748b", fontSize: "0.9rem" }}>
+            Excluir este checkout de <strong>{firstParticipant.name}</strong>?
+            <br />Os dados serão perdidos permanentemente.
           </Typography>
           <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
-            <Button
-              variant="contained"
-              color="error"
-              onClick={() => handleDelete(checkout.id)}
-              sx={{ textTransform: "none" }}
-            >
-              Confirmar
-            </Button>
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={handleCloseModalDelete}
-              sx={{ textTransform: "none" }}
-            >
+            <Button variant="outlined" onClick={() => setShowModalDelete(false)} sx={{ textTransform: "none" }}>
               Cancelar
+            </Button>
+            <Button variant="contained" color="error" onClick={handleDelete} sx={{ textTransform: "none" }}>
+              Excluir
             </Button>
           </Box>
         </Box>

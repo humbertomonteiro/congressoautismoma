@@ -1,4 +1,3 @@
-import styles from "./modalCheckoutDetails.module.css";
 import {
   Typography,
   Box,
@@ -7,25 +6,28 @@ import {
   AccordionSummary,
   AccordionDetails,
   Divider,
-  Grid,
   TextField,
   Select,
   MenuItem,
+  FormControl,
+  InputLabel,
+  Chip,
 } from "@mui/material";
 import { QRCodeSVG } from "qrcode.react";
 import { IoIosArrowDown } from "react-icons/io";
 import { useState } from "react";
-import {
-  doc,
-  updateDoc,
-  getDoc,
-  collection,
-  writeBatch,
-} from "firebase/firestore";
+import { doc, updateDoc, writeBatch } from "firebase/firestore";
 import { db } from "../../../../../firebaseConfig";
 import PaymentService from "../../../../data/services/PaymentService";
 import { toast } from "react-toastify";
 import { FaRegEdit } from "react-icons/fa";
+import {
+  MdCheckCircle,
+  MdEmail,
+  MdQrCode,
+  MdPerson,
+  MdBadge,
+} from "react-icons/md";
 import useRole from "../../../../data/hooks/useRole";
 
 const EMAIL_FROM = import.meta.env.VITE_EMAIL_FROM;
@@ -37,6 +39,7 @@ const statusOptions = [
   { value: "canceled", label: "Cancelado" },
   { value: "refunded", label: "Estornado" },
   { value: "test", label: "Teste" },
+  { value: "expired", label: "Expirado" },
 ];
 
 const paymentMethods = [
@@ -50,6 +53,40 @@ const paymentMethods = [
   { value: "falha-tecnica", label: "Falha técnica" },
 ];
 
+const STATUS_COLORS = {
+  approved: { color: "#16a34a", bg: "#dcfce7" },
+  pending: { color: "#d97706", bg: "#fef9c3" },
+  error: { color: "#dc2626", bg: "#fee2e2" },
+  canceled: { color: "#64748b", bg: "#f1f5f9" },
+  refunded: { color: "#0891b2", bg: "#e0f2fe" },
+  test: { color: "#7c3aed", bg: "#ede9fe" },
+};
+
+const InfoRow = ({ label, value }) => (
+  <Box sx={{ display: "flex", gap: 1, py: 0.4 }}>
+    <Typography
+      sx={{
+        fontSize: "0.8rem",
+        color: "#94a3b8",
+        minWidth: 140,
+        flexShrink: 0,
+      }}
+    >
+      {label}
+    </Typography>
+    <Typography
+      sx={{
+        fontSize: "0.8rem",
+        color: "#1e293b",
+        fontWeight: 500,
+        wordBreak: "break-word",
+      }}
+    >
+      {value ?? "—"}
+    </Typography>
+  </Box>
+);
+
 const ModalCheckoutDetails = ({
   checkout,
   setOpenDetailsModal,
@@ -58,92 +95,110 @@ const ModalCheckoutDetails = ({
   message,
   updateCheckoutInContext,
 }) => {
-  const [participants, setParticipants] = useState(checkout.participants);
-  const [orderData, setOrderData] = useState({
-    document: checkout.document || checkout.cpf || "",
-    status: checkout.status || "",
-    paymentMethod: checkout.paymentMethod || "",
-    observation: checkout.observation || "Sem observações...",
-    paymentId: checkout.paymentId,
-    total: checkout.orderDetails.total || checkout.totalAmount,
+  const [participants, setParticipants] = useState(
+    checkout?.participants ?? []
+  );
+  const [orderData, setOrderData] = useState(() => ({
+    document: checkout?.document || checkout?.cpf || "",
+    status: checkout?.status || "",
+    paymentMethod: checkout?.paymentMethod || "",
+    observation: checkout?.observation || "",
+    paymentId: checkout?.paymentId || "",
+    total: checkout?.orderDetails?.total ?? checkout?.totalAmount ?? "",
     orderDetails: {
-      fullTickets: checkout.orderDetails.fullTickets || 0,
-      halfTickets: checkout.orderDetails.halfTickets || 0,
-      coupon: checkout.orderDetails.coupon || "",
-      discount: checkout.orderDetails.discount || "0.00",
+      fullTickets: checkout?.orderDetails?.fullTickets ?? 0,
+      halfTickets: checkout?.orderDetails?.halfTickets ?? 0,
+      coupon: checkout?.orderDetails?.coupon ?? "",
+      discount: checkout?.orderDetails?.discount ?? "0.00",
       valueTicketsAll:
-        checkout.orderDetails.valueTicketsAll ||
-        checkout.orderDetails.fullTicketsValue ||
+        checkout?.orderDetails?.valueTicketsAll ??
+        checkout?.orderDetails?.fullTicketsValue ??
         "0.00",
       valueTicketsHalf:
-        checkout.orderDetails.valueTicketsHalf ||
-        checkout.orderDetails.halfTicketsValue ||
+        checkout?.orderDetails?.valueTicketsHalf ??
+        checkout?.orderDetails?.halfTicketsValue ??
         "0.00",
     },
-  });
-  const [isEditingOrderDetails, setIsEditingOrderDetails] = useState(false);
-  const [editingParticipantIndex, setEditingParticipantIndex] = useState(null);
+  }));
+
+  const [isEditingOrder, setIsEditingOrder] = useState(false);
+  const [editingParticipantIdx, setEditingParticipantIdx] = useState(null);
   const { canEdit } = useRole();
 
-  const handleInputChange = (index, field, value) => {
-    const updatedParticipants = [...participants];
-    updatedParticipants[index][field] = value;
-    setParticipants(updatedParticipants);
+  // ── handleOrderDataChange(field, value, nestedField?) ──────────────────────
+  const handleOrderDataChange = (field, value, nestedField = null) => {
+    setOrderData((prev) => {
+      const next = { ...prev };
+      if (nestedField) {
+        const FULL_PRICE = 499.9;
+        const HALF_PRICE = 399.9;
+        const details = { ...next.orderDetails, [nestedField]: value };
+        details.valueTicketsAll = (
+          parseInt(details.fullTickets || 0) * FULL_PRICE
+        ).toFixed(2);
+        details.valueTicketsHalf = (
+          parseInt(details.halfTickets || 0) * HALF_PRICE
+        ).toFixed(2);
+        next.orderDetails = details;
+        next.total = (
+          parseInt(details.fullTickets || 0) * FULL_PRICE +
+          parseInt(details.halfTickets || 0) * HALF_PRICE -
+          parseFloat(details.discount || 0)
+        ).toFixed(2);
+      } else {
+        next[field] = value;
+      }
+      return next;
+    });
   };
 
-  const handleOrderDataChange = (field, nestedField = null) => {
-    const updatedOrderData = { ...orderData };
-
-    if (nestedField) {
-      updatedOrderData.orderDetails[nestedField] = value;
-      const fullPrice = 499.9;
-      const halfPrice = 399.9;
-      updatedOrderData.orderDetails.valueTicketsAll = (
-        parseInt(updatedOrderData.orderDetails.fullTickets || 0) * fullPrice
-      ).toFixed(2);
-      updatedOrderData.orderDetails.valueTicketsHalf = (
-        parseInt(updatedOrderData.orderDetails.halfTickets || 0) * halfPrice
-      ).toFixed(2);
-      updatedOrderData.totalAmount = (
-        parseInt(updatedOrderData.orderDetails.fullTickets || 0) * fullPrice +
-        parseInt(updatedOrderData.orderDetails.halfTickets || 0) * halfPrice -
-        parseFloat(updatedOrderData.orderDetails.discount || 0)
-      ).toFixed(2);
-    } else {
-      updatedOrderData[field] = value;
-    }
-
-    setOrderData(updatedOrderData);
+  const handleParticipantChange = (index, field, value) => {
+    setParticipants((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
   };
 
   const clearQrCodes = (index) => {
-    const updatedParticipants = [...participants];
-    delete updatedParticipants[index].qrCodes;
-    delete updatedParticipants[index].qrRawData;
-    setParticipants(updatedParticipants);
+    setParticipants((prev) => {
+      const updated = [...prev];
+      const p = { ...updated[index] };
+      delete p.qrCodes;
+      delete p.qrRawData;
+      updated[index] = p;
+      return updated;
+    });
   };
 
   const saveChanges = async () => {
     try {
-      const checkoutRef = doc(db, "checkouts", checkout.id);
+      // Salva participantes na subcoleção
+      if (participants.some((p) => p.id)) {
+        const batch = writeBatch(db);
+        participants.forEach((p) => {
+          if (p.id) {
+            const pRef = doc(
+              db,
+              "checkouts",
+              checkout.id,
+              "participants",
+              p.id
+            );
+            const { id: _id, ...pData } = p;
+            batch.update(pRef, pData);
+          }
+        });
+        await batch.commit();
+      }
 
-      // Atualiza cada participante na subcoleção (novo modelo)
-      const batch = writeBatch(db);
-      participants.forEach((p) => {
-        if (p.id) {
-          const pRef = doc(db, "checkouts", checkout.id, "participants", p.id);
-          const { id: _id, ...pData } = p;
-          batch.update(pRef, pData);
-        }
-      });
-      await batch.commit();
-
-      await updateDoc(checkoutRef, {
+      // Salva dados do pedido no checkout
+      await updateDoc(doc(db, "checkouts", checkout.id), {
         document: orderData.document,
         status: orderData.status,
         paymentMethod: orderData.paymentMethod,
         observation: orderData.observation,
-        totalAmount: orderData.totalAmount,
+        totalAmount: parseFloat(orderData.total) || 0,
         orderDetails: {
           ...checkout.orderDetails,
           fullTickets: parseInt(orderData.orderDetails.fullTickets || 0),
@@ -154,6 +209,7 @@ const ModalCheckoutDetails = ({
           valueTicketsHalf: orderData.orderDetails.valueTicketsHalf,
         },
       });
+
       toast.success("Alterações salvas com sucesso!");
       updateCheckoutInContext({
         ...checkout,
@@ -162,7 +218,7 @@ const ModalCheckoutDetails = ({
         status: orderData.status,
         paymentMethod: orderData.paymentMethod,
         observation: orderData.observation,
-        totalAmount: orderData.totalAmount,
+        totalAmount: parseFloat(orderData.total) || 0,
         orderDetails: {
           ...checkout.orderDetails,
           fullTickets: parseInt(orderData.orderDetails.fullTickets || 0),
@@ -173,10 +229,10 @@ const ModalCheckoutDetails = ({
           valueTicketsHalf: orderData.orderDetails.valueTicketsHalf,
         },
       });
-      setIsEditingOrderDetails(false);
-      setEditingParticipantIndex(null);
-    } catch (error) {
-      console.error("Erro ao salvar alterações:", error);
+      setIsEditingOrder(false);
+      setEditingParticipantIdx(null);
+    } catch (err) {
+      console.error("Erro ao salvar alterações:", err);
       toast.error("Erro ao salvar alterações");
     }
   };
@@ -184,694 +240,641 @@ const ModalCheckoutDetails = ({
   const sendConfirmationEmail = async (participant, index) => {
     if (
       participant.qrRawData &&
-      (participant.qrRawData["2026-05-16"] ||
-        participant.qrRawData["2026-05-17"])
+      Object.values(participant.qrRawData).some(Boolean)
     ) {
       toast.error(
-        "Este participante já possui QR Codes. Apague-os antes de enviar o email de confirmação."
+        "Participante já possui QR Codes. Apague-os antes de enviar o e-mail."
       );
       return;
     }
+    const emailData = {
+      checkoutId: checkout.id,
+      from: EMAIL_FROM,
+      to: participant.email,
+      subject: "Confirmação de Pagamento - Congresso Autismo MA 2026",
+      data: {
+        name: participant.name,
+        transactionId: checkout.transactionId,
+        fullTickets: orderData.orderDetails.fullTickets,
+        valueTicketsAll: orderData.orderDetails.valueTicketsAll,
+        halfTickets: orderData.orderDetails.halfTickets,
+        valueTicketsHalf: orderData.orderDetails.valueTicketsHalf,
+        coupon: orderData.orderDetails.coupon || "",
+        discount: orderData.orderDetails.discount || "0.00",
+        total: orderData.total,
+        installments:
+          orderData.paymentMethod === "creditCard"
+            ? checkout.paymentDetails?.creditCard?.installments || "1"
+            : "1",
+      },
+    };
 
     try {
-      const emailData = {
-        checkoutId: checkout.id,
-        from: EMAIL_FROM,
-        to: participant.email,
-        subject: "Confirmação de Pagamento - Congresso Autismo MA 2026",
-        data: {
-          name: participant.name,
-          transactionId: checkout.transactionId,
-          fullTickets: orderData.orderDetails.fullTickets,
-          valueTicketsAll: orderData.orderDetails.valueTicketsAll,
-          halfTickets: orderData.orderDetails.halfTickets,
-          valueTicketsHalf: orderData.orderDetails.valueTicketsHalf,
-          coupon: orderData.orderDetails.coupon || "",
-          discount: orderData.orderDetails.discount || "0.00",
-          total: orderData.totalAmount,
-          installments:
-            orderData.paymentMethod === "creditCard"
-              ? checkout.paymentDetails.creditCard?.installments || "1"
-              : "1",
-        },
-      };
+      await toast.promise(PaymentService.sendConfirmationEmail(emailData), {
+        pending: "Enviando e-mail…",
+        success: "E-mail enviado com sucesso!",
+        error: "Erro ao enviar e-mail. Tente novamente.",
+      });
 
-      console.log(
-        "Enviando email de confirmação para:",
-        participant.email,
-        emailData
+      // Atualiza participante localmente (subcoleção não fica no doc do checkout)
+      const updatedParticipants = participants.map((p, i) =>
+        i === index ? { ...p, emailSent: true } : p
       );
-
-      if (
-        !emailData.from ||
-        !emailData.to ||
-        !emailData.subject ||
-        !emailData.data ||
-        !emailData.checkoutId
-      ) {
-        console.error("Campos obrigatórios faltando no emailData:", emailData);
-        toast.error("Erro ao enviar email: Campos obrigatórios faltando.");
-        throw new Error(
-          "Dados insuficientes para enviar o email de confirmação."
-        );
-      }
-
-      const emailResponse = await toast.promise(
-        PaymentService.sendConfirmationEmail(emailData),
-        {
-          pending: "Enviando email...",
-          success: "Email enviado com sucesso!",
-          error: "Verifique o email, caso não tenha recebido, tente novamente.",
-        }
-      );
-      console.log("Resposta do envio de email:", emailResponse);
-
-      const checkoutRef = doc(db, "checkouts", checkout.id);
-      const checkoutSnap = await getDoc(checkoutRef);
-      if (checkoutSnap.exists()) {
-        const updatedCheckout = { id: checkout.id, ...checkoutSnap.data() };
-        setParticipants(updatedCheckout.participants);
-        updateCheckoutInContext(updatedCheckout);
-      } else {
-        throw new Error(
-          "Checkout não encontrado no Firebase após o envio do email."
-        );
-      }
-    } catch (error) {
-      console.error("Erro ao enviar email ou buscar dados:", error);
-      toast.error(
-        "Aguarde um momento e verifique seu email, caso não tenha recebido, tente novamente."
-      );
+      setParticipants(updatedParticipants);
+      updateCheckoutInContext({
+        ...checkout,
+        participants: updatedParticipants,
+      });
+    } catch (err) {
+      console.error("Erro ao enviar e-mail:", err);
     }
   };
 
-  const getPaymentMethodLabel = (value) => {
-    const method = paymentMethods.find((m) => m.value === value);
-    return method
-      ? method.label
-      : value.charAt(0).toUpperCase() + value.slice(1);
-  };
+  const getLabel = (options, value) =>
+    options.find((o) => o.value === value)?.label ??
+    (value ? value.charAt(0).toUpperCase() + value.slice(1) : "—");
 
-  const getStatusLabel = (value) => {
-    const status = statusOptions.find((s) => s.value === value);
-    return status
-      ? status.label
-      : value.charAt(0).toUpperCase() + value.slice(1);
-  };
-
-  const renderCertificateInfo = (participant) => {
-    const hasCertificateInfo =
-      participant.certificateIssued !== undefined ||
-      participant.certificateIssuedAt ||
-      (participant.certificateIssuedNames &&
-        participant.certificateIssuedNames.length > 0) ||
-      (participant.attempts && participant.attempts.length > 0) ||
-      participant.emittedOnDashboard !== undefined;
-
-    if (!hasCertificateInfo) return null;
-
+  // ── Render: caso sem checkout (mensagem de resultado) ──────────────────────
+  if (!checkout) {
     return (
-      <Box sx={{ mt: 2 }}>
-        <Typography variant="h6" sx={{ color: "#666666", mb: 1 }}>
-          Informações do Certificado
+      <Box sx={{ p: 3, textAlign: "center" }}>
+        <Typography
+          variant="h6"
+          sx={{ fontWeight: 700, mb: 1, color: "#0f172a" }}
+        >
+          {title}
         </Typography>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          {participant.certificateIssued !== undefined && (
-            <Typography sx={{ color: "#666666" }}>
-              <strong>Certificado Emitido:</strong>{" "}
-              {participant.certificateIssued ? "Sim" : "Não"}
-            </Typography>
-          )}
-          {participant.certificateIssuedAt && (
-            <Typography sx={{ color: "#666666" }}>
-              <strong>Data de Emissão:</strong>{" "}
-              {formatTimestamp(participant.certificateIssuedAt)}
-            </Typography>
-          )}
-          {participant.emittedOnDashboard !== undefined && (
-            <Typography sx={{ color: "#666666" }}>
-              <strong>Emitido no Dashboard:</strong>{" "}
-              {participant.emittedOnDashboard ? "Sim" : "Não"}
-            </Typography>
-          )}
-          {participant.certificateIssuedNames &&
-            participant.certificateIssuedNames.length > 0 && (
-              <Box>
-                <Typography sx={{ color: "#666666", fontWeight: 500, mb: 0.5 }}>
-                  Emissões do Certificado:
-                </Typography>
-                {participant.certificateIssuedNames.map((entry, idx) => (
-                  <Typography key={idx} sx={{ color: "#666666", ml: 2 }}>
-                    - Nome: {entry.name}, CPF: {entry.cpf}, Data:{" "}
-                    {formatTimestamp(entry.timestamp)}
-                  </Typography>
-                ))}
-              </Box>
-            )}
-          {participant.attempts && participant.attempts.length > 0 && (
-            <Box>
-              <Typography sx={{ color: "#666666", fontWeight: 500, mb: 0.5 }}>
-                Tentativas de Emissão:
-              </Typography>
-              {participant.attempts.map((attempt, idx) => (
-                <Typography key={idx} sx={{ color: "#666666", ml: 2 }}>
-                  - Nome: {attempt.name}, Data:{" "}
-                  {formatTimestamp(attempt.timestamp)}
-                </Typography>
-              ))}
-            </Box>
-          )}
-        </Box>
+        <Typography sx={{ color: "#64748b", mb: 2 }}>{message}</Typography>
+        <Button variant="outlined" onClick={() => setOpenDetailsModal(null)}>
+          Fechar
+        </Button>
       </Box>
     );
+  }
+
+  const statusCfg = STATUS_COLORS[orderData.status] || {
+    color: "#64748b",
+    bg: "#f1f5f9",
   };
 
+  // ── Render principal ────────────────────────────────────────────────────────
   return (
-    <>
-      {checkout ? (
-        <Box sx={{ p: 2 }}>
+    <Box sx={{ p: "20px 22px 16px" }}>
+      {/* Header */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          mb: 2,
+        }}
+      >
+        <Box>
           <Typography
-            variant="h5"
-            sx={{ color: "#333333", fontWeight: 600, mb: 3 }}
+            variant="h6"
+            sx={{ fontWeight: 700, color: "#0f172a", lineHeight: 1.2 }}
           >
             Detalhes do Checkout
           </Typography>
-
-          <Typography
-            variant="h6"
-            sx={{ color: "#1976D2", fontWeight: 500, mb: 2 }}
-          >
-            Informações Gerais
+          <Typography sx={{ fontSize: "0.78rem", color: "#64748b", mt: 0.3 }}>
+            {checkout.eventName} · {formatTimestamp(checkout.timestamp)}
           </Typography>
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={6}>
-              <Typography sx={{ color: "#666666" }}>
-                <strong>Evento:</strong> {checkout.eventName}
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography sx={{ color: "#666666" }}>
-                <strong>Data e Hora:</strong>{" "}
-                {formatTimestamp(checkout.timestamp)}
-              </Typography>
-            </Grid>
-          </Grid>
-          <Divider sx={{ mb: 3 }} />
+        </Box>
+        <Chip
+          label={getLabel(statusOptions, orderData.status)}
+          size="small"
+          sx={{
+            fontWeight: 700,
+            fontSize: "0.72rem",
+            color: statusCfg.color,
+            bgcolor: statusCfg.bg,
+            flexShrink: 0,
+          }}
+        />
+      </Box>
 
-          <Typography
-            variant="h6"
-            sx={{ color: "#1976D2", fontWeight: 500, mb: 2 }}
+      {/* ── Participantes ───────────────────────────────────────────────── */}
+      <Typography
+        variant="subtitle2"
+        sx={{ color: "#1976d2", fontWeight: 700, mb: 1 }}
+      >
+        Participantes
+      </Typography>
+
+      {participants.map((p, index) => (
+        <Accordion
+          key={p.id || index}
+          sx={{
+            mb: 1,
+            boxShadow: "none",
+            border: "1px solid #e2e8f0",
+            borderRadius: "8px !important",
+          }}
+          disableGutters
+        >
+          <AccordionSummary
+            expandIcon={<IoIosArrowDown />}
+            sx={{ minHeight: 44 }}
           >
-            Participantes
-          </Typography>
-          {participants.map((p, index) => (
-            <Accordion
-              key={index}
-              sx={{ mb: 1, boxShadow: "none", border: "1px solid #e0e0e0" }}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                width: "100%",
+              }}
             >
-              <AccordionSummary expandIcon={<IoIosArrowDown />}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    width: "100%",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      color: p.certificateIssued ? "#2E7D32" : "#333333",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 2,
-                    }}
-                  >
-                    {p.name}
-                    <Typography sx={{ fontSize: "1rem" }}>
-                      {p.certificateIssued && "(Certificado emitido)"}
-                    </Typography>
-                  </Typography>
-                </Box>
-              </AccordionSummary>
-              <AccordionDetails>
-                {canEdit && (
-                  <Button
-                    variant="outlined"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingParticipantIndex(
-                        editingParticipantIndex === index ? null : index
-                      );
-                    }}
-                    sx={{ mb: 2 }}
-                  >
-                    {editingParticipantIndex === index ? (
-                      "Cancelar"
-                    ) : (
-                      <FaRegEdit />
-                    )}
-                  </Button>
-                )}
-                {editingParticipantIndex === index ? (
-                  <>
-                    <TextField
-                      label="Nome"
-                      value={p.name}
-                      onChange={(e) =>
-                        handleInputChange(index, "name", e.target.value)
-                      }
-                      fullWidth
-                      sx={{ mb: 2 }}
-                    />
-                    <TextField
-                      label="CPF"
-                      value={p.document || p.cpf}
-                      onChange={(e) =>
-                        handleInputChange(index, "document", e.target.value)
-                      }
-                      fullWidth
-                      sx={{ mb: 2 }}
-                    />
-                    <TextField
-                      label="E-mail"
-                      value={p.email}
-                      onChange={(e) =>
-                        handleInputChange(index, "email", e.target.value)
-                      }
-                      fullWidth
-                      sx={{ mb: 2 }}
-                    />
-                    <TextField
-                      label="Número"
-                      value={p.number || ""}
-                      onChange={(e) =>
-                        handleInputChange(index, "number", e.target.value)
-                      }
-                      fullWidth
-                      sx={{ mb: 2 }}
-                    />
-                    <Button
-                      variant="contained"
-                      onClick={saveChanges}
-                      sx={{ mt: 2 }}
-                    >
-                      Salvar Alterações
-                    </Button>
-                  </>
-                ) : (
-                  <Box
-                    sx={{ display: "flex", flexDirection: "column", gap: 1 }}
-                  >
-                    <Typography sx={{ color: "#666666" }}>
-                      <strong>Nome:</strong> {p.name}
-                    </Typography>
-                    <Typography sx={{ color: "#666666" }}>
-                      <strong>CPF:</strong> {p.document || p.cpf}
-                    </Typography>
-                    <Typography sx={{ color: "#666666" }}>
-                      <strong>E-mail:</strong> {p.email}
-                    </Typography>
-                    <Typography sx={{ color: "#666666" }}>
-                      <strong>Número:</strong>{" "}
-                      {p.phone || p.number || "Não informado"}
-                    </Typography>
-                    {renderCertificateInfo(p)}
-                  </Box>
-                )}
-                {p.qrRawData ? (
-                  // &&
-                  // p.qrRawData["2026-05-31"] &&
-                  // p.qrRawData["2026-06-01"] ?
-                  <Box sx={{ mt: 2 }}>
-                    <Typography sx={{ color: "#666666", fontWeight: 500 }}>
-                      <strong>QR Codes:</strong>
-                    </Typography>
-                    <Box sx={{ display: "flex", gap: 2, mt: 1 }}>
-                      <Box>
-                        <Typography sx={{ color: "#666666" }}>
-                          16/05/2026
-                        </Typography>
-                        <QRCodeSVG
-                          value={p.qrRawData["2026-05-16"]}
-                          size={100}
-                        />
-                      </Box>
-                      <Box>
-                        <Typography sx={{ color: "#666666" }}>
-                          17/05/2026
-                        </Typography>
-                        <QRCodeSVG
-                          value={p.qrRawData["2026-05-17"]}
-                          size={100}
-                        />
-                      </Box>
-                    </Box>
-                  </Box>
-                ) : (
-                  <Typography sx={{ color: "#666666", mt: 1 }}>
-                    QR Codes não disponíveis
-                  </Typography>
-                )}
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mt: 2 }}>
-                  {!p.qrRawData && (
-                    <Button
-                      sx={{ flex: "1 1 45%", minWidth: "150px" }}
-                      variant="outlined"
-                      onClick={() => sendConfirmationEmail(p, index)}
-                    >
-                      Enviar Email de Confirmação
-                    </Button>
-                  )}
-                  {p.qrRawData && editingParticipantIndex === index && (
-                    <Button
-                      sx={{ flex: "1 1 45%", minWidth: "150px" }}
-                      variant="outlined"
-                      color="error"
-                      onClick={() => clearQrCodes(index)}
-                    >
-                      Apagar QR Codes
-                    </Button>
-                  )}
-                </Box>
-              </AccordionDetails>
-            </Accordion>
-          ))}
+              <MdPerson size={15} color="#64748b" />
+              <Typography
+                sx={{
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  color: "#0f172a",
+                  flex: 1,
+                }}
+              >
+                {p.name}
+              </Typography>
+              {p.emailSent && (
+                <MdEmail size={14} color="#16a34a" title="E-mail enviado" />
+              )}
+              {(p.checkedIn || p.validated) && (
+                <MdCheckCircle size={14} color="#16a34a" title="Credenciado" />
+              )}
+              {p.qrRawData && (
+                <MdQrCode size={14} color="#1976d2" title="QR Code gerado" />
+              )}
+              {p.certificateIssued && (
+                <MdBadge
+                  size={14}
+                  color="#7c3aed"
+                  title="Certificado emitido"
+                />
+              )}
+            </Box>
+          </AccordionSummary>
 
-          <Divider sx={{ my: 3 }} />
-
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{ color: "#1976D2", fontWeight: 500, mb: 2 }}
-            >
-              Detalhes do Pedido
-            </Typography>
+          <AccordionDetails sx={{ pt: 0, pb: 1.5 }}>
+            {/* Botão editar participante */}
             {canEdit && (
               <Button
+                size="small"
                 variant="outlined"
-                onClick={() => setIsEditingOrderDetails(!isEditingOrderDetails)}
+                startIcon={
+                  editingParticipantIdx === index ? null : (
+                    <FaRegEdit size={13} />
+                  )
+                }
+                onClick={() =>
+                  setEditingParticipantIdx(
+                    editingParticipantIdx === index ? null : index
+                  )
+                }
+                sx={{ mb: 1.5, textTransform: "none", fontSize: "0.75rem" }}
               >
-                {isEditingOrderDetails ? "Cancelar" : <FaRegEdit />}
+                {editingParticipantIdx === index
+                  ? "Cancelar edição"
+                  : "Editar dados"}
               </Button>
             )}
-          </Box>
-          <Box sx={{ display: "flex", gap: 1, alignItems: "start", mb: 3 }}>
-            {isEditingOrderDetails ? (
-              <Box sx={{ flexGrow: 1 }}>
+
+            {editingParticipantIdx === index ? (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                 <TextField
-                  label="Documento do Pagador"
-                  value={orderData.document}
+                  size="small"
+                  label="Nome"
+                  value={p.name}
                   onChange={(e) =>
-                    handleOrderDataChange("document", e.target.value)
+                    handleParticipantChange(index, "name", e.target.value)
                   }
                   fullWidth
-                  sx={{ mb: 2 }}
-                />
-                <Select
-                  label="Status"
-                  value={orderData.status}
-                  onChange={(e) =>
-                    handleOrderDataChange("status", e.target.value)
-                  }
-                  fullWidth
-                  sx={{ mb: 2 }}
-                >
-                  {statusOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-                <Select
-                  label="Método de Pagamento"
-                  value={orderData.paymentMethod}
-                  onChange={(e) =>
-                    handleOrderDataChange("paymentMethod", e.target.value)
-                  }
-                  fullWidth
-                  sx={{ mb: 2 }}
-                >
-                  {paymentMethods.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-                <TextField
-                  label="Ingressos Inteiros"
-                  type="number"
-                  value={orderData.orderDetails.fullTickets}
-                  onChange={(e) =>
-                    handleOrderDataChange(
-                      "orderDetails",
-                      e.target.value,
-                      "fullTickets"
-                    )
-                  }
-                  fullWidth
-                  sx={{ mb: 2 }}
-                  inputProps={{ min: 0 }}
                 />
                 <TextField
-                  label="Ingressos Meia-Entrada"
-                  type="number"
-                  value={orderData.orderDetails.halfTickets}
+                  size="small"
+                  label="CPF"
+                  value={p.document || p.cpf || ""}
                   onChange={(e) =>
-                    handleOrderDataChange(
-                      "orderDetails",
-                      e.target.value,
-                      "halfTickets"
-                    )
+                    handleParticipantChange(index, "document", e.target.value)
                   }
                   fullWidth
-                  sx={{ mb: 2 }}
-                  inputProps={{ min: 0 }}
                 />
                 <TextField
-                  label="Cupom"
-                  value={orderData.orderDetails.coupon}
+                  size="small"
+                  label="E-mail"
+                  value={p.email || ""}
                   onChange={(e) =>
-                    handleOrderDataChange(
-                      "orderDetails",
-                      e.target.value,
-                      "coupon"
-                    )
+                    handleParticipantChange(index, "email", e.target.value)
                   }
                   fullWidth
-                  sx={{ mb: 2 }}
                 />
                 <TextField
-                  label="Desconto (R$)"
-                  type="number"
-                  value={orderData.orderDetails.discount}
+                  size="small"
+                  label="Telefone"
+                  value={p.phone || p.number || ""}
                   onChange={(e) =>
-                    handleOrderDataChange(
-                      "orderDetails",
-                      e.target.value,
-                      "discount"
-                    )
+                    handleParticipantChange(index, "phone", e.target.value)
                   }
                   fullWidth
-                  sx={{ mb: 2 }}
-                  inputProps={{ min: 0, step: "0.01" }}
-                />
-                <Typography sx={{ color: "#666666", mb: 2 }}>
-                  <strong>Valor Ingressos Inteiros:</strong> R${" "}
-                  {orderData.orderDetails.valueTicketsAll}
-                </Typography>
-                <Typography sx={{ color: "#666666", mb: 2 }}>
-                  <strong>Valor Ingressos Meia:</strong> R${" "}
-                  {orderData.orderDetails.valueTicketsHalf}
-                </Typography>
-                <TextField
-                  label="Observação"
-                  value={orderData.observation}
-                  onChange={(e) =>
-                    handleOrderDataChange("observation", e.target.value)
-                  }
-                  fullWidth
-                  multiline
-                  rows={2}
-                  sx={{ mb: 2 }}
                 />
                 <TextField
-                  label="Valor Total (R$)"
-                  type="number"
-                  value={orderData.total}
+                  size="small"
+                  label="Tipo de ingresso"
+                  value={p.ticketType || ""}
                   onChange={(e) =>
-                    handleOrderDataChange("totalAmount", e.target.value)
+                    handleParticipantChange(index, "ticketType", e.target.value)
                   }
                   fullWidth
-                  sx={{ mb: 2 }}
-                  inputProps={{ step: "0.01" }}
                 />
                 <Button
                   variant="contained"
+                  size="small"
                   onClick={saveChanges}
-                  sx={{ mt: 2 }}
+                  sx={{ textTransform: "none", alignSelf: "flex-start" }}
                 >
-                  Salvar Alterações
+                  Salvar
                 </Button>
               </Box>
             ) : (
-              <Box
-                sx={{
-                  flexGrow: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 1,
-                }}
-              >
-                <Typography sx={{ color: "#666666" }}>
-                  <strong>Id do pagamento:</strong> {orderData.paymentId}
-                </Typography>
-                <Typography sx={{ color: "#666666" }}>
-                  <strong>Documento do Pagador:</strong>{" "}
-                  {orderData.document ||
-                    orderData.cpf ||
-                    participants[0].document}
-                </Typography>
-                <Typography sx={{ color: "#666666" }}>
-                  <strong>Status:</strong> {getStatusLabel(orderData.status)}
-                </Typography>
-                <Typography sx={{ color: "#666666" }}>
-                  <strong>Método:</strong>{" "}
-                  {getPaymentMethodLabel(orderData.paymentMethod)}
-                </Typography>
-                {orderData.orderDetails.fullTickets > 0 && (
-                  <Typography sx={{ color: "#666666" }}>
-                    <strong>Inteiros:</strong>{" "}
-                    {orderData.orderDetails.fullTickets} (R$
-                    {orderData.orderDetails.valueTicketsAll})
-                  </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column" }}>
+                <InfoRow label="CPF" value={p.document || p.cpf} />
+                <InfoRow label="E-mail" value={p.email} />
+                <InfoRow label="Telefone" value={p.phone || p.number} />
+                <InfoRow
+                  label="Tipo de ingresso"
+                  value={
+                    p.ticketType === "full"
+                      ? "Inteira"
+                      : p.ticketType === "half"
+                      ? "Meia entrada"
+                      : p.ticketType
+                  }
+                />
+                {p.checkedIn && <InfoRow label="Credenciado" value="Sim" />}
+                {p.certificateIssued && (
+                  <InfoRow label="Certificado" value="Emitido" />
                 )}
-                {orderData.orderDetails.halfTickets > 0 && (
-                  <Typography sx={{ color: "#666666" }}>
-                    <strong>Meia:</strong> {orderData.orderDetails.halfTickets}{" "}
-                    (R$
-                    {orderData.orderDetails.valueTicketsHalf})
-                  </Typography>
-                )}
-                {orderData.orderDetails.coupon && (
-                  <>
-                    <Typography sx={{ color: "#666666" }}>
-                      <strong>Desconto:</strong> R${" "}
-                      {orderData.orderDetails.discount}
-                    </Typography>
-                    <Typography sx={{ color: "#666666" }}>
-                      <strong>Cupom:</strong> {orderData.orderDetails.coupon}
-                    </Typography>
-                  </>
-                )}
-                <Typography sx={{ color: "#666666" }}>
-                  <strong>Observação:</strong> {orderData.observation}
-                </Typography>
-                <Typography sx={{ color: "#333333", fontWeight: 500 }}>
-                  <strong>Valor Total:</strong> R$ {orderData.total}
-                </Typography>
               </Box>
             )}
+
+            {/* QR Codes */}
+            {p.qrRawData ? (
+              <Box sx={{ mt: 1.5 }}>
+                <Typography
+                  sx={{
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    color: "#475569",
+                    mb: 0.75,
+                  }}
+                >
+                  QR Codes gerados
+                </Typography>
+                <Box sx={{ display: "flex", gap: 2 }}>
+                  {Object.entries(p.qrRawData).map(([date, raw]) => (
+                    <Box key={date} sx={{ textAlign: "center" }}>
+                      <Typography
+                        sx={{ fontSize: "0.7rem", color: "#64748b", mb: 0.5 }}
+                      >
+                        {date}
+                      </Typography>
+                      <QRCodeSVG value={raw} size={90} />
+                    </Box>
+                  ))}
+                </Box>
+                {editingParticipantIdx === index && (
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="error"
+                    onClick={() => clearQrCodes(index)}
+                    sx={{ mt: 1, textTransform: "none", fontSize: "0.73rem" }}
+                  >
+                    Apagar QR Codes
+                  </Button>
+                )}
+              </Box>
+            ) : (
+              <Box sx={{ mt: 1.5, display: "flex", gap: 1, flexWrap: "wrap" }}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<MdEmail size={14} />}
+                  onClick={() => sendConfirmationEmail(p, index)}
+                  sx={{ textTransform: "none", fontSize: "0.73rem" }}
+                  disabled={!!p.emailSent}
+                >
+                  {p.emailSent
+                    ? "E-mail já enviado"
+                    : "Enviar e-mail de confirmação"}
+                </Button>
+              </Box>
+            )}
+          </AccordionDetails>
+        </Accordion>
+      ))}
+
+      <Divider sx={{ my: 2 }} />
+
+      {/* ── Detalhes do Pedido ──────────────────────────────────────────── */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 1.5,
+        }}
+      >
+        <Typography
+          variant="subtitle2"
+          sx={{ color: "#1976d2", fontWeight: 700 }}
+        >
+          Detalhes do Pedido
+        </Typography>
+        {canEdit && (
+          <Button
+            size="small"
+            variant={isEditingOrder ? "outlined" : "text"}
+            startIcon={isEditingOrder ? null : <FaRegEdit size={13} />}
+            onClick={() => setIsEditingOrder(!isEditingOrder)}
+            sx={{ textTransform: "none", fontSize: "0.75rem" }}
+          >
+            {isEditingOrder ? "Cancelar" : "Editar"}
+          </Button>
+        )}
+      </Box>
+
+      {isEditingOrder ? (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <TextField
+            size="small"
+            label="Documento do pagador"
+            fullWidth
+            value={orderData.document}
+            onChange={(e) => handleOrderDataChange("document", e.target.value)}
+          />
+          <FormControl size="small" fullWidth>
+            <InputLabel>Status</InputLabel>
+            <Select
+              label="Status"
+              value={orderData.status}
+              onChange={(e) => handleOrderDataChange("status", e.target.value)}
+            >
+              {statusOptions.map((o) => (
+                <MenuItem key={o.value} value={o.value}>
+                  {o.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl size="small" fullWidth>
+            <InputLabel>Método de pagamento</InputLabel>
+            <Select
+              label="Método de pagamento"
+              value={orderData.paymentMethod}
+              onChange={(e) =>
+                handleOrderDataChange("paymentMethod", e.target.value)
+              }
+            >
+              {paymentMethods.map((o) => (
+                <MenuItem key={o.value} value={o.value}>
+                  {o.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Box sx={{ display: "flex", gap: 1.5 }}>
+            <TextField
+              size="small"
+              label="Ingressos inteiros"
+              type="number"
+              fullWidth
+              value={orderData.orderDetails.fullTickets}
+              onChange={(e) =>
+                handleOrderDataChange(
+                  "orderDetails",
+                  e.target.value,
+                  "fullTickets"
+                )
+              }
+              slotProps={{ htmlInput: { min: 0 } }}
+            />
+            <TextField
+              size="small"
+              label="Ingressos meia"
+              type="number"
+              fullWidth
+              value={orderData.orderDetails.halfTickets}
+              onChange={(e) =>
+                handleOrderDataChange(
+                  "orderDetails",
+                  e.target.value,
+                  "halfTickets"
+                )
+              }
+              slotProps={{ htmlInput: { min: 0 } }}
+            />
           </Box>
+          <Box sx={{ display: "flex", gap: 1.5 }}>
+            <TextField
+              size="small"
+              label="Cupom"
+              fullWidth
+              value={orderData.orderDetails.coupon}
+              onChange={(e) =>
+                handleOrderDataChange("orderDetails", e.target.value, "coupon")
+              }
+            />
+            <TextField
+              size="small"
+              label="Desconto (R$)"
+              type="number"
+              fullWidth
+              value={orderData.orderDetails.discount}
+              onChange={(e) =>
+                handleOrderDataChange(
+                  "orderDetails",
+                  e.target.value,
+                  "discount"
+                )
+              }
+              slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
+            />
+          </Box>
+          <TextField
+            size="small"
+            label="Valor total (R$)"
+            type="number"
+            fullWidth
+            value={orderData.total}
+            onChange={(e) => handleOrderDataChange("total", e.target.value)}
+            slotProps={{ htmlInput: { step: "0.01" } }}
+          />
+          <TextField
+            size="small"
+            label="Observação"
+            fullWidth
+            multiline
+            rows={2}
+            value={orderData.observation}
+            onChange={(e) =>
+              handleOrderDataChange("observation", e.target.value)
+            }
+          />
+          <Button
+            variant="contained"
+            size="small"
+            onClick={saveChanges}
+            sx={{ textTransform: "none", alignSelf: "flex-start" }}
+          >
+            Salvar alterações
+          </Button>
+        </Box>
+      ) : (
+        <Box>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "2px 16px",
+              mb: 1,
+            }}
+          >
+            <InfoRow
+              label="Status"
+              value={getLabel(statusOptions, orderData.status)}
+            />
+            <InfoRow
+              label="Método"
+              value={getLabel(paymentMethods, orderData.paymentMethod)}
+            />
+            <InfoRow
+              label="Ingressos inteiros"
+              value={orderData.orderDetails.fullTickets}
+            />
+            <InfoRow
+              label="Ingressos meia"
+              value={orderData.orderDetails.halfTickets}
+            />
+            {orderData.orderDetails.valueTicketsAll !== "0.00" && (
+              <InfoRow
+                label="Valor inteiras"
+                value={`R$ ${orderData.orderDetails.valueTicketsAll}`}
+              />
+            )}
+            {orderData.orderDetails.valueTicketsHalf !== "0.00" && (
+              <InfoRow
+                label="Valor meias"
+                value={`R$ ${orderData.orderDetails.valueTicketsHalf}`}
+              />
+            )}
+            {orderData.orderDetails.coupon && (
+              <InfoRow label="Cupom" value={orderData.orderDetails.coupon} />
+            )}
+            {orderData.orderDetails.coupon && (
+              <InfoRow
+                label="Desconto"
+                value={`R$ ${orderData.orderDetails.discount}`}
+              />
+            )}
+            <InfoRow label="Documento" value={orderData.document} />
+            {orderData.paymentId && (
+              <InfoRow label="ID pagamento" value={orderData.paymentId} />
+            )}
+          </Box>
+          {orderData.observation && (
+            <InfoRow label="Observação" value={orderData.observation} />
+          )}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              mt: 1,
+              p: "8px 12px",
+              bgcolor: "#f8fafc",
+              borderRadius: "8px",
+              border: "1px solid #e2e8f0",
+            }}
+          >
+            <Typography
+              sx={{ fontSize: "0.8rem", color: "#64748b", fontWeight: 600 }}
+            >
+              VALOR TOTAL
+            </Typography>
+            <Typography
+              sx={{ fontSize: "1rem", fontWeight: 800, color: "#0f172a" }}
+            >
+              R${" "}
+              {parseFloat(orderData.total || 0)
+                .toFixed(2)
+                .replace(".", ",")}
+            </Typography>
+          </Box>
+        </Box>
+      )}
 
-          <Divider sx={{ my: 3 }} />
-
+      {/* ── Informações de Pagamento ────────────────────────────────────── */}
+      {(checkout.paymentDetails?.pix ||
+        checkout.paymentDetails?.creditCard ||
+        checkout.status === "error") && (
+        <>
+          <Divider sx={{ my: 2 }} />
           <Typography
-            variant="h6"
-            sx={{ color: "#1976D2", fontWeight: 500, mb: 2 }}
+            variant="subtitle2"
+            sx={{ color: "#1976d2", fontWeight: 700, mb: 1 }}
           >
             Informações de Pagamento
           </Typography>
-          {checkout.paymentDetails.pix && (
-            <Typography sx={{ color: "#666666" }}>
-              <strong>PIX:</strong> {checkout.paymentDetails.pix.qrCodeString}
-            </Typography>
+          {checkout.paymentDetails?.creditCard && (
+            <Box sx={{ display: "flex", gap: 3 }}>
+              <InfoRow
+                label="Final do cartão"
+                value={checkout.paymentDetails.creditCard.last4Digits}
+              />
+              <InfoRow
+                label="Parcelas"
+                value={checkout.paymentDetails.creditCard.installments}
+              />
+            </Box>
+          )}
+          {checkout.paymentDetails?.pix && (
+            <InfoRow
+              label="PIX (código)"
+              value={
+                <Typography
+                  component="span"
+                  sx={{
+                    fontSize: "0.72rem",
+                    fontFamily: "monospace",
+                    wordBreak: "break-all",
+                    color: "#475569",
+                  }}
+                >
+                  {checkout.paymentDetails.pix.qrCodeString}
+                </Typography>
+              }
+            />
           )}
           {checkout.status === "error" && (
-            <Typography style={{ color: "red" }}>
-              <strong>Erro:</strong>{" "}
-              {checkout.errorLog ? checkout.errorLog : "Boleto Vencido"}
-            </Typography>
+            <InfoRow
+              label="Erro"
+              value={checkout.errorLog || "Boleto vencido"}
+            />
           )}
-          {checkout.paymentDetails.creditCard && (
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <Typography sx={{ color: "#666666" }}>
-                  <strong>Final do Cartão:</strong>{" "}
-                  {checkout.paymentDetails.creditCard.last4Digits}
-                </Typography>
-              </Grid>
-              <Grid item xs={6}>
-                <Typography sx={{ color: "#666666" }}>
-                  <strong>Parcelas:</strong>{" "}
-                  {checkout.paymentDetails.creditCard.installments}
-                </Typography>
-              </Grid>
-            </Grid>
-          )}
-          {!checkout.paymentDetails.pix &&
-            !checkout.paymentDetails.creditCard &&
-            !checkout.errorLog && (
-              <Typography sx={{ color: "#666666" }}>
-                Nenhuma informação de pagamento disponível
-              </Typography>
-            )}
-
-          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
-            <Button
-              variant="outlined"
-              onClick={() => setOpenDetailsModal(null)}
-              sx={{
-                borderColor: "#1976D2",
-                color: "#1976D2",
-                textTransform: "none",
-                "&:hover": {
-                  borderColor: "#1565C0",
-                  backgroundColor: "#f5faff",
-                },
-              }}
-            >
-              Fechar
-            </Button>
-          </Box>
-        </Box>
-      ) : (
-        <Box
-          sx={{
-            p: 2,
-            textAlign: "center",
-            color: "#666666",
-            borderRadius: "8px",
-          }}
-        >
-          <Typography
-            variant="h5"
-            sx={{ color: "#333333", fontWeight: 600, mb: 2 }}
-          >
-            {title}
-          </Typography>
-          <Typography sx={{ color: "#666666", mb: 2 }}>{message}</Typography>
-          <Button
-            variant="outlined"
-            onClick={() => setOpenDetailsModal(null)}
-            sx={{
-              borderColor: "#1976D2",
-              color: "#1976D2",
-              textTransform: "none",
-              "&:hover": { borderColor: "#1565C0", backgroundColor: "#f5faff" },
-            }}
-          >
-            Fechar
-          </Button>
-        </Box>
+        </>
       )}
-    </>
+
+      {/* ── Fechar ─────────────────────────────────────────────────────── */}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2.5 }}>
+        <Button
+          variant="outlined"
+          onClick={() => setOpenDetailsModal(null)}
+          sx={{ textTransform: "none" }}
+        >
+          Fechar
+        </Button>
+      </Box>
+    </Box>
   );
 };
 
