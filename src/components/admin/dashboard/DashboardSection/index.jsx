@@ -39,14 +39,7 @@ const DashboardSection = () => {
   // if (loading || !metrics) return <Loading />;
 
   return (
-    <div
-      className={styles.container}
-      style={{
-        backgroundColor: "#F5F7FA",
-        padding: "20px",
-        borderRadius: "12px",
-      }}
-    >
+    <div className={styles.container}>
       <Box
         sx={{
           display: "flex",
@@ -61,11 +54,12 @@ const DashboardSection = () => {
         <Button
           variant="contained"
           sx={{
-            backgroundColor: "#1976D2",
+            backgroundColor: "#3b82f6",
             borderRadius: "8px",
             textTransform: "none",
             fontWeight: 500,
-            "&:hover": { backgroundColor: "#1565C0" },
+            boxShadow: "none",
+            "&:hover": { backgroundColor: "#2563eb", boxShadow: "none" },
           }}
           onClick={updateMetrics}
         >
@@ -92,77 +86,43 @@ const DashboardSection = () => {
           formatToBrazilianCurrency={formatToBrazilianCurrency}
         />
 
-        <Box
-          sx={{
-            width: "100%",
-            backgroundColor: "#FFFFFF",
-            borderRadius: "12px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-            display: "flex",
-            justifyContent: "center",
-            flexDirection: "column",
-            alignItems: "center",
-            p: 2,
-            mt: isMobile ? 2 : 0,
-          }}
-        >
+        <Box sx={{
+          width: "100%",
+          backgroundColor: "#fff",
+          borderRadius: "12px",
+          border: "1px solid #e2e8f0",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          p: 2,
+          mt: isMobile ? 2 : 0,
+        }}>
           <StatusGrafic chartData={chartData} />
-          <Card sx={{ width: "100%", boxShadow: "none" }}>
-            <Typography variant="subtitle">Gráfico de Status</Typography>:
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mt: 1 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <Typography sx={{ color: "#c2c2c2", fontSize: ".8rem" }}>
-                  Aprovados:{" "}
-                </Typography>
-                <Box
-                  sx={{
-                    width: "15px",
-                    height: "15px",
-                    borderRadius: "50%",
-                    backgroundColor: "#2E7D32",
-                  }}
-                ></Box>
+          <Box sx={{ width: "100%", display: "flex", flexWrap: "wrap", gap: 2, mt: 1 }}>
+            {[
+              { label: "Aprovados", color: "#16a34a" },
+              { label: "Pendentes", color: "#d97706" },
+              { label: "Erros", color: "#dc2626" },
+            ].map(({ label, color }) => (
+              <Box key={label} sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Box sx={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: color, flexShrink: 0 }} />
+                <Typography sx={{ color: "#94a3b8", fontSize: "0.78rem" }}>{label}</Typography>
               </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <Typography sx={{ color: "#c2c2c2", fontSize: ".8rem" }}>
-                  Pendentes:{" "}
-                </Typography>
-                <Box
-                  sx={{
-                    width: "15px",
-                    height: "15px",
-                    borderRadius: "50%",
-                    backgroundColor: "#FFB300",
-                  }}
-                ></Box>
-              </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <Typography sx={{ color: "#c2c2c2", fontSize: ".8rem" }}>
-                  Erros:{" "}
-                </Typography>
-                <Box
-                  sx={{
-                    width: "15px",
-                    height: "15px",
-                    borderRadius: "50%",
-                    backgroundColor: "#D32F2F",
-                  }}
-                ></Box>
-              </Box>
-            </Box>
-          </Card>
+            ))}
+          </Box>
         </Box>
       </Box>
 
       {!isMobile && (
-        <Card
-          sx={{
-            backgroundColor: "#FFFFFF",
-            borderRadius: "12px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-            mb: 4,
-          }}
-        >
+        <Card sx={{
+          backgroundColor: "#fff",
+          borderRadius: "12px",
+          border: "1px solid #e2e8f0",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          mb: 3,
+        }}>
           <Filters
             isMobile={isMobile}
             setOpenFiltersDrawer={setOpenFiltersDrawer}

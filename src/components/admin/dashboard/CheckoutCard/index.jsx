@@ -19,11 +19,13 @@ import { useDashboard } from "../../../../data/contexts/DashboardContext";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import toast from "react-hot-toast";
+import useRole from "../../../../data/hooks/useRole";
 
 const CheckoutCard = ({ checkout, isMobile }) => {
   const [openDetailsModal, setOpenDetailsModal] = useState(null);
   const { setCheckouts, setFilteredCheckouts } = useDashboard();
   const [showModalDelete, setShowModalDelete] = useState(false);
+  const { canDelete } = useRole();
 
   const handleContactParticipant = (participantPhone, paymentMethod) => {
     const cleanPhone = participantPhone.replace(/\D/g, "");
@@ -93,14 +95,10 @@ const CheckoutCard = ({ checkout, isMobile }) => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "approved":
-        return { borderLeft: "6px solid #2E7D32" };
-      case "pending":
-        return { borderLeft: "6px solid #FFB300" };
-      case "error":
-        return { borderLeft: "6px solid #D32F2F" };
-      default:
-        return { borderLeft: "6px solid #B0BEC5" };
+      case "approved": return { borderLeft: "4px solid #16a34a" };
+      case "pending":  return { borderLeft: "4px solid #d97706" };
+      case "error":    return { borderLeft: "4px solid #dc2626" };
+      default:         return { borderLeft: "4px solid #cbd5e1" };
     }
   };
 
@@ -127,42 +125,34 @@ const CheckoutCard = ({ checkout, isMobile }) => {
     <>
       <Card
         sx={{
-          border: "1px solid #c2c2c2",
+          border: "1px solid #e2e8f0",
           ...getStatusColor(checkout.status),
-          backgroundColor: "#FFFFFF",
-          borderRadius: "12px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+          backgroundColor: "#fff",
+          borderRadius: "10px",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
           padding: 2,
           maxWidth: "100%",
         }}
       >
         <CardContent sx={{ padding: 0 }}>
-          <Typography
-            variant="h6"
-            sx={{
-              color: "#333333",
-              fontWeight: 500,
-              mb: ".5rem",
-              whiteSpace: "nowrap",
-              textOverflow: "ellipsis",
-              overflow: "hidden",
-            }}
-          >
+          <Typography sx={{
+            color: "#0f172a", fontWeight: 600, fontSize: "0.9rem",
+            mb: 0.75, whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden",
+          }}>
             {checkout.participants[0].name}
           </Typography>
-          <Typography sx={{ color: "#666666", fontSize: "0.9rem" }}>
+          <Typography sx={{ color: "#64748b", fontSize: "0.8rem" }}>
             <strong>Status:</strong>{" "}
             {checkout.status.charAt(0).toUpperCase() + checkout.status.slice(1)}
           </Typography>
-          <Typography sx={{ color: "#666666", fontSize: "0.9rem" }}>
+          <Typography sx={{ color: "#64748b", fontSize: "0.8rem" }}>
             <strong>Método:</strong> {checkout.paymentMethod}
           </Typography>
-          <Typography sx={{ color: "#666666", fontSize: "0.9rem" }}>
-            <strong>Data e Hora:</strong> {formatTimestamp(checkout.timestamp)}
+          <Typography sx={{ color: "#64748b", fontSize: "0.8rem" }}>
+            <strong>Data:</strong> {formatTimestamp(checkout.timestamp)}
           </Typography>
-          <Typography sx={{ color: "#666666", fontSize: "0.9rem", mb: 0.5 }}>
-            <strong>Valor:</strong> R${" "}
-            {checkout.orderDetails.total || checkout.totalAmount}
+          <Typography sx={{ color: "#64748b", fontSize: "0.8rem", mb: 0.5 }}>
+            <strong>Valor:</strong> R$ {checkout.orderDetails.total || checkout.totalAmount}
           </Typography>
           {checkout.seller && (
             <Box
@@ -182,9 +172,8 @@ const CheckoutCard = ({ checkout, isMobile }) => {
         >
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button
-              color="primary"
               size="small"
-              sx={{ textTransform: "none", fontSize: "0.7rem", p: ".2rem" }}
+              sx={{ textTransform: "none", fontSize: "0.75rem", p: ".2rem", color: "#3b82f6" }}
               onClick={() => setOpenDetailsModal(checkout.id)}
             >
               Detalhes
@@ -208,14 +197,16 @@ const CheckoutCard = ({ checkout, isMobile }) => {
                   Verificar Pagamento
                 </Button>
               )} */}
-            <Button
-              color="error"
-              size="small"
-              sx={{ textTransform: "none", fontSize: "0.7rem", p: ".2rem" }}
-              onClick={handleShowModalDelete}
-            >
-              Excluir
-            </Button>
+            {canDelete && (
+              <Button
+                color="error"
+                size="small"
+                sx={{ textTransform: "none", fontSize: "0.7rem", p: ".2rem" }}
+                onClick={handleShowModalDelete}
+              >
+                Excluir
+              </Button>
+            )}
           </Box>
           {checkout.participants[0]?.phone && (
             <IconButton

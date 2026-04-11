@@ -6,13 +6,9 @@ const StatusGrafic = ({ chartData }) => {
   const COLORS = ["#2E7D32", "#FFB300", "#D32F2F", "#FF8042", "#8884D8"];
 
   return (
-    <Box item xs={12} sx={{ marginBottom: "24px", width: "100%" }}>
-      <Card
-        sx={{
-          boxShadow: 0,
-        }}
-      >
-        <Typography variant="h6" sx={{ color: "#333333", fontWeight: 500 }}>
+    <Box sx={{ mb: 2, width: "100%" }}>
+      <Card sx={{ boxShadow: 0, border: "none" }}>
+        <Typography sx={{ color: "#0f172a", fontWeight: 700, fontSize: "0.95rem", mb: 0.5 }}>
           Status dos Checkouts
         </Typography>
         <ResponsiveContainer width="100%" height={200}>
@@ -35,13 +31,13 @@ const StatusGrafic = ({ chartData }) => {
                 />
               ))}
             </Pie>
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "#FFFFFF",
-                borderRadius: "8px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-              }}
-            />
+            <Tooltip contentStyle={{
+              backgroundColor: "#fff",
+              border: "1px solid #e2e8f0",
+              borderRadius: "8px",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+              fontSize: "0.82rem",
+            }} />
           </PieChart>
         </ResponsiveContainer>
       </Card>

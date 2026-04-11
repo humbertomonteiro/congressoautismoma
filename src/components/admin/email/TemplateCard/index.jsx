@@ -9,8 +9,10 @@ import {
   Box,
 } from "@mui/material";
 import { MdDelete, MdEdit } from "react-icons/md";
+import useRole from "../../../../data/hooks/useRole";
 
 const TemplateCard = ({ template, onEdit, onDelete }) => {
+  const { canEdit, canDelete } = useRole();
   const getStatusColor = (template) => {
     switch (template.statusFilter) {
       case "approved":
@@ -71,18 +73,22 @@ const TemplateCard = ({ template, onEdit, onDelete }) => {
         </Box>
       </CardContent>
       <CardActions sx={{ justifyContent: "flex-end", p: 2, pt: 0 }}>
-        <IconButton
-          onClick={() => onEdit(template)}
-          sx={{ color: "#1976D2", "&:hover": { color: "#1565C0" } }}
-        >
-          <MdEdit />
-        </IconButton>
-        <IconButton
-          onClick={() => onDelete(template.id)}
-          sx={{ color: "#D32F2F", "&:hover": { color: "#B71C1C" } }}
-        >
-          <MdDelete />
-        </IconButton>
+        {canEdit && (
+          <IconButton
+            onClick={() => onEdit(template)}
+            sx={{ color: "#1976D2", "&:hover": { color: "#1565C0" } }}
+          >
+            <MdEdit />
+          </IconButton>
+        )}
+        {canDelete && (
+          <IconButton
+            onClick={() => onDelete(template.id)}
+            sx={{ color: "#D32F2F", "&:hover": { color: "#B71C1C" } }}
+          >
+            <MdDelete />
+          </IconButton>
+        )}
       </CardActions>
     </Card>
   );

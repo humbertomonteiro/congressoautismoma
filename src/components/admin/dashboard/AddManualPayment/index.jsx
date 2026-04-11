@@ -21,6 +21,8 @@ import Modal from "../../../checkout/Modal";
 import PaymentService from "../../../../data/services/PaymentService";
 import { toast } from "react-toastify";
 import { MdPerson, MdVerified } from "react-icons/md";
+import useRole from "../../../../data/hooks/useRole";
+import useAuth from "../../../../data/hooks/useAuth";
 
 const AddManualPayment = () => {
   const {
@@ -41,6 +43,9 @@ const AddManualPayment = () => {
     handleRemoveCoupon,
   } = usePaymentForm();
 
+  const { isVendedor } = useRole();
+  const { sellerId: loggedSellerId, sellerName: loggedSellerName } = useAuth();
+
   const [installments, setInstallments] = useState("1");
   const [cardBrand, setCardBrand] = useState("Visa");
   const [sellers, setSellers] = useState([]);
@@ -48,11 +53,18 @@ const AddManualPayment = () => {
 
   useEffect(() => {
     getDocs(collection(db, "sellers"))
-      .then((snap) =>
-        setSellers(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-      )
+      .then((snap) => {
+        setSellers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      })
       .catch(() => {});
   }, []);
+
+  // Para role vendedor: pré-seleciona e trava o seller vinculado
+  useEffect(() => {
+    if (isVendedor && loggedSellerId) {
+      setSelectedSeller(loggedSellerId);
+    }
+  }, [isVendedor, loggedSellerId]);
 
   const paymentMethods = [
     { value: "creditCard", label: "Cartão de Crédito" },
@@ -159,7 +171,7 @@ const AddManualPayment = () => {
       const checkoutData = {
         transactionId,
         timestamp: new Date().toISOString(),
-        status: "approved",
+        status: isVendedor ? "pending" : "approved",
         paymentMethod: formState.paymentMethod,
         observation: formState.observation,
         seller: selectedSeller
@@ -279,25 +291,45 @@ const AddManualPayment = () => {
     }
   };
 
+  const SectionTitle = ({ children }) => (
+    <Typography sx={{ color: "#0f172a", fontWeight: 700, fontSize: "0.95rem", mb: 2 }}>
+      {children}
+    </Typography>
+  );
+
+  const sxCard = {
+    backgroundColor: "#fff",
+    border: "1px solid #e2e8f0",
+    borderRadius: "12px",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+    p: "20px",
+    mb: 2,
+  };
+
   return (
     <div className={styles.section}>
-      <div className={styles.title}>
-        <h1>Adicionar Pagamento Manual</h1>
-      </div>
+      <Box sx={{ mb: 3 }}>
+        <Typography sx={{ color: "#0f172a", fontWeight: 700, fontSize: "1.4rem" }}>
+          Adicionar Pagamento Manual
+        </Typography>
+        <Typography sx={{ color: "#64748b", fontSize: "0.85rem", mt: 0.5 }}>
+          Registre um checkout manualmente no sistema
+        </Typography>
+      </Box>
 
-      {/* Seção Geral */}
-      <div className={styles.headerInputs}>
-        <Box sx={{ width: "100%", display: "flex", gap: 2, flexWrap: "wrap" }}>
+      {/* Seção de Pagamento */}
+      <Box sx={sxCard}>
+        <SectionTitle>Dados do Pagamento</SectionTitle>
+        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 2 }}>
           <FormControl className={styles.shortInput}>
             <InputLabel>Tipo de Pagamento</InputLabel>
             <Select
               value={formState.paymentMethod}
               onChange={(e) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  paymentMethod: e.target.value,
-                }))
+                setFormState((prev) => ({ ...prev, paymentMethod: e.target.value }))
               }
+              label="Tipo de Pagamento"
+              sx={{ borderRadius: "8px" }}
               disabled={formState.loading}
             >
               {paymentMethods.map((method) => (
@@ -315,6 +347,8 @@ const AddManualPayment = () => {
               <Select
                 value={cardBrand}
                 onChange={(e) => setCardBrand(e.target.value)}
+                label="Bandeira"
+                sx={{ borderRadius: "8px" }}
                 disabled={formState.loading}
               >
                 {cardBrands.map((brand) => (
@@ -332,17 +366,21 @@ const AddManualPayment = () => {
               <Select
                 value={installments}
                 onChange={(e) => setInstallments(e.target.value)}
+                label="Parcelas"
+                sx={{ borderRadius: "8px" }}
                 disabled={formState.loading}
               >
                 {Array.from({ length: 10 }, (_, i) => (
                   <MenuItem key={i + 1} value={String(i + 1)}>
-                    {i + 1} Parcela(s)
+                    {i + 1}x
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
           )}
+        </Box>
 
+        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 2 }}>
           <TextField
             label="Ingressos Inteiros"
             value={formState.allTickets}
@@ -351,8 +389,8 @@ const AddManualPayment = () => {
             className={styles.shortInput}
             disabled={formState.loading}
             inputProps={{ min: 0 }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
           />
-
           <TextField
             label="Ingressos Meia"
             value={formState.halfTickets}
@@ -361,137 +399,157 @@ const AddManualPayment = () => {
             className={styles.shortInput}
             disabled={formState.loading}
             inputProps={{ min: 0 }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
           />
-
-          {formState.paymentMethod !== "courtesy" && (
-            <Box className={styles.couponWrapper}>
-              <TextField
-                label="Cupom (opcional)"
-                value={formState.coupon.code}
-                onChange={(e) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    coupon: { ...prev.coupon, code: e.target.value },
-                  }))
-                }
-                className={styles.shortInput}
-                disabled={formState.loading}
-              />
-              {!formState.coupon.isApplied ? (
-                <Button
-                  variant="outlined"
-                  onClick={handleApplyCoupon}
-                  disabled={!formState.coupon.code || formState.loading}
-                >
-                  Aplicar
-                </Button>
-              ) : (
-                <Button
-                  variant="outlined"
-                  onClick={handleRemoveCoupon}
-                  disabled={formState.loading}
-                >
-                  Remover
-                </Button>
-              )}
-            </Box>
-          )}
-        </Box>
-
-        {/* Vendedor credenciado */}
-        <Box sx={{ width: "100%" }}>
-          <FormControl sx={{ width: "100%" }} disabled={formState.loading}>
-            <InputLabel>Vendedor credenciado (opcional)</InputLabel>
-            <Select
-              value={selectedSeller}
-              label="Vendedor credenciado (opcional)"
-              onChange={(e) => setSelectedSeller(e.target.value)}
-              renderValue={(value) => {
-                if (!value) return "Nenhum (venda direta)";
-                const s = sellers.find((s) => s.id === value);
-                return s ? (
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Avatar
-                      src={s.photoBase64 || undefined}
-                      sx={{ width: 24, height: 24, fontSize: "0.75rem" }}
-                    >
-                      {!s.photoURL && <MdPerson />}
-                    </Avatar>
-                    <span>{s.name}</span>
-                    <MdVerified color="#1976D2" size={14} />
-                  </Box>
-                ) : (
-                  "Nenhum"
-                );
-              }}
-            >
-              <MenuItem value="">
-                <em>Nenhum (venda direta)</em>
-              </MenuItem>
-              {sellers.map((s) => (
-                <MenuItem key={s.id} value={s.id}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <Avatar
-                      src={s.photoBase64 || undefined}
-                      sx={{ width: 32, height: 32 }}
-                    >
-                      {!s.photoURL && <MdPerson />}
-                    </Avatar>
-                    <Box>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                      >
-                        <span style={{ fontWeight: 600 }}>{s.name}</span>
-                        <MdVerified color="#1976D2" size={13} />
-                      </Box>
-                      <Box sx={{ fontSize: "0.75rem", color: "#78909c" }}>
-                        CPF: {s.document}
-                      </Box>
-                    </Box>
-                  </Box>
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-
-        <Box sx={{ width: "100%" }}>
           <TextField
-            sx={{ width: "100%" }}
-            label="Observações (opcional)"
-            value={formState.observation}
-            onChange={(e) =>
-              setFormState((prev) => ({
-                ...prev,
-                observation: e.target.value,
-              }))
-            }
-            multiline
-            rows={4}
+            label="Ingressos Social"
+            value={formState.socialTickets || 0}
+            onChange={(e) => handleTicketTypeChange("social", e.target.value)}
+            type="number"
+            className={styles.shortInput}
             disabled={formState.loading}
+            inputProps={{ min: 0 }}
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
           />
         </Box>
-      </div>
+
+        {formState.paymentMethod !== "courtesy" && (
+          <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", flexWrap: "wrap", mb: 2 }}>
+            <TextField
+              label="Cupom (opcional)"
+              value={formState.coupon.code}
+              onChange={(e) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  coupon: { ...prev.coupon, code: e.target.value },
+                }))
+              }
+              className={styles.shortInput}
+              disabled={formState.loading}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+            />
+            {!formState.coupon.isApplied ? (
+              <Button
+                variant="outlined"
+                onClick={handleApplyCoupon}
+                disabled={!formState.coupon.code || formState.loading}
+                sx={{
+                  borderColor: "#3b82f6",
+                  color: "#3b82f6",
+                  borderRadius: "8px",
+                  textTransform: "none",
+                  height: "40px",
+                  "&:hover": { borderColor: "#2563eb", backgroundColor: "#eff6ff" },
+                }}
+              >
+                Aplicar cupom
+              </Button>
+            ) : (
+              <Button
+                variant="outlined"
+                onClick={handleRemoveCoupon}
+                disabled={formState.loading}
+                sx={{
+                  borderColor: "#fecaca",
+                  color: "#dc2626",
+                  borderRadius: "8px",
+                  textTransform: "none",
+                  height: "40px",
+                  "&:hover": { borderColor: "#dc2626", backgroundColor: "#fff1f2" },
+                }}
+              >
+                Remover cupom
+              </Button>
+            )}
+          </Box>
+        )}
+
+        <FormControl fullWidth disabled={formState.loading || isVendedor} sx={{ mb: 2 }}>
+          <InputLabel>
+            {isVendedor ? "Vendedor (vinculado à sua conta)" : "Vendedor credenciado (opcional)"}
+          </InputLabel>
+          <Select
+            value={selectedSeller}
+            label={isVendedor ? "Vendedor (vinculado à sua conta)" : "Vendedor credenciado (opcional)"}
+            onChange={(e) => !isVendedor && setSelectedSeller(e.target.value)}
+            sx={{ borderRadius: "8px" }}
+            renderValue={(value) => {
+              if (!value) return "Nenhum (venda direta)";
+              const s = sellers.find((s) => s.id === value);
+              return s ? (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Avatar src={s.photoBase64 || undefined} sx={{ width: 24, height: 24, fontSize: "0.75rem" }}>
+                    {!s.photoURL && <MdPerson />}
+                  </Avatar>
+                  <span>{s.name}</span>
+                  <MdVerified color="#1976D2" size={14} />
+                </Box>
+              ) : "Nenhum";
+            }}
+          >
+            <MenuItem value=""><em>Nenhum (venda direta)</em></MenuItem>
+            {sellers.map((s) => (
+              <MenuItem key={s.id} value={s.id}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Avatar src={s.photoBase64 || undefined} sx={{ width: 32, height: 32 }}>
+                    {!s.photoURL && <MdPerson />}
+                  </Avatar>
+                  <Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                      <span style={{ fontWeight: 600 }}>{s.name}</span>
+                      <MdVerified color="#1976D2" size={13} />
+                    </Box>
+                    <Box sx={{ fontSize: "0.75rem", color: "#78909c" }}>CPF: {s.document}</Box>
+                  </Box>
+                </Box>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <TextField
+          fullWidth
+          label="Observações (opcional)"
+          value={formState.observation}
+          onChange={(e) =>
+            setFormState((prev) => ({ ...prev, observation: e.target.value }))
+          }
+          multiline
+          rows={3}
+          disabled={formState.loading}
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+        />
+      </Box>
 
       {/* Seção de Participantes */}
-      <div className={styles.participantSection}>
-        <Typography variant="h6" gutterBottom>
-          Adicionar Participante ({participants.length}/{ticketQuantity})
-        </Typography>
-        <div className={styles.participantFields}>
+      <Box sx={sxCard}>
+        <Box sx={{ display: "flex", alignItems: "baseline", gap: 1.5, mb: 2 }}>
+          <Typography sx={{ color: "#0f172a", fontWeight: 700, fontSize: "0.95rem" }}>
+            Participantes
+          </Typography>
+          <Typography sx={{
+            fontSize: "0.78rem",
+            color: participants.length >= ticketQuantity ? "#16a34a" : "#64748b",
+            fontWeight: 500,
+          }}>
+            {participants.length}/{ticketQuantity} adicionado{participants.length !== 1 ? "s" : ""}
+          </Typography>
+        </Box>
+
+        <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "flex-start" }}>
           <TextField
-            label="Nome"
+            label="Nome completo"
             value={currentParticipant.name}
             onChange={(e) => handleParticipantChange("name", e.target.value)}
-            className={styles.fullWidthField}
+            sx={{ flex: "1 1 220px", "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
             disabled={formState.loading}
             required
           />
           <TextField
-            label="Email"
+            label="E-mail"
             value={currentParticipant.email}
             onChange={(e) => handleParticipantChange("email", e.target.value)}
-            className={styles.fullWidthField}
+            sx={{ flex: "1 1 220px", "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
             disabled={formState.loading}
             required
           />
@@ -505,7 +563,7 @@ const AddManualPayment = () => {
               <TextField
                 {...inputProps}
                 label="Telefone"
-                className={styles.shortField}
+                sx={{ flex: "1 1 160px", "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                 required
               />
             )}
@@ -513,34 +571,38 @@ const AddManualPayment = () => {
           <InputMask
             mask="999.999.999-99"
             value={currentParticipant.document}
-            onChange={(e) =>
-              handleParticipantChange("document", e.target.value)
-            }
+            onChange={(e) => handleParticipantChange("document", e.target.value)}
             disabled={formState.loading}
           >
             {(inputProps) => (
               <TextField
                 {...inputProps}
                 label="CPF"
-                className={styles.shortField}
+                sx={{ flex: "1 1 160px", "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                 required
               />
             )}
           </InputMask>
           <Button
-            sx={{ height: "56px", marginTop: "8px" }}
             variant="outlined"
-            color="primary"
             onClick={handleAddParticipant}
-            className={styles.addButton}
-            disabled={
-              formState.loading || participants.length >= ticketQuantity
-            }
+            disabled={formState.loading || participants.length >= ticketQuantity}
+            sx={{
+              height: "56px",
+              borderColor: "#3b82f6",
+              color: "#3b82f6",
+              borderRadius: "8px",
+              textTransform: "none",
+              fontWeight: 500,
+              flexShrink: 0,
+              "&:hover": { borderColor: "#2563eb", backgroundColor: "#eff6ff" },
+              "&:disabled": { borderColor: "#e2e8f0", color: "#cbd5e1" },
+            }}
           >
-            Adicionar Participante
+            + Adicionar
           </Button>
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {/* Lista de Participantes */}
       {participants.length > 0 && (
@@ -555,34 +617,59 @@ const AddManualPayment = () => {
       )}
 
       {/* Resumo */}
-      <div className={styles.summary}>
-        <h3>Resumo</h3>
-        <p>
-          Ingressos Inteiros: {formState.allTickets} x R${" "}
-          {totals.valueTicketsAll}
-        </p>
-        {formState.halfTickets > 0 && (
-          <p>
-            Ingressos Meia: {formState.halfTickets} x R${" "}
-            {totals.valueTicketsHalf}
-          </p>
-        )}
-        {formState.coupon.isApplied && (
-          <p>
-            Desconto ({formState.coupon.code}): R$ {totals.discount}
-          </p>
-        )}
-        <p className={styles.total}>
-          <strong>Total: R$ {totals.total}</strong>
-        </p>
-      </div>
+      <Box sx={{ ...sxCard, mb: 3 }}>
+        <SectionTitle>Resumo do Pedido</SectionTitle>
+        {[
+          formState.allTickets > 0 && {
+            label: `Inteiro × ${formState.allTickets}`,
+            value: `R$ ${totals.valueTicketsAll}`,
+          },
+          formState.halfTickets > 0 && {
+            label: `Meia × ${formState.halfTickets}`,
+            value: `R$ ${totals.valueTicketsHalf}`,
+          },
+          (formState.socialTickets || 0) > 0 && {
+            label: `Social × ${formState.socialTickets}`,
+            value: `R$ ${totals.valueTicketsSocial || "0.00"}`,
+          },
+          formState.coupon.isApplied && {
+            label: `Desconto (${formState.coupon.code})`,
+            value: `- R$ ${totals.discount}`,
+            color: "#16a34a",
+          },
+        ]
+          .filter(Boolean)
+          .map((row, i) => (
+            <Box key={i} sx={{ display: "flex", justifyContent: "space-between", py: 0.75, borderBottom: "1px solid #f1f5f9" }}>
+              <Typography sx={{ color: "#64748b", fontSize: "0.88rem" }}>{row.label}</Typography>
+              <Typography sx={{ color: row.color || "#475569", fontSize: "0.88rem", fontWeight: 500 }}>{row.value}</Typography>
+            </Box>
+          ))}
+        <Box sx={{ display: "flex", justifyContent: "space-between", pt: 1.5, mt: 0.5 }}>
+          <Typography sx={{ color: "#0f172a", fontWeight: 700, fontSize: "1rem" }}>Total</Typography>
+          <Typography sx={{ color: "#0f172a", fontWeight: 700, fontSize: "1rem" }}>
+            R$ {totals.total}
+          </Typography>
+        </Box>
+      </Box>
 
       {/* Botão Finalizar */}
       <Button
         variant="contained"
-        color="primary"
         onClick={handleSaveCheckout}
         disabled={formState.loading || participants.length === 0}
+        sx={{
+          backgroundColor: "#3b82f6",
+          borderRadius: "8px",
+          textTransform: "none",
+          fontWeight: 600,
+          fontSize: "0.95rem",
+          px: 4,
+          py: 1.25,
+          boxShadow: "none",
+          "&:hover": { backgroundColor: "#2563eb", boxShadow: "none" },
+          "&:disabled": { backgroundColor: "#e2e8f0", color: "#94a3b8" },
+        }}
       >
         {formState.loading ? "Salvando..." : "Finalizar Checkout"}
       </Button>

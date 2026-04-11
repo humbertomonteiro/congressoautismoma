@@ -8,8 +8,8 @@ import Loading from "../../components/shared/Loading";
 export const AuthContext = createContext({});
 
 export default function AuthProvider({ children }) {
-  const [user, setUser] = useState(null > null);
-  const [error, setError] = useState(null > null);
+  const [user, setUser] = useState(null);
+  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
@@ -37,7 +37,13 @@ export default function AuthProvider({ children }) {
       const authentication = new FirebaseAuth();
       const user = await authentication.login(email, password);
       setUser(user);
-      navigate("/dashboard");
+
+      // Redireciona scanner diretamente para credenciamento
+      if (user.role === "scanner") {
+        navigate("/dashboard?section=accreditation");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (error) {
       console.error("Erro ao logar:", error);
       setError("Erro ao logar, " + error);
@@ -57,12 +63,10 @@ export default function AuthProvider({ children }) {
   }
 
   async function logout() {
-    console.log("clicou");
     try {
       const authentication = new FirebaseAuth();
       await authentication.logout();
       setUser(null);
-      console.log("deslogado");
       navigate("/login");
     } catch (error) {
       console.log("Error ao deslogar, " + error);
@@ -83,6 +87,9 @@ export default function AuthProvider({ children }) {
         signed: !!user,
         setUser,
         loading,
+        role: user?.role || null,
+        sellerId: user?.sellerId || null,
+        sellerName: user?.sellerName || null,
       }}
     >
       {children}

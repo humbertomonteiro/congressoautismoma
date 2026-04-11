@@ -201,17 +201,6 @@ const usePaymentForm = () => {
       );
       return;
     }
-    if (
-      formState.coupon.isApplied &&
-      formState.coupon.code === "grupo" &&
-      counts.allTickets < 5
-    ) {
-      setModalError(
-        "Cupom de grupo aplicado",
-        "Para diminuir ingressos inteiros para menos de 5, remova o cupom."
-      );
-      return;
-    }
     setFormState((prev) => ({ ...prev, [fieldMap[type]]: newValue }));
   };
 
@@ -257,7 +246,7 @@ const usePaymentForm = () => {
     });
   };
 
-  const handleApplyCoupon = async (e, couponCode = null) => {
+  const handleApplyCoupon = async (e, couponCode = null, ticketOverride = null, silent = false) => {
     if (e && typeof e.preventDefault === "function") {
       e.preventDefault();
     }
@@ -270,11 +259,17 @@ const usePaymentForm = () => {
       return;
     }
 
+    // ticketOverride permite passar quantidades corretas ao aplicar via URL
+    // sem depender do estado do React que ainda pode não ter sido atualizado
+    const allT = ticketOverride?.allTickets ?? formState.allTickets;
+    const halfT = ticketOverride?.halfTickets ?? formState.halfTickets;
+    const socialT = ticketOverride?.socialTickets ?? formState.socialTickets;
+
     try {
       const response = await PaymentService.calculateTotals({
-        allTickets: formState.allTickets,
-        halfTickets: formState.halfTickets,
-        socialTickets: formState.socialTickets,
+        allTickets: allT,
+        halfTickets: halfT,
+        socialTickets: socialT,
         coupon: trimmedCoupon,
       });
       setFormState((prev) => ({
@@ -282,12 +277,14 @@ const usePaymentForm = () => {
         coupon: { code: trimmedCoupon, isApplied: true },
       }));
       setTotals(response);
-      setModalState({
-        isOpen: true,
-        title: "Cupom Aplicado",
-        message: "Cupom aplicado com sucesso!",
-        type: "success",
-      });
+      if (!silent) {
+        setModalState({
+          isOpen: true,
+          title: "Cupom Aplicado",
+          message: "Cupom aplicado com sucesso!",
+          type: "success",
+        });
+      }
     } catch (error) {
       console.error("Erro ao aplicar cupom:", error);
       setFormState((prev) => ({

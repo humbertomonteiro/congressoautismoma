@@ -1,204 +1,206 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./adminDashboard.module.css";
 import { IoExitOutline, IoMenuOutline } from "react-icons/io5";
 import {
   MdOutlineSpaceDashboard,
   MdOutlineMarkEmailRead,
   MdOutlineBadge,
+  MdOutlinePeopleAlt,
+  MdOutlineLocalOffer,
+  MdOutlineAccountBalance,
+  MdOutlineQrCodeScanner,
+  MdOutlineWorkspacePremium,
+  MdOutlineShoppingCart,
 } from "react-icons/md";
-import { IoBagCheckOutline } from "react-icons/io5";
-import { MdOutlineQrCode } from "react-icons/md";
 import {
   AppBar,
   Toolbar,
   IconButton,
   Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   Box,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
 import useAuth from "../../data/hooks/useAuth";
-import logo from "../../assets/logos/logo-no-text.png";
+import useRole from "../../data/hooks/useRole";
+import logo from "../../assets/logos/logo.png";
 import DashboardSection from "../../components/admin/dashboard/DashboardSection";
 import EmailSection from "../../components/admin/email/EmailSection";
 import AddManualPayment from "../../components/admin/dashboard/AddManualPayment";
 import CertificateContainer from "../../components/certificateGenerator/CertificateContainer";
 import Scanner from "../../components/admin/Scanner";
 import SellerSection from "../../components/admin/SellerSection";
-
+import UserManagementSection from "../../components/admin/UserManagementSection";
+import CouponManagementSection from "../../components/admin/CouponManagementSection";
+import CaixaSection from "../../components/admin/caixa/CaixaSection";
 import { DashboardProvider } from "../../data/contexts/DashboardContext";
+import { useSearchParams } from "react-router-dom";
+
+const ROLE_LABELS = {
+  adm: "Administrador",
+  viewer: "Visualizador",
+  scanner: "Scanner",
+  vendedor: "Vendedor",
+};
 
 const AdminDashboard = () => {
-  const [activeSection, setActiveSection] = useState("dashboard");
+  const [searchParams] = useSearchParams();
+  const [activeSection, setActiveSection] = useState(
+    searchParams.get("section") || "dashboard"
+  );
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const {
+    canSeeDashboard,
+    canSeeManualPayment,
+    canSeeSellers,
+    canSeeCertificates,
+    canSeeAccreditation,
+    canSeeEmails,
+    canSeeUserManagement,
+    canSeeCaixa,
+    isScanner,
+  } = useRole();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-  const toggleDrawer = () => {
-    setIsDrawerOpen(!isDrawerOpen);
-  };
+  useEffect(() => {
+    if (isScanner) setActiveSection("accreditation");
+  }, [isScanner]);
 
   const handleSectionChange = (section) => {
     setActiveSection(section);
     if (isMobile) setIsDrawerOpen(false);
   };
 
+  // Iniciais do nome para o avatar
+  const initials = user?.name
+    ? user.name.trim().split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase()
+    : "?";
+
+  const NavItem = ({ section, icon, label, visible = true }) => {
+    if (!visible) return null;
+    return (
+      <button
+        className={`${styles.navItem} ${activeSection === section ? styles.active : ""}`}
+        onClick={() => handleSectionChange(section)}
+      >
+        <span className={styles.navItemIcon}>{icon}</span>
+        {label}
+      </button>
+    );
+  };
+
+  const SectionLabel = ({ label, visible = true }) => {
+    if (!visible) return null;
+    return <p className={styles.sectionLabel}>{label}</p>;
+  };
+
+  // Decide quais grupos de seções ficam visíveis
+  const hasOperacional = canSeeDashboard || canSeeManualPayment || canSeeAccreditation;
+  const hasFinanceiro = canSeeCaixa;
+  const hasGestao = canSeeSellers || canSeeEmails || canSeeCertificates;
+  const hasAdmin = canSeeUserManagement;
+
   const drawerContent = (
     <Box className={styles.drawerContent}>
-      <List>
-        <ListItem
-          button
-          className={`${styles.navItem} ${
-            activeSection === "dashboard" ? styles.active : ""
-          }`}
-          onClick={() => handleSectionChange("dashboard")}
-        >
-          <ListItemIcon>
-            <MdOutlineSpaceDashboard />
-          </ListItemIcon>
-          <ListItemText primary="Dashboard" />
-        </ListItem>
+      {/* Usuário logado */}
+      {user && (
+        <div className={styles.userBadge}>
+          <div className={styles.userAvatar}>{initials}</div>
+          <div style={{ minWidth: 0 }}>
+            <div className={styles.userName}>{user.name}</div>
+            <div className={styles.userRole}>
+              {ROLE_LABELS[user.role] || user.role}
+            </div>
+          </div>
+        </div>
+      )}
 
-        <ListItem
-          button
-          className={`${styles.navItem} ${
-            activeSection === "checkout-manual" ? styles.active : ""
-          }`}
-          onClick={() => handleSectionChange("checkout-manual")}
-        >
-          <ListItemIcon>
-            <IoBagCheckOutline />
-          </ListItemIcon>
-          <ListItemText primary="Add Checkout" />
-        </ListItem>
+      {/* Nav agrupada com scroll */}
+      <div className={styles.navScroll}>
+        <SectionLabel label="Operacional" visible={hasOperacional} />
+        <NavItem section="dashboard" icon={<MdOutlineSpaceDashboard size={18} />} label="Dashboard" visible={canSeeDashboard} />
+        <NavItem section="checkout-manual" icon={<MdOutlineShoppingCart size={18} />} label="Add Checkout" visible={canSeeManualPayment} />
+        <NavItem section="accreditation" icon={<MdOutlineQrCodeScanner size={18} />} label="Credenciamento" visible={canSeeAccreditation} />
 
-        <ListItem
-          button
-          className={`${styles.navItem} ${
-            activeSection === "sellers" ? styles.active : ""
-          }`}
-          onClick={() => handleSectionChange("sellers")}
-        >
-          <ListItemIcon>
-            <MdOutlineBadge />
-          </ListItemIcon>
-          <ListItemText primary="Vendedores" />
-        </ListItem>
+        {hasFinanceiro && <div className={styles.navDivider} />}
+        <SectionLabel label="Financeiro" visible={hasFinanceiro} />
+        <NavItem section="caixa" icon={<MdOutlineAccountBalance size={18} />} label="Caixa do Evento" visible={canSeeCaixa} />
 
-        <ListItem
-          button
-          className={`${styles.navItem} ${
-            activeSection === "certificate-generator" ? styles.active : ""
-          }`}
-          onClick={() => handleSectionChange("certificate-generator")}
-        >
-          <ListItemIcon>
-            <IoBagCheckOutline />
-          </ListItemIcon>
-          <ListItemText primary="Certificados" />
-        </ListItem>
+        {hasGestao && <div className={styles.navDivider} />}
+        <SectionLabel label="Gestão" visible={hasGestao} />
+        <NavItem section="sellers" icon={<MdOutlineBadge size={18} />} label="Vendedores" visible={canSeeSellers} />
+        <NavItem section="emails" icon={<MdOutlineMarkEmailRead size={18} />} label="E-mails" visible={canSeeEmails} />
+        <NavItem section="certificate-generator" icon={<MdOutlineWorkspacePremium size={18} />} label="Certificados" visible={canSeeCertificates} />
 
-        <ListItem
-          button
-          className={`${styles.navItem} ${
-            activeSection === "accreditation" ? styles.active : ""
-          }`}
-          onClick={() => handleSectionChange("accreditation")}
-        >
-          <ListItemIcon>
-            <MdOutlineQrCode />
-          </ListItemIcon>
-          <ListItemText primary="Credenciamento" />
-        </ListItem>
+        {hasAdmin && <div className={styles.navDivider} />}
+        <SectionLabel label="Administração" visible={hasAdmin} />
+        <NavItem section="coupons" icon={<MdOutlineLocalOffer size={18} />} label="Cupons" visible={canSeeUserManagement} />
+        <NavItem section="users" icon={<MdOutlinePeopleAlt size={18} />} label="Usuários" visible={canSeeUserManagement} />
+      </div>
 
-        <ListItem
-          button
-          className={`${styles.navItem} ${
-            activeSection === "emails" ? styles.active : ""
-          }`}
-          onClick={() => handleSectionChange("emails")}
-        >
-          <ListItemIcon>
-            <MdOutlineMarkEmailRead />
-          </ListItemIcon>
-          <ListItemText primary="Emails" />
-        </ListItem>
-
-        <ListItem onClick={logout} className={styles.navItem} data-exit="true">
-          <ListItemIcon>
-            <IoExitOutline />
-          </ListItemIcon>
-          <ListItemText primary="Sair" />
-        </ListItem>
-      </List>
+      {/* Logout fixo no rodapé */}
+      <div className={styles.logoutArea}>
+        <button className={styles.logoutBtn} onClick={logout}>
+          <IoExitOutline size={18} />
+          Sair
+        </button>
+      </div>
     </Box>
   );
 
   return (
     <DashboardProvider>
       <Box className={styles.dashboardContainer}>
-        {/* Header fixo no mobile */}
+        {/* AppBar mobile */}
         {isMobile && (
           <>
             <AppBar position="fixed" className={styles.appBar}>
-              <Toolbar>
-                <Box className={styles.logoContainer}>
-                  <img
-                    src={logo}
-                    alt="Congresso Autismo MA"
-                    className={styles.logo}
-                  />
-                </Box>
+              <Toolbar sx={{ minHeight: "56px !important" }}>
+                <img src={logo} alt="Congresso Autismo MA" className={styles.appBarLogo} />
                 <IconButton
                   edge="end"
                   color="inherit"
-                  onClick={toggleDrawer}
+                  onClick={() => setIsDrawerOpen(true)}
                   sx={{ ml: "auto" }}
                 >
-                  <IoMenuOutline />
+                  <IoMenuOutline size={22} />
                 </IconButton>
               </Toolbar>
             </AppBar>
             <Drawer
               anchor="left"
               open={isDrawerOpen}
-              onClose={toggleDrawer}
-              PaperProps={{ sx: { width: 250 } }}
+              onClose={() => setIsDrawerOpen(false)}
+              PaperProps={{ sx: { width: 240, backgroundColor: "#0f172a", border: "none" } }}
             >
               {drawerContent}
             </Drawer>
           </>
         )}
 
-        {/* Sidebar fixa no desktop */}
+        {/* Sidebar desktop */}
         {!isMobile && (
           <Box component="aside" className={styles.aside}>
-            <Box className={styles.logoContainer}>
-              <img
-                src={logo}
-                alt="Congresso Autismo MA"
-                className={styles.logo}
-              />
-            </Box>
+            <div className={styles.logoContainer}>
+              <img src={logo} alt="Congresso Autismo MA" className={styles.logo} />
+            </div>
             {drawerContent}
           </Box>
         )}
 
         {/* Conteúdo principal */}
         <Box component="main" className={styles.mainContent}>
-          {activeSection === "dashboard" && <DashboardSection />}
-          {activeSection === "checkout-manual" && <AddManualPayment />}
-          {activeSection === "emails" && <EmailSection />}
-          {activeSection === "certificate-generator" && (
-            <CertificateContainer />
-          )}
-          {activeSection === "accreditation" && <Scanner />}
-          {activeSection === "sellers" && <SellerSection />}
+          {activeSection === "dashboard" && canSeeDashboard && <DashboardSection />}
+          {activeSection === "checkout-manual" && canSeeManualPayment && <AddManualPayment />}
+          {activeSection === "emails" && canSeeEmails && <EmailSection />}
+          {activeSection === "certificate-generator" && canSeeCertificates && <CertificateContainer />}
+          {activeSection === "accreditation" && canSeeAccreditation && <Scanner />}
+          {activeSection === "sellers" && canSeeSellers && <SellerSection />}
+          {activeSection === "caixa" && canSeeCaixa && <CaixaSection />}
+          {activeSection === "coupons" && canSeeUserManagement && <CouponManagementSection />}
+          {activeSection === "users" && canSeeUserManagement && <UserManagementSection />}
         </Box>
       </Box>
     </DashboardProvider>

@@ -1,28 +1,14 @@
-/* adminDashboard.module.css */
-
-/* Container geral */
+/* ── Layout base ─────────────────────────────────────────────────────────── */
 .dashboardContainer {
   display: flex;
   min-height: 100vh;
-  background: linear-gradient(135deg, #f0f4f8 0%, #e0e7ef 100%);
+  background-color: #f1f5f9;
 }
 
-/* Logo Container */
-.logoContainer {
-  padding: 20px 0 20px 0;
-  text-align: center;
-}
-
-.logo {
-  width: 100px;
-  height: auto;
-}
-
-/* Sidebar (aside) para desktop */
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
 .aside {
-  width: 250px;
-  background-color: #ffffff;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  width: 240px;
+  background-color: #0f172a;
   position: fixed;
   top: 0;
   left: 0;
@@ -30,90 +16,215 @@
   z-index: 10;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
-/* Drawer Content (usado tanto no desktop quanto no mobile) */
+/* ── Logo ────────────────────────────────────────────────────────────────── */
+.logoContainer {
+  padding: 20px 20px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.logo {
+  width: 120px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
+}
+
+/* ── Drawer content ──────────────────────────────────────────────────────── */
 .drawerContent {
   display: flex;
   flex-direction: column;
   height: 100%;
-  justify-content: space-between;
-  padding: 20px;
+  overflow: hidden;
 }
 
-/* Itens de navegação */
-.navItem,
-.exitContainer {
-  padding: 15px 20px;
-  color: #555;
-  font-size: 16px;
-  font-weight: 500;
+.navScroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px 0;
+  scrollbar-width: none;
+}
+.navScroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── User badge ──────────────────────────────────────────────────────────── */
+.userBadge {
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 8px;
-  background: linear-gradient(135deg, #fafafa 0%, #f9f9f9 100%);
-  margin-bottom: 10px;
-  height: 48px;
+  margin: 10px 12px 4px;
+  flex-shrink: 0;
+}
+
+.userAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.userName {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userRole {
+  font-size: 0.68rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Section label ───────────────────────────────────────────────────────── */
+.sectionLabel {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 14px 8px 4px;
+}
+
+/* ── Nav item ────────────────────────────────────────────────────────────── */
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 7px;
+  margin-bottom: 2px;
   cursor: pointer;
-  transition: background 0.3s ease, color 0.3s ease, transform 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: background 0.15s ease, color 0.15s ease;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  position: relative;
 }
 
 .navItem:hover {
-  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-  color: #ffffff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
 }
 
-.active {
-  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-  color: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Botão de sair */
-[data-exit="true"] {
-  align-self: flex-end;
-  background: linear-gradient(135deg, #f73a3a 0%, #d62f2f 100%);
+.navItem.active {
+  background: rgba(59, 130, 246, 0.15);
   color: #fff;
-  margin-top: 100px;
 }
 
-[data-exit="true"]:hover {
-  align-self: flex-end;
-  background: linear-gradient(135deg, #db3333 0%, #b92929 100%);
+.navItem.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 20%;
+  height: 60%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: #3b82f6;
 }
 
-/* AppBar para mobile */
+.navItemIcon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+}
+
+.navItem.active .navItemIcon {
+  opacity: 1;
+}
+
+/* ── Divider ─────────────────────────────────────────────────────────────── */
+.navDivider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 8px 0;
+}
+
+/* ── Logout ──────────────────────────────────────────────────────────────── */
+.logoutArea {
+  flex-shrink: 0;
+  padding: 8px 12px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.logoutBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+
+.logoutBtn:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+}
+
+/* ── AppBar mobile ───────────────────────────────────────────────────────── */
 .appBar {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background-color: #0f172a !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) !important;
 }
 
-/* Conteúdo principal */
+.appBarLogo {
+  height: 32px;
+  width: auto;
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
+}
+
+/* ── Main content ────────────────────────────────────────────────────────── */
 .mainContent {
   flex-grow: 1;
-  padding: 30px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  min-height: 100vh;
   overflow-y: auto;
+  background-color: #f1f5f9;
 }
 
-/* Ajustes para mobile (telas menores que 960px) */
-@media (max-width: 960px) {
+@media (min-width: 961px) {
   .mainContent {
-    margin-top: 100px; /* Espaço para o AppBar fixo */
-    margin-left: 0;
-    border-radius: 0;
-    padding: 20px;
-    width: 100%;
-    box-sizing: border-box;
+    margin-left: 240px;
   }
 }
 
-/* Ajustes para desktop (telas maiores que 960px) */
-@media (min-width: 961px) {
+@media (max-width: 960px) {
   .mainContent {
-    margin-left: 250px; /* Espaço para a sidebar fixa */
-    border-radius: 12px 0 0 12px;
+    margin-top: 56px;
   }
 }

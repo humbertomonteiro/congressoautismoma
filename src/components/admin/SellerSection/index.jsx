@@ -53,6 +53,7 @@ import {
 } from "react-icons/md";
 import { FaWhatsapp, FaPix } from "react-icons/fa6";
 import styles from "./sellerSection.module.css";
+import useRole from "../../../data/hooks/useRole";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -104,6 +105,7 @@ const EMPTY_FORM = {
 // ─── componente principal ────────────────────────────────────────────────────
 
 const SellerSection = () => {
+  const { canEdit, canDelete } = useRole();
   const [sellers, setSellers] = useState([]);
   const [salesMap, setSalesMap] = useState({}); // name → { count, totalAmount }
   const [paymentsMap, setPaymentsMap] = useState({}); // sellerId → totalPaid
@@ -565,28 +567,32 @@ const SellerSection = () => {
                           <MdPayments size={16} />
                         </IconButton>
                       </Tooltip>
-                      <IconButton
-                        size="small"
-                        className={styles.editBtn}
-                        onClick={() => handleEdit(seller)}
-                        title="Editar"
-                      >
-                        <MdEdit size={16} />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        className={styles.deleteBtn}
-                        onClick={() =>
-                          setDeleteDialog({
-                            open: true,
-                            id: seller.id,
-                            name: seller.name,
-                          })
-                        }
-                        title="Remover"
-                      >
-                        <MdDelete size={16} />
-                      </IconButton>
+                      {canEdit && (
+                        <IconButton
+                          size="small"
+                          className={styles.editBtn}
+                          onClick={() => handleEdit(seller)}
+                          title="Editar"
+                        >
+                          <MdEdit size={16} />
+                        </IconButton>
+                      )}
+                      {canDelete && (
+                        <IconButton
+                          size="small"
+                          className={styles.deleteBtn}
+                          onClick={() =>
+                            setDeleteDialog({
+                              open: true,
+                              id: seller.id,
+                              name: seller.name,
+                            })
+                          }
+                          title="Remover"
+                        >
+                          <MdDelete size={16} />
+                        </IconButton>
+                      )}
                     </Box>
                   </Box>
 

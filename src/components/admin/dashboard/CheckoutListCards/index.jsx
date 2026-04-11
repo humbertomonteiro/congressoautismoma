@@ -254,79 +254,42 @@ const CheckoutListCards = ({
   };
 
   return (
-    <Card
-      sx={{
-        backgroundColor: "#FFFFFF",
-        borderRadius: "12px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-      }}
-    >
+    <Card sx={{
+      backgroundColor: "#fff",
+      borderRadius: "12px",
+      border: "1px solid #e2e8f0",
+      boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+    }}>
       <CardContent sx={{ p: "20px" }}>
         {/* Header */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            flexWrap: "wrap",
-            mb: 2,
-            gap: 2,
-          }}
-        >
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", mb: 2, gap: 2 }}>
           <Box>
-            <Typography variant="h6" sx={{ color: "#333333", fontWeight: 500 }}>
+            <Typography sx={{ color: "#0f172a", fontWeight: 700, fontSize: "0.95rem" }}>
               {allCheckouts.length} Checkouts
             </Typography>
-            <Box
-              sx={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: isMobile ? 0.5 : 2,
-                mt: 0.5,
-              }}
-            >
-              <Typography
-                variant="body2"
-                sx={{ fontWeight: 500, fontSize: ".80rem", color: "#666" }}
-              >
-                Aprovados: {filteredMetrics?.approvedCount || 0}
-              </Typography>
-              {!isMobile && <Typography color="#ccc">|</Typography>}
-              <Typography
-                variant="body2"
-                sx={{ fontWeight: 500, fontSize: ".80rem", color: "#666" }}
-              >
-                Pendentes: {filteredMetrics?.pendingCount || 0}
-              </Typography>
-              {!isMobile && <Typography color="#ccc">|</Typography>}
-              <Typography
-                variant="body2"
-                sx={{ fontWeight: 500, fontSize: ".80rem", color: "#666" }}
-              >
-                Erros: {filteredMetrics?.errorCount || 0}
-              </Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: isMobile ? 0.5 : 1.5, mt: 0.5 }}>
+              {[
+                { label: "Aprovados", count: filteredMetrics?.approvedCount || 0, color: "#16a34a" },
+                { label: "Pendentes", count: filteredMetrics?.pendingCount || 0, color: "#d97706" },
+                { label: "Erros", count: filteredMetrics?.errorCount || 0, color: "#dc2626" },
+              ].map(({ label, count, color }, i) => (
+                <Box key={label} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  {i > 0 && !isMobile && <Typography sx={{ color: "#e2e8f0" }}>·</Typography>}
+                  <Typography sx={{ fontSize: "0.78rem", color: "#64748b" }}>
+                    {label}: <span style={{ color, fontWeight: 600 }}>{count}</span>
+                  </Typography>
+                </Box>
+              ))}
             </Box>
           </Box>
 
-          <Box
-            sx={{
-              display: "flex",
-              gap: 1,
-              flexWrap: "wrap",
-              alignItems: "center",
-            }}
-          >
+          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
             {isMobile && (
               <>
                 <Button
                   variant="outlined"
                   onClick={() => setOpenFiltersDrawer(true)}
-                  sx={{
-                    borderColor: "#1976D2",
-                    color: "#1976D2",
-                    borderRadius: "8px",
-                    textTransform: "none",
-                  }}
+                  sx={{ borderColor: "#e2e8f0", color: "#475569", borderRadius: "8px", textTransform: "none", fontSize: "0.82rem" }}
                 >
                   Filtros
                 </Button>
@@ -343,35 +306,16 @@ const CheckoutListCards = ({
                 </Drawer>
               </>
             )}
-            <Button
-              variant="outlined"
-              onClick={exportToExcel}
-              sx={{
-                borderColor: "#1976D2",
-                color: "#1976D2",
-                borderRadius: "8px",
-                textTransform: "none",
-              }}
-            >
+            <Button variant="outlined" onClick={exportToExcel}
+              sx={{ borderColor: "#e2e8f0", color: "#475569", borderRadius: "8px", textTransform: "none", fontSize: "0.82rem" }}>
               Excel
             </Button>
-            <Button
-              variant="outlined"
-              onClick={exportToPDF}
-              sx={{
-                borderColor: "#1976D2",
-                color: "#1976D2",
-                borderRadius: "8px",
-                textTransform: "none",
-              }}
-            >
+            <Button variant="outlined" onClick={exportToPDF}
+              sx={{ borderColor: "#e2e8f0", color: "#475569", borderRadius: "8px", textTransform: "none", fontSize: "0.82rem" }}>
               PDF
             </Button>
-            <Button
-              variant="contained"
-              onClick={handleToggleViewMode}
-              sx={{ borderRadius: "8px", textTransform: "none" }}
-            >
+            <Button variant="contained" onClick={handleToggleViewMode}
+              sx={{ borderRadius: "8px", textTransform: "none", fontSize: "0.82rem", backgroundColor: "#3b82f6", boxShadow: "none", "&:hover": { backgroundColor: "#2563eb", boxShadow: "none" } }}>
               {viewMode === "cards" ? "Ver Tabela" : "Ver Cards"}
             </Button>
           </Box>
@@ -423,14 +367,7 @@ const CheckoutListCards = ({
                     "Taxa",
                     "Líquido",
                   ].map((h) => (
-                    <TableCell
-                      key={h}
-                      sx={{
-                        backgroundColor: "#F5F5F5",
-                        fontWeight: "bold",
-                        fontSize: "0.8rem",
-                      }}
-                    >
+                    <TableCell key={h} sx={{ backgroundColor: "#f8fafc", fontWeight: 700, fontSize: "0.78rem", color: "#475569" }}>
                       {h}
                     </TableCell>
                   ))}
@@ -520,33 +457,17 @@ const CheckoutListCards = ({
             gap: 1,
           }}
         >
-          <Button
-            variant="outlined"
-            size="small"
-            disabled={page === 0}
+          <Button variant="outlined" size="small" disabled={page === 0}
             onClick={() => setPage((p) => p - 1)}
-            sx={{ borderRadius: "8px", textTransform: "none", minWidth: 90 }}
-          >
+            sx={{ borderRadius: "8px", textTransform: "none", fontSize: "0.82rem", borderColor: "#e2e8f0", color: "#475569" }}>
             ← Anterior
           </Button>
-          <Typography
-            sx={{
-              mx: 1,
-              color: "#555",
-              fontSize: "0.85rem",
-              minWidth: 100,
-              textAlign: "center",
-            }}
-          >
+          <Typography sx={{ mx: 1, color: "#94a3b8", fontSize: "0.82rem", minWidth: 100, textAlign: "center" }}>
             Página {page + 1} de {totalPages}
           </Typography>
-          <Button
-            variant="outlined"
-            size="small"
-            disabled={page + 1 >= totalPages}
+          <Button variant="outlined" size="small" disabled={page + 1 >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-            sx={{ borderRadius: "8px", textTransform: "none", minWidth: 90 }}
-          >
+            sx={{ borderRadius: "8px", textTransform: "none", fontSize: "0.82rem", borderColor: "#e2e8f0", color: "#475569" }}>
             Próxima →
           </Button>
         </Box>

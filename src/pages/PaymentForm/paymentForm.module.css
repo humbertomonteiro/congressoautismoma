@@ -75,7 +75,7 @@
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   padding: 20px;
-  margin: 20px 0;
+  margin-top: 20px;
 }
 
 /* Descrição do evento */
@@ -159,6 +159,10 @@
   color: #555;
   font-size: 16px;
   margin: 5px 0;
+}
+
+.orderSummary .infoCoupon {
+  margin: 0 0 1rem 0;
 }
 
 .total {
@@ -462,6 +466,12 @@ input[type="checkbox"] {
 }
 
 @media (max-width: 480px) {
+  .container {
+    padding: 50px 0 50px 0;
+  }
+  .content {
+    padding: 20px;
+  }
   .step {
     font-size: 0.7rem;
   }

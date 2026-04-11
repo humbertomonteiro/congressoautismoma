@@ -26,7 +26,7 @@ import { db } from "../../../../../firebaseConfig";
 import PaymentService from "../../../../data/services/PaymentService";
 import { toast } from "react-toastify";
 import { FaRegEdit } from "react-icons/fa";
-import { data } from "react-router-dom";
+import useRole from "../../../../data/hooks/useRole";
 
 const EMAIL_FROM = import.meta.env.VITE_EMAIL_FROM;
 
@@ -83,6 +83,7 @@ const ModalCheckoutDetails = ({
   });
   const [isEditingOrderDetails, setIsEditingOrderDetails] = useState(false);
   const [editingParticipantIndex, setEditingParticipantIndex] = useState(null);
+  const { canEdit } = useRole();
 
   const handleInputChange = (index, field, value) => {
     const updatedParticipants = [...participants];
@@ -414,22 +415,24 @@ const ModalCheckoutDetails = ({
                 </Box>
               </AccordionSummary>
               <AccordionDetails>
-                <Button
-                  variant="outlined"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditingParticipantIndex(
-                      editingParticipantIndex === index ? null : index
-                    );
-                  }}
-                  sx={{ mb: 2 }}
-                >
-                  {editingParticipantIndex === index ? (
-                    "Cancelar"
-                  ) : (
-                    <FaRegEdit />
-                  )}
-                </Button>
+                {canEdit && (
+                  <Button
+                    variant="outlined"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingParticipantIndex(
+                        editingParticipantIndex === index ? null : index
+                      );
+                    }}
+                    sx={{ mb: 2 }}
+                  >
+                    {editingParticipantIndex === index ? (
+                      "Cancelar"
+                    ) : (
+                      <FaRegEdit />
+                    )}
+                  </Button>
+                )}
                 {editingParticipantIndex === index ? (
                   <>
                     <TextField
@@ -570,12 +573,14 @@ const ModalCheckoutDetails = ({
             >
               Detalhes do Pedido
             </Typography>
-            <Button
-              variant="outlined"
-              onClick={() => setIsEditingOrderDetails(!isEditingOrderDetails)}
-            >
-              {isEditingOrderDetails ? "Cancelar" : <FaRegEdit />}
-            </Button>
+            {canEdit && (
+              <Button
+                variant="outlined"
+                onClick={() => setIsEditingOrderDetails(!isEditingOrderDetails)}
+              >
+                {isEditingOrderDetails ? "Cancelar" : <FaRegEdit />}
+              </Button>
+            )}
           </Box>
           <Box sx={{ display: "flex", gap: 1, alignItems: "start", mb: 3 }}>
             {isEditingOrderDetails ? (

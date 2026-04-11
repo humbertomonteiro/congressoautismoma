@@ -90,37 +90,43 @@ const PaymentForm = () => {
     const legacyTickets = parseInt(searchParams.get("tickets")) || 0;
     const legacyType = searchParams.get("type");
 
+    // Resolve as quantidades finais (URL tem prioridade sobre o estado inicial)
+    let resolvedAll = formState.allTickets;
+    let resolvedHalf = formState.halfTickets;
+    let resolvedSocial = formState.socialTickets;
+
     if (allParam > 0 || halfParam > 0 || socialParam > 0) {
-      setFormState((prev) => ({
-        ...prev,
-        allTickets: allParam,
-        halfTickets: halfParam,
-        socialTickets: socialParam,
-      }));
+      resolvedAll = allParam;
+      resolvedHalf = halfParam;
+      resolvedSocial = socialParam;
     } else if (legacyTickets > 0) {
       if (legacyType === "half") {
-        setFormState((prev) => ({
-          ...prev,
-          allTickets: 0,
-          halfTickets: legacyTickets,
-        }));
+        resolvedAll = 0;
+        resolvedHalf = legacyTickets;
       } else if (legacyType === "social") {
-        setFormState((prev) => ({
-          ...prev,
-          allTickets: 0,
-          socialTickets: legacyTickets,
-        }));
+        resolvedAll = 0;
+        resolvedSocial = legacyTickets;
       } else {
-        setFormState((prev) => ({ ...prev, allTickets: legacyTickets }));
+        resolvedAll = legacyTickets;
       }
     }
 
+    // Atualiza tudo de uma vez para evitar múltiplos renders
+    setFormState((prev) => ({
+      ...prev,
+      allTickets: resolvedAll,
+      halfTickets: resolvedHalf,
+      socialTickets: resolvedSocial,
+    }));
+
     if (couponParam && !isCouponAppliedInitially) {
-      setFormState((prev) => ({
-        ...prev,
-        coupon: { code: couponParam, isApplied: true },
-      }));
-      handleApplyCoupon(null, couponParam);
+      // Passa as quantidades resolvidas diretamente para evitar ler
+      // o estado ainda não atualizado dentro do hook
+      handleApplyCoupon(null, couponParam, {
+        allTickets: resolvedAll,
+        halfTickets: resolvedHalf,
+        socialTickets: resolvedSocial,
+      }, true);
       setIsCouponAppliedInitially(true);
     }
 
@@ -357,7 +363,7 @@ const PaymentForm = () => {
               )}
 
               {formState.coupon.isApplied && (
-                <p>
+                <p className={styles.infoCoupon}>
                   Cupom <strong>{formState.coupon.code}</strong> aplicado —
                   Desconto: R$ {totals.discount}
                 </p>

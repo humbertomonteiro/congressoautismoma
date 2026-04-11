@@ -235,12 +235,16 @@ const useDashboardData = () => {
             parseFloat(data.totalAmount) ||
             parseFloat(data.orderDetails?.total) ||
             0;
-          const fullTickets = data.orderDetails?.fullTickets || 0;
+          // "allTickets" é o campo atual (manual e backend novo); "fullTickets" é legado
+          const fullTickets =
+            data.orderDetails?.fullTickets ?? data.orderDetails?.allTickets ?? 0;
           const halfTickets = data.orderDetails?.halfTickets || 0;
+          const socialTickets = data.orderDetails?.socialTickets || 0;
 
           if (data.status === "approved") {
             acc.successTicketsFull += fullTickets;
             acc.successTicketsHalf += halfTickets;
+            acc.successTicketsSocial += socialTickets;
             acc.successValueGross += amount;
             acc.successCount += 1;
 
@@ -257,35 +261,35 @@ const useDashboardData = () => {
                 acc.totalFeeMasterVisa += fee;
                 acc.totalGrossMasterVisa += amount;
                 acc.totalTicketsMasterVisa =
-                  (acc.totalTicketsMasterVisa || 0) + fullTickets + halfTickets;
+                  (acc.totalTicketsMasterVisa || 0) + fullTickets + halfTickets + socialTickets;
               } else if (brand === "elo") {
                 fee = amount * 0.0509;
                 acc.totalFeeElo += fee;
                 acc.totalGrossElo += amount;
                 acc.totalTicketsElo =
-                  (acc.totalTicketsElo || 0) + fullTickets + halfTickets;
+                  (acc.totalTicketsElo || 0) + fullTickets + halfTickets + socialTickets;
               } else {
                 fee = amount * 0.0449;
                 acc.totalGrossOthers += amount;
                 acc.totalTicketsOthers =
-                  (acc.totalTicketsOthers || 0) + fullTickets + halfTickets;
+                  (acc.totalTicketsOthers || 0) + fullTickets + halfTickets + socialTickets;
               }
             } else if (method === "pix") {
               fee = amount * 0.0099;
               acc.totalFeePix += fee;
               acc.totalGrossPix += amount;
               acc.totalTicketsPix =
-                (acc.totalTicketsPix || 0) + fullTickets + halfTickets;
+                (acc.totalTicketsPix || 0) + fullTickets + halfTickets + socialTickets;
             } else if (method === "boleto") {
               fee = 5.0;
               acc.totalFeeBoleto += fee;
               acc.totalGrossBoleto += amount;
               acc.totalTicketsBoleto =
-                (acc.totalTicketsBoleto || 0) + fullTickets + halfTickets;
+                (acc.totalTicketsBoleto || 0) + fullTickets + halfTickets + socialTickets;
             } else {
               acc.totalGrossOthers += amount;
               acc.totalTicketsOthers =
-                (acc.totalTicketsOthers || 0) + fullTickets + halfTickets;
+                (acc.totalTicketsOthers || 0) + fullTickets + halfTickets + socialTickets;
             }
 
             acc.successValueNet += amount - fee;
@@ -302,6 +306,7 @@ const useDashboardData = () => {
           totalDocs: 0,
           successTicketsFull: 0,
           successTicketsHalf: 0,
+          successTicketsSocial: 0,
           successValueGross: 0,
           successValueNet: 0,
           pendingCount: 0,

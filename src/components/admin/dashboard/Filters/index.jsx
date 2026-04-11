@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Box,
   Typography,
@@ -8,14 +7,11 @@ import {
   MenuItem,
   TextField,
   Button,
-  Checkbox,
-  FormControlLabel,
 } from "@mui/material";
 import { useDashboard } from "../../../../data/contexts/DashboardContext";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { startOfDay, endOfDay } from "date-fns";
-import { format } from "date-fns";
+import { endOfDay } from "date-fns";
 
 const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
   const {
@@ -30,11 +26,10 @@ const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
     startDateFilter,
     setStartDateFilter,
     endDateFilter,
-    attendedFilter,
+    setEndDateFilter,
     setAttendedFilter,
     eventFilter,
     setEventFilter,
-    setEndDateFilter,
   } = useDashboard();
 
   const handleStartDateChange = (date) => {
@@ -77,10 +72,7 @@ const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
 
   return (
     <Box sx={{ p: "20px" }}>
-      <Typography
-        variant="h6"
-        sx={{ color: "#333333", fontWeight: 500, mb: 2, borderRadius: "12px" }}
-      >
+      <Typography sx={{ color: "#0f172a", fontWeight: 700, fontSize: "0.95rem", mb: 2 }}>
         Filtros
       </Typography>
       <Box
@@ -91,7 +83,7 @@ const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
         }}
       >
         <FormControl fullWidth>
-          <InputLabel sx={{ color: "#666666" }}>Evento</InputLabel>
+          <InputLabel sx={{ color: "#64748b" }}>Evento</InputLabel>
           <Select
             value={eventFilter}
             onChange={(e) => setEventFilter(e.target.value)}
@@ -213,11 +205,12 @@ const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
           variant="outlined"
           onClick={handleClearFilters}
           sx={{
-            borderColor: "#D32F2F",
-            color: "#D32F2F",
+            borderColor: "#fecaca",
+            color: "#dc2626",
             borderRadius: "10px",
             textTransform: "none",
-            "&:hover": { borderColor: "#B71C1C", color: "#B71C1C" },
+            fontSize: "0.85rem",
+            "&:hover": { borderColor: "#dc2626", backgroundColor: "#fff1f2" },
           }}
         >
           Limpar Filtros
