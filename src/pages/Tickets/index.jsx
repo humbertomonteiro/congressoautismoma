@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { jsPDF } from "jspdf";
 import { toast } from "react-toastify";
 import { db } from "../../../firebaseConfig";
+import useEventConfig from "../../data/hooks/useEventConfig";
 import {
   collectionGroup,
   query,
@@ -13,8 +14,6 @@ import { QRCodeSVG } from "qrcode.react";
 import logo from "../../assets/logos/logo-no-text.png";
 import html2canvas from "html2canvas";
 
-const EVENT_DATES = ["2026-05-16", "2026-05-17"];
-
 // Monta o valor do QR para uma data específica a partir do qrToken salvo
 const buildQrValue = (qrToken, date) => {
   if (!qrToken) return "";
@@ -25,7 +24,16 @@ const buildQrValue = (qrToken, date) => {
   }
 };
 
+const formatDateDot = (isoDate) => {
+  const [y, m, d] = isoDate.split("-");
+  return `${d}.${m}.${y}`;
+};
+
 const Tickets = () => {
+  const { config: eventConfig } = useEventConfig();
+  const EVENT_DATES = eventConfig.eventDates;
+  const EVENT_NAME_UPPER = eventConfig.eventName.toUpperCase();
+
   const [identifier, setIdentifier] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -125,7 +133,7 @@ const Tickets = () => {
       const checkoutData = checkoutSnap.data();
       if (
         checkoutData.status === "approved" &&
-        checkoutData.eventName === "Congresso Autismo MA 2026"
+        checkoutData.eventName === eventConfig.eventName
       ) {
         return {
           checkout: { id: checkoutSnap.id, ...checkoutData },
@@ -325,12 +333,12 @@ const Tickets = () => {
                 bottom: "10px",
               }}
             >
-              CONGRESSO AUTISMO MA 2026
+              {EVENT_NAME_UPPER}
             </div>
           </div>
 
           {/* Ingresso Dia 1 */}
-          {EVENT_DATES.map((date, idx) => (
+          {EVENT_DATES.map((date) => (
             <div
               key={date}
               style={{
@@ -358,13 +366,13 @@ const Tickets = () => {
                     marginBottom: "10px",
                   }}
                 >
-                  CONGRESSO AUTISMO MA 2026
+                  {EVENT_NAME_UPPER}
                 </div>
                 <div style={{ fontSize: "10px", marginBottom: "5px" }}>
                   NOME: {participant?.name?.toUpperCase() || ""}
                 </div>
                 <div style={{ fontSize: "10px", marginBottom: "5px" }}>
-                  DATA: {idx === 0 ? "16.05.2026" : "17.05.2026"}
+                  DATA: {formatDateDot(date)}
                 </div>
                 <div style={{ fontSize: "10px" }}>HORÁRIO: 08:00 - 18:00</div>
               </div>

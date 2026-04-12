@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { FaWhatsapp, FaPaperPlane } from "react-icons/fa";
 import styles from "./Chatbot.module.css";
+import useEventConfig from "../../../data/hooks/useEventConfig";
 
 const Chatbot = ({ isOpen, onClose, initialTicketType }) => {
   const whatsappNumber = "5598988259214";
+  const { config: eventConfig } = useEventConfig();
   const ticketPrices = {
-    full: 499.9,
-    half: 399.9,
-    group: 449.9,
+    full:  eventConfig.ticketPrices.full,
+    half:  eventConfig.ticketPrices.half,
+    group: eventConfig.ticketPrices.full,
   };
 
   const [state, setState] = useState({

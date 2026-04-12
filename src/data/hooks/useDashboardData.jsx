@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { db } from "../../../firebaseConfig";
+import { DEFAULT_EVENT_CONFIG } from "./useEventConfig";
 import {
   collection,
   query,
@@ -60,7 +61,7 @@ const useDashboardData = () => {
   const [startDateFilter, setStartDateFilter] = useState("");
   const [endDateFilter, setEndDateFilter] = useState("");
   const [attendedFilter, setAttendedFilter] = useState(false);
-  const [eventFilter, setEventFilter] = useState("Congresso Autismo MA 2026");
+  const [eventFilter, setEventFilter] = useState(DEFAULT_EVENT_CONFIG.eventName);
   const [eventOptions, setEventOptions] = useState([]);
   const [metrics, setMetrics] = useState(null);
   const [filteredMetrics, setFilteredMetrics] = useState(null);

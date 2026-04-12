@@ -29,6 +29,7 @@ import {
   MdBadge,
 } from "react-icons/md";
 import useRole from "../../../../data/hooks/useRole";
+import useEventConfig from "../../../../data/hooks/useEventConfig";
 
 const EMAIL_FROM = import.meta.env.VITE_EMAIL_FROM;
 
@@ -95,6 +96,7 @@ const ModalCheckoutDetails = ({
   message,
   updateCheckoutInContext,
 }) => {
+  const { config: eventConfig } = useEventConfig();
   const [participants, setParticipants] = useState(
     checkout?.participants ?? []
   );
@@ -251,7 +253,7 @@ const ModalCheckoutDetails = ({
       checkoutId: checkout.id,
       from: EMAIL_FROM,
       to: participant.email,
-      subject: "Confirmação de Pagamento - Congresso Autismo MA 2026",
+      subject: `Confirmação de Pagamento - ${eventConfig.eventName}`,
       data: {
         name: participant.name,
         transactionId: checkout.transactionId,

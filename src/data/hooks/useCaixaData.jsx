@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../../../firebaseConfig";
 import { toast } from "react-toastify";
+import useEventConfig from "./useEventConfig";
 
 export const RECEITA_CATEGORIES = [
   { value: "ingressos", label: "Ingressos" },
@@ -33,16 +34,18 @@ export const DESPESA_CATEGORIES = [
   { value: "outros", label: "Outros" },
 ];
 
-const EVENT_NAME = "Congresso Autismo MA 2026";
-
 const formatCurrency = (value) => {
   const num = parseFloat(value) || 0;
   return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 };
 
 const useCaixaData = () => {
+  const { config: eventConfig } = useEventConfig();
+  const eventName = eventConfig.eventName;
+
   const [entries, setEntries] = useState([]);
   const [pendingCheckouts, setPendingCheckouts] = useState([]);
+  const [approvedOnlineCheckouts, setApprovedOnlineCheckouts] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const fetchEntries = useCallback(async () => {
@@ -51,7 +54,7 @@ const useCaixaData = () => {
       const snap = await getDocs(
         query(
           collection(db, "caixa_entries"),
-          where("eventName", "==", EVENT_NAME),
+          where("eventName", "==", eventName),
           orderBy("timestamp", "desc")
         )
       );
@@ -61,14 +64,14 @@ const useCaixaData = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [eventName]);
 
   const fetchPendingCheckouts = useCallback(async () => {
     try {
       const snap = await getDocs(
         query(
           collection(db, "checkouts"),
-          where("eventName", "==", EVENT_NAME),
+          where("eventName", "==", eventName),
           where("status", "==", "pending")
         )
       );
@@ -78,21 +81,40 @@ const useCaixaData = () => {
     } catch (err) {
       console.error("Erro ao carregar checkouts pendentes:", err);
     }
-  }, []);
+  }, [eventName]);
+
+  // Busca ingressos aprovados via gateway (PIX, cartão, boleto)
+  // Exclui checkouts manuais de vendedor pois esses já entram em caixa_entries via approveCheckout
+  const fetchApprovedOnlineCheckouts = useCallback(async () => {
+    try {
+      const snap = await getDocs(
+        query(
+          collection(db, "checkouts"),
+          where("eventName", "==", eventName),
+          where("status", "==", "approved")
+        )
+      );
+      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setApprovedOnlineCheckouts(docs.filter((c) => !(c.seller && c.paymentDetails?.manual)));
+    } catch (err) {
+      console.error("Erro ao carregar checkouts aprovados:", err);
+    }
+  }, [eventName]);
 
   useEffect(() => {
     fetchEntries();
     fetchPendingCheckouts();
-  }, [fetchEntries, fetchPendingCheckouts]);
+    fetchApprovedOnlineCheckouts();
+  }, [fetchEntries, fetchPendingCheckouts, fetchApprovedOnlineCheckouts]);
 
   const addEntry = async (entry) => {
     try {
       const docRef = await addDoc(collection(db, "caixa_entries"), {
         ...entry,
-        eventName: EVENT_NAME,
+        eventName: eventName,
         timestamp: Timestamp.now().toMillis(),
       });
-      const newEntry = { id: docRef.id, ...entry, eventName: EVENT_NAME, timestamp: Timestamp.now().toMillis() };
+      const newEntry = { id: docRef.id, ...entry, eventName: eventName, timestamp: Timestamp.now().toMillis() };
       setEntries((prev) => [newEntry, ...prev]);
       toast.success("Lançamento adicionado!");
     } catch (err) {
@@ -159,11 +181,18 @@ const useCaixaData = () => {
     const receitas = entries.filter((e) => e.type === "receita");
     const despesas = entries.filter((e) => e.type === "despesa");
 
-    const totalReceitas = receitas.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+    // Valor bruto dos ingressos aprovados via gateway (não manuais de vendedor)
+    const receitaIngressosOnline = approvedOnlineCheckouts.reduce(
+      (s, c) => s + (parseFloat(c.totalAmount) || parseFloat(c.orderDetails?.total) || 0),
+      0
+    );
+
+    const totalReceitasEntries = receitas.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+    const totalReceitas = totalReceitasEntries + receitaIngressosOnline;
     const totalDespesas = despesas.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
     const saldo = totalReceitas - totalDespesas;
 
-    // Receitas por categoria
+    // Receitas por categoria (entradas manuais)
     const receitaByCategory = RECEITA_CATEGORIES.reduce((acc, cat) => {
       acc[cat.value] = receitas
         .filter((e) => e.category === cat.value)
@@ -171,7 +200,10 @@ const useCaixaData = () => {
       return acc;
     }, {});
 
-    // Dentro de ingressos: separar vendedores vs direto
+    // Soma ingressos online à categoria "ingressos"
+    receitaByCategory["ingressos"] += receitaIngressosOnline;
+
+    // Dentro de ingressos: separar vendedores vs gateway
     const receitaVendedores = receitas
       .filter((e) => e.category === "ingressos" && e.subcategory === "vendedor")
       .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
@@ -193,6 +225,7 @@ const useCaixaData = () => {
       receitaByCategory,
       receitaVendedores,
       receitaIngressosDireto,
+      receitaIngressosOnline,
       despesaByCategory,
       pendingCount: pendingCheckouts.length,
       pendingValue: pendingCheckouts.reduce(
@@ -211,7 +244,7 @@ const useCaixaData = () => {
     deleteEntry,
     approveCheckout,
     rejectCheckout,
-    refresh: () => { fetchEntries(); fetchPendingCheckouts(); },
+    refresh: () => { fetchEntries(); fetchPendingCheckouts(); fetchApprovedOnlineCheckouts(); },
     formatCurrency,
     RECEITA_CATEGORIES,
     DESPESA_CATEGORIES,

@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import PaymentService from "../services/PaymentService";
+import useEventConfig from "./useEventConfig";
 
 const EMAIL_FROM = import.meta.env.VITE_EMAIL_FROM;
 
@@ -35,6 +36,8 @@ const deriveTicketType = (index, allTickets, halfTickets) => {
 };
 
 const usePaymentForm = () => {
+  const { config: eventConfig } = useEventConfig();
+
   const [formState, setFormState] = useState({
     paymentMethod: "creditCard",
     loading: false,
@@ -377,7 +380,7 @@ const usePaymentForm = () => {
               participantId,
               from: EMAIL_FROM,
               to: participant.email,
-              subject: "Confirmação de Pagamento - Congresso Autismo MA 2026",
+              subject: `Confirmação de Pagamento - ${eventConfig.eventName}`,
               data: {
                 name: participant.name,
                 transactionId: response.transactionId,

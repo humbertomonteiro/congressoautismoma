@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import useEventConfig from "../../../../data/hooks/useEventConfig";
 import axios from "axios";
 import {
   Dialog,
@@ -67,8 +68,6 @@ const CHECKED_IN_OPTIONS = [
   { value: "true", label: "Já credenciado no evento" },
   { value: "false", label: "Ainda não credenciado" },
 ];
-
-const EVENT_DATES = ["2026-05-16", "2026-05-17"];
 
 // ── Converte objeto de filtros salvo → estado do formulário ──────────────────
 function filtersToForm(filters = {}) {
@@ -140,6 +139,8 @@ export default function AudienceForm({
   onClose,
 }) {
   const isEdit = !!initialData?.id;
+  const { config: eventConfig } = useEventConfig();
+  const EVENT_DATES = eventConfig.eventDates;
 
   const [name, setName] = useState(initialData?.name ?? "");
   const [description, setDescription] = useState(

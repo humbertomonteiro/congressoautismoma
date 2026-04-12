@@ -613,6 +613,7 @@ const CaixaSection = () => {
           color="#2E7D32"
           items={[
             ...receitaBreakdown,
+            { label: "└ Online (gateway)", value: metrics.receitaIngressosOnline },
             { label: "└ Via vendedores", value: metrics.receitaVendedores },
           ]}
           formatCurrency={formatCurrency}

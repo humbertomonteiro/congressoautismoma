@@ -41,6 +41,7 @@ import { db } from "../../../../firebaseConfig";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import ManualAuth from "./ManualAuth";
 import styles from "./scanner.module.css";
+import useEventConfig from "../../../data/hooks/useEventConfig";
 
 // ── Configuração ─────────────────────────────────────────────────────────────
 const BASE_URL =
@@ -48,7 +49,6 @@ const BASE_URL =
     ? import.meta.env.VITE_BASE_URL_SANDBOX
     : import.meta.env.VITE_BASE_URL_PRODUCTION;
 
-const EVENT_DATES = ["2026-05-16", "2026-05-17"];
 const CACHE_KEY = "scanner_participants_v2";
 const PENDING_KEY = "scanner_pending_checkins";
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutos
@@ -110,7 +110,7 @@ const savePendingToStorage = (arr) => {
 };
 
 // ── Validação offline ────────────────────────────────────────────────────────
-const validateOffline = (qrData, participantsCache) => {
+const validateOffline = (qrData, participantsCache, eventDates) => {
   let parsed;
   try {
     parsed = JSON.parse(qrData);
@@ -127,7 +127,7 @@ const validateOffline = (qrData, participantsCache) => {
     return { type: "error", message: "QR Code incompleto." };
   }
 
-  if (!EVENT_DATES.includes(date)) {
+  if (!eventDates.includes(date)) {
     return {
       type: "error",
       message: `Data ${date} não é válida para este evento.`,
@@ -190,6 +190,11 @@ const validateOffline = (qrData, participantsCache) => {
 
 // ── Componente Principal ──────────────────────────────────────────────────────
 const Scanner = () => {
+  // Config do evento (tempo real via Firestore)
+  const { config: eventConfig } = useEventConfig();
+  const EVENT_NAME  = eventConfig.eventName;
+  const EVENT_DATES = eventConfig.eventDates;
+
   // Rede
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
@@ -259,9 +264,13 @@ const Scanner = () => {
     if (!isOnline) return;
     setCacheLoading(true);
     try {
-      // 1. Buscar checkouts aprovados
+      // 1. Buscar checkouts aprovados do evento atual
       const checkoutsSnap = await getDocs(
-        query(collection(db, "checkouts"), where("status", "==", "approved"))
+        query(
+          collection(db, "checkouts"),
+          where("status", "==", "approved"),
+          where("eventName", "==", EVENT_NAME)
+        )
       );
 
       // 2. Carregar participantes de cada checkout em paralelo
@@ -287,10 +296,11 @@ const Scanner = () => {
     } finally {
       setCacheLoading(false);
     }
-  }, [isOnline]);
+  }, [isOnline, EVENT_NAME]);
 
-  // Carrega cache na montagem
+  // Carrega cache na montagem e quando o evento muda
   useEffect(() => {
+    if (!EVENT_NAME) return; // aguarda o config carregar
     const cached = loadCacheFromStorage();
     if (cached && cached.length > 0) {
       setParticipantsCache(cached);
@@ -300,7 +310,7 @@ const Scanner = () => {
       loadParticipants();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [EVENT_NAME]);
 
   // ── Sincronizar check-ins offline ─────────────────────────────────────────
   const syncPendingCheckins = async () => {
@@ -383,7 +393,7 @@ const Scanner = () => {
 
       if (!isOnline) {
         // Validação offline
-        const offlineResult = validateOffline(qrText, participantsCache);
+        const offlineResult = validateOffline(qrText, participantsCache, EVENT_DATES);
         if (offlineResult.type === "success") {
           // Marca no cache e enfileira para sync
           updateCacheCheckin(

@@ -11,6 +11,7 @@ import {
   MdOutlineQrCodeScanner,
   MdOutlineWorkspacePremium,
   MdOutlineShoppingCart,
+  // MdOutlineSettings,
 } from "react-icons/md";
 import {
   AppBar,
@@ -33,6 +34,7 @@ import SellerSection from "../../components/admin/SellerSection";
 import UserManagementSection from "../../components/admin/UserManagementSection";
 import CouponManagementSection from "../../components/admin/CouponManagementSection";
 import CaixaSection from "../../components/admin/caixa/CaixaSection";
+import EventConfigSection from "../../components/admin/EventConfigSection";
 import { DashboardProvider } from "../../data/contexts/DashboardContext";
 import { useSearchParams } from "react-router-dom";
 
@@ -75,14 +77,22 @@ const AdminDashboard = () => {
 
   // Iniciais do nome para o avatar
   const initials = user?.name
-    ? user.name.trim().split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase()
+    ? user.name
+        .trim()
+        .split(" ")
+        .slice(0, 2)
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase()
     : "?";
 
   const NavItem = ({ section, icon, label, visible = true }) => {
     if (!visible) return null;
     return (
       <button
-        className={`${styles.navItem} ${activeSection === section ? styles.active : ""}`}
+        className={`${styles.navItem} ${
+          activeSection === section ? styles.active : ""
+        }`}
         onClick={() => handleSectionChange(section)}
       >
         <span className={styles.navItemIcon}>{icon}</span>
@@ -97,7 +107,8 @@ const AdminDashboard = () => {
   };
 
   // Decide quais grupos de seções ficam visíveis
-  const hasOperacional = canSeeDashboard || canSeeManualPayment || canSeeAccreditation;
+  const hasOperacional =
+    canSeeDashboard || canSeeManualPayment || canSeeAccreditation;
   const hasFinanceiro = canSeeCaixa;
   const hasGestao = canSeeSellers || canSeeEmails || canSeeCertificates;
   const hasAdmin = canSeeUserManagement;
@@ -120,24 +131,70 @@ const AdminDashboard = () => {
       {/* Nav agrupada com scroll */}
       <div className={styles.navScroll}>
         <SectionLabel label="Operacional" visible={hasOperacional} />
-        <NavItem section="dashboard" icon={<MdOutlineSpaceDashboard size={18} />} label="Dashboard" visible={canSeeDashboard} />
-        <NavItem section="checkout-manual" icon={<MdOutlineShoppingCart size={18} />} label="Add Checkout" visible={canSeeManualPayment} />
-        <NavItem section="accreditation" icon={<MdOutlineQrCodeScanner size={18} />} label="Credenciamento" visible={canSeeAccreditation} />
+        <NavItem
+          section="dashboard"
+          icon={<MdOutlineSpaceDashboard size={18} />}
+          label="Dashboard"
+          visible={canSeeDashboard}
+        />
+        <NavItem
+          section="checkout-manual"
+          icon={<MdOutlineShoppingCart size={18} />}
+          label="Add Checkout"
+          visible={canSeeManualPayment}
+        />
+        <NavItem
+          section="accreditation"
+          icon={<MdOutlineQrCodeScanner size={18} />}
+          label="Credenciamento"
+          visible={canSeeAccreditation}
+        />
 
         {hasFinanceiro && <div className={styles.navDivider} />}
         <SectionLabel label="Financeiro" visible={hasFinanceiro} />
-        <NavItem section="caixa" icon={<MdOutlineAccountBalance size={18} />} label="Caixa do Evento" visible={canSeeCaixa} />
+        <NavItem
+          section="caixa"
+          icon={<MdOutlineAccountBalance size={18} />}
+          label="Caixa do Evento"
+          visible={canSeeCaixa}
+        />
 
         {hasGestao && <div className={styles.navDivider} />}
         <SectionLabel label="Gestão" visible={hasGestao} />
-        <NavItem section="sellers" icon={<MdOutlineBadge size={18} />} label="Vendedores" visible={canSeeSellers} />
-        <NavItem section="emails" icon={<MdOutlineMarkEmailRead size={18} />} label="E-mails" visible={canSeeEmails} />
-        <NavItem section="certificate-generator" icon={<MdOutlineWorkspacePremium size={18} />} label="Certificados" visible={canSeeCertificates} />
+        <NavItem
+          section="sellers"
+          icon={<MdOutlineBadge size={18} />}
+          label="Vendedores"
+          visible={canSeeSellers}
+        />
+        <NavItem
+          section="emails"
+          icon={<MdOutlineMarkEmailRead size={18} />}
+          label="E-mails"
+          visible={canSeeEmails}
+        />
+        <NavItem
+          section="certificate-generator"
+          icon={<MdOutlineWorkspacePremium size={18} />}
+          label="Certificados"
+          visible={canSeeCertificates}
+        />
 
         {hasAdmin && <div className={styles.navDivider} />}
         <SectionLabel label="Administração" visible={hasAdmin} />
-        <NavItem section="coupons" icon={<MdOutlineLocalOffer size={18} />} label="Cupons" visible={canSeeUserManagement} />
-        <NavItem section="users" icon={<MdOutlinePeopleAlt size={18} />} label="Usuários" visible={canSeeUserManagement} />
+        <NavItem
+          section="coupons"
+          icon={<MdOutlineLocalOffer size={18} />}
+          label="Cupons"
+          visible={canSeeUserManagement}
+        />
+        <NavItem
+          section="users"
+          icon={<MdOutlinePeopleAlt size={18} />}
+          label="Usuários"
+          visible={canSeeUserManagement}
+        />
+        {/* <NavItem section="event-config" icon={<MdOutlineSettings size={18} />} label="Config. Evento" visible={canSeeUserManagement} /> */}
       </div>
 
       {/* Logout fixo no rodapé */}
@@ -158,7 +215,11 @@ const AdminDashboard = () => {
           <>
             <AppBar position="fixed" className={styles.appBar}>
               <Toolbar sx={{ minHeight: "56px !important" }}>
-                <img src={logo} alt="Congresso Autismo MA" className={styles.appBarLogo} />
+                <img
+                  src={logo}
+                  alt="Congresso Autismo MA"
+                  className={styles.appBarLogo}
+                />
                 <IconButton
                   edge="end"
                   color="inherit"
@@ -173,7 +234,9 @@ const AdminDashboard = () => {
               anchor="left"
               open={isDrawerOpen}
               onClose={() => setIsDrawerOpen(false)}
-              PaperProps={{ sx: { width: 240, backgroundColor: "#0f172a", border: "none" } }}
+              PaperProps={{
+                sx: { width: 240, backgroundColor: "#0f172a", border: "none" },
+              }}
             >
               {drawerContent}
             </Drawer>
@@ -184,7 +247,11 @@ const AdminDashboard = () => {
         {!isMobile && (
           <Box component="aside" className={styles.aside}>
             <div className={styles.logoContainer}>
-              <img src={logo} alt="Congresso Autismo MA" className={styles.logo} />
+              <img
+                src={logo}
+                alt="Congresso Autismo MA"
+                className={styles.logo}
+              />
             </div>
             {drawerContent}
           </Box>
@@ -192,15 +259,30 @@ const AdminDashboard = () => {
 
         {/* Conteúdo principal */}
         <Box component="main" className={styles.mainContent}>
-          {activeSection === "dashboard" && canSeeDashboard && <DashboardSection />}
-          {activeSection === "checkout-manual" && canSeeManualPayment && <AddManualPayment />}
+          {activeSection === "dashboard" && canSeeDashboard && (
+            <DashboardSection />
+          )}
+          {activeSection === "checkout-manual" && canSeeManualPayment && (
+            <AddManualPayment />
+          )}
           {activeSection === "emails" && canSeeEmails && <EmailSection />}
-          {activeSection === "certificate-generator" && canSeeCertificates && <CertificateContainer />}
-          {activeSection === "accreditation" && canSeeAccreditation && <Scanner />}
+          {activeSection === "certificate-generator" && canSeeCertificates && (
+            <CertificateContainer />
+          )}
+          {activeSection === "accreditation" && canSeeAccreditation && (
+            <Scanner />
+          )}
           {activeSection === "sellers" && canSeeSellers && <SellerSection />}
           {activeSection === "caixa" && canSeeCaixa && <CaixaSection />}
-          {activeSection === "coupons" && canSeeUserManagement && <CouponManagementSection />}
-          {activeSection === "users" && canSeeUserManagement && <UserManagementSection />}
+          {activeSection === "coupons" && canSeeUserManagement && (
+            <CouponManagementSection />
+          )}
+          {activeSection === "users" && canSeeUserManagement && (
+            <UserManagementSection />
+          )}
+          {activeSection === "event-config" && canSeeUserManagement && (
+            <EventConfigSection />
+          )}
         </Box>
       </Box>
     </DashboardProvider>

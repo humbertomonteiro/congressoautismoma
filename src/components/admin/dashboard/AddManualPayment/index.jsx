@@ -23,6 +23,7 @@ import { toast } from "react-toastify";
 import { MdPerson, MdVerified } from "react-icons/md";
 import useRole from "../../../../data/hooks/useRole";
 import useAuth from "../../../../data/hooks/useAuth";
+import useEventConfig from "../../../../data/hooks/useEventConfig";
 
 const AddManualPayment = () => {
   const {
@@ -45,6 +46,7 @@ const AddManualPayment = () => {
 
   const { isVendedor } = useRole();
   const { sellerId: loggedSellerId, sellerName: loggedSellerName } = useAuth();
+  const { config: eventConfig } = useEventConfig();
 
   const [installments, setInstallments] = useState("1");
   const [cardBrand, setCardBrand] = useState("Visa");
@@ -177,11 +179,13 @@ const AddManualPayment = () => {
         seller: selectedSeller
           ? (() => {
               const s = sellers.find((s) => s.id === selectedSeller);
-              return s ? { id: s.id, name: s.name, document: s.document } : null;
+              return s
+                ? { id: s.id, name: s.name, document: s.document }
+                : null;
             })()
           : null,
         totalAmount: updatedTotals.total,
-        eventName: "Congresso Autismo MA 2026",
+        eventName: eventConfig.eventName,
         paymentId: transactionId,
         document: participants[0]?.document || "",
         sentEmails: [],
@@ -292,7 +296,9 @@ const AddManualPayment = () => {
   };
 
   const SectionTitle = ({ children }) => (
-    <Typography sx={{ color: "#0f172a", fontWeight: 700, fontSize: "0.95rem", mb: 2 }}>
+    <Typography
+      sx={{ color: "#0f172a", fontWeight: 700, fontSize: "0.95rem", mb: 2 }}
+    >
       {children}
     </Typography>
   );
@@ -309,7 +315,9 @@ const AddManualPayment = () => {
   return (
     <div className={styles.section}>
       <Box sx={{ mb: 3 }}>
-        <Typography sx={{ color: "#0f172a", fontWeight: 700, fontSize: "1.4rem" }}>
+        <Typography
+          sx={{ color: "#0f172a", fontWeight: 700, fontSize: "1.4rem" }}
+        >
           Adicionar Pagamento Manual
         </Typography>
         <Typography sx={{ color: "#64748b", fontSize: "0.85rem", mt: 0.5 }}>
@@ -326,7 +334,10 @@ const AddManualPayment = () => {
             <Select
               value={formState.paymentMethod}
               onChange={(e) =>
-                setFormState((prev) => ({ ...prev, paymentMethod: e.target.value }))
+                setFormState((prev) => ({
+                  ...prev,
+                  paymentMethod: e.target.value,
+                }))
               }
               label="Tipo de Pagamento"
               sx={{ borderRadius: "8px" }}
@@ -382,7 +393,7 @@ const AddManualPayment = () => {
 
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 2 }}>
           <TextField
-            label="Ingressos Inteiros"
+            label="Inteiros"
             value={formState.allTickets}
             onChange={(e) => handleTicketTypeChange("all", e.target.value)}
             type="number"
@@ -392,7 +403,7 @@ const AddManualPayment = () => {
             sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
           />
           <TextField
-            label="Ingressos Meia"
+            label="Meia"
             value={formState.halfTickets}
             onChange={(e) => handleTicketTypeChange("half", e.target.value)}
             type="number"
@@ -402,7 +413,7 @@ const AddManualPayment = () => {
             sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
           />
           <TextField
-            label="Ingressos Social"
+            label="Social"
             value={formState.socialTickets || 0}
             onChange={(e) => handleTicketTypeChange("social", e.target.value)}
             type="number"
@@ -414,7 +425,15 @@ const AddManualPayment = () => {
         </Box>
 
         {formState.paymentMethod !== "courtesy" && (
-          <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", flexWrap: "wrap", mb: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1.5,
+              alignItems: "center",
+              flexWrap: "wrap",
+              mb: 2,
+            }}
+          >
             <TextField
               label="Cupom (opcional)"
               value={formState.coupon.code}
@@ -439,7 +458,10 @@ const AddManualPayment = () => {
                   borderRadius: "8px",
                   textTransform: "none",
                   height: "40px",
-                  "&:hover": { borderColor: "#2563eb", backgroundColor: "#eff6ff" },
+                  "&:hover": {
+                    borderColor: "#2563eb",
+                    backgroundColor: "#eff6ff",
+                  },
                 }}
               >
                 Aplicar cupom
@@ -455,7 +477,10 @@ const AddManualPayment = () => {
                   borderRadius: "8px",
                   textTransform: "none",
                   height: "40px",
-                  "&:hover": { borderColor: "#dc2626", backgroundColor: "#fff1f2" },
+                  "&:hover": {
+                    borderColor: "#dc2626",
+                    backgroundColor: "#fff1f2",
+                  },
                 }}
               >
                 Remover cupom
@@ -464,13 +489,23 @@ const AddManualPayment = () => {
           </Box>
         )}
 
-        <FormControl fullWidth disabled={formState.loading || isVendedor} sx={{ mb: 2 }}>
+        <FormControl
+          fullWidth
+          disabled={formState.loading || isVendedor}
+          sx={{ mb: 2 }}
+        >
           <InputLabel>
-            {isVendedor ? "Vendedor (vinculado à sua conta)" : "Vendedor credenciado (opcional)"}
+            {isVendedor
+              ? "Vendedor (vinculado à sua conta)"
+              : "Vendedor credenciado (opcional)"}
           </InputLabel>
           <Select
             value={selectedSeller}
-            label={isVendedor ? "Vendedor (vinculado à sua conta)" : "Vendedor credenciado (opcional)"}
+            label={
+              isVendedor
+                ? "Vendedor (vinculado à sua conta)"
+                : "Vendedor credenciado (opcional)"
+            }
             onChange={(e) => !isVendedor && setSelectedSeller(e.target.value)}
             sx={{ borderRadius: "8px" }}
             renderValue={(value) => {
@@ -478,28 +513,42 @@ const AddManualPayment = () => {
               const s = sellers.find((s) => s.id === value);
               return s ? (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Avatar src={s.photoBase64 || undefined} sx={{ width: 24, height: 24, fontSize: "0.75rem" }}>
+                  <Avatar
+                    src={s.photoBase64 || undefined}
+                    sx={{ width: 24, height: 24, fontSize: "0.75rem" }}
+                  >
                     {!s.photoURL && <MdPerson />}
                   </Avatar>
                   <span>{s.name}</span>
                   <MdVerified color="#1976D2" size={14} />
                 </Box>
-              ) : "Nenhum";
+              ) : (
+                "Nenhum"
+              );
             }}
           >
-            <MenuItem value=""><em>Nenhum (venda direta)</em></MenuItem>
+            <MenuItem value="">
+              <em>Nenhum (venda direta)</em>
+            </MenuItem>
             {sellers.map((s) => (
               <MenuItem key={s.id} value={s.id}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                  <Avatar src={s.photoBase64 || undefined} sx={{ width: 32, height: 32 }}>
+                  <Avatar
+                    src={s.photoBase64 || undefined}
+                    sx={{ width: 32, height: 32 }}
+                  >
                     {!s.photoURL && <MdPerson />}
                   </Avatar>
                   <Box>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <Box
+                      sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                    >
                       <span style={{ fontWeight: 600 }}>{s.name}</span>
                       <MdVerified color="#1976D2" size={13} />
                     </Box>
-                    <Box sx={{ fontSize: "0.75rem", color: "#78909c" }}>CPF: {s.document}</Box>
+                    <Box sx={{ fontSize: "0.75rem", color: "#78909c" }}>
+                      CPF: {s.document}
+                    </Box>
                   </Box>
                 </Box>
               </MenuItem>
@@ -524,24 +573,40 @@ const AddManualPayment = () => {
       {/* Seção de Participantes */}
       <Box sx={sxCard}>
         <Box sx={{ display: "flex", alignItems: "baseline", gap: 1.5, mb: 2 }}>
-          <Typography sx={{ color: "#0f172a", fontWeight: 700, fontSize: "0.95rem" }}>
+          <Typography
+            sx={{ color: "#0f172a", fontWeight: 700, fontSize: "0.95rem" }}
+          >
             Participantes
           </Typography>
-          <Typography sx={{
-            fontSize: "0.78rem",
-            color: participants.length >= ticketQuantity ? "#16a34a" : "#64748b",
-            fontWeight: 500,
-          }}>
-            {participants.length}/{ticketQuantity} adicionado{participants.length !== 1 ? "s" : ""}
+          <Typography
+            sx={{
+              fontSize: "0.78rem",
+              color:
+                participants.length >= ticketQuantity ? "#16a34a" : "#64748b",
+              fontWeight: 500,
+            }}
+          >
+            {participants.length}/{ticketQuantity} adicionado
+            {participants.length !== 1 ? "s" : ""}
           </Typography>
         </Box>
 
-        <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "flex-start" }}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: 1.5,
+            flexWrap: "wrap",
+            alignItems: "flex-start",
+          }}
+        >
           <TextField
             label="Nome completo"
             value={currentParticipant.name}
             onChange={(e) => handleParticipantChange("name", e.target.value)}
-            sx={{ flex: "1 1 220px", "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+            sx={{
+              flex: "1 1 220px",
+              "& .MuiOutlinedInput-root": { borderRadius: "8px" },
+            }}
             disabled={formState.loading}
             required
           />
@@ -549,7 +614,10 @@ const AddManualPayment = () => {
             label="E-mail"
             value={currentParticipant.email}
             onChange={(e) => handleParticipantChange("email", e.target.value)}
-            sx={{ flex: "1 1 220px", "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+            sx={{
+              flex: "1 1 220px",
+              "& .MuiOutlinedInput-root": { borderRadius: "8px" },
+            }}
             disabled={formState.loading}
             required
           />
@@ -563,7 +631,10 @@ const AddManualPayment = () => {
               <TextField
                 {...inputProps}
                 label="Telefone"
-                sx={{ flex: "1 1 160px", "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                sx={{
+                  flex: "1 1 160px",
+                  "& .MuiOutlinedInput-root": { borderRadius: "8px" },
+                }}
                 required
               />
             )}
@@ -571,14 +642,19 @@ const AddManualPayment = () => {
           <InputMask
             mask="999.999.999-99"
             value={currentParticipant.document}
-            onChange={(e) => handleParticipantChange("document", e.target.value)}
+            onChange={(e) =>
+              handleParticipantChange("document", e.target.value)
+            }
             disabled={formState.loading}
           >
             {(inputProps) => (
               <TextField
                 {...inputProps}
                 label="CPF"
-                sx={{ flex: "1 1 160px", "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                sx={{
+                  flex: "1 1 160px",
+                  "& .MuiOutlinedInput-root": { borderRadius: "8px" },
+                }}
                 required
               />
             )}
@@ -586,7 +662,9 @@ const AddManualPayment = () => {
           <Button
             variant="outlined"
             onClick={handleAddParticipant}
-            disabled={formState.loading || participants.length >= ticketQuantity}
+            disabled={
+              formState.loading || participants.length >= ticketQuantity
+            }
             sx={{
               height: "56px",
               borderColor: "#3b82f6",
@@ -640,14 +718,45 @@ const AddManualPayment = () => {
         ]
           .filter(Boolean)
           .map((row, i) => (
-            <Box key={i} sx={{ display: "flex", justifyContent: "space-between", py: 0.75, borderBottom: "1px solid #f1f5f9" }}>
-              <Typography sx={{ color: "#64748b", fontSize: "0.88rem" }}>{row.label}</Typography>
-              <Typography sx={{ color: row.color || "#475569", fontSize: "0.88rem", fontWeight: 500 }}>{row.value}</Typography>
+            <Box
+              key={i}
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                py: 0.75,
+                borderBottom: "1px solid #f1f5f9",
+              }}
+            >
+              <Typography sx={{ color: "#64748b", fontSize: "0.88rem" }}>
+                {row.label}
+              </Typography>
+              <Typography
+                sx={{
+                  color: row.color || "#475569",
+                  fontSize: "0.88rem",
+                  fontWeight: 500,
+                }}
+              >
+                {row.value}
+              </Typography>
             </Box>
           ))}
-        <Box sx={{ display: "flex", justifyContent: "space-between", pt: 1.5, mt: 0.5 }}>
-          <Typography sx={{ color: "#0f172a", fontWeight: 700, fontSize: "1rem" }}>Total</Typography>
-          <Typography sx={{ color: "#0f172a", fontWeight: 700, fontSize: "1rem" }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            pt: 1.5,
+            mt: 0.5,
+          }}
+        >
+          <Typography
+            sx={{ color: "#0f172a", fontWeight: 700, fontSize: "1rem" }}
+          >
+            Total
+          </Typography>
+          <Typography
+            sx={{ color: "#0f172a", fontWeight: 700, fontSize: "1rem" }}
+          >
             R$ {totals.total}
           </Typography>
         </Box>
