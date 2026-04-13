@@ -87,12 +87,11 @@ const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
           <Select
             value={eventFilter}
             onChange={(e) => setEventFilter(e.target.value)}
-            label="Método"
+            label="Evento"
             sx={{ borderRadius: "10px" }}
           >
-            <MenuItem value="">{eventFilter}</MenuItem>
-            <MenuItem value="Congresso Autismo MA 2025">2025</MenuItem>
-            <MenuItem value="Congresso Autismo MA 2026">2026</MenuItem>
+            <MenuItem value="Congresso Autismo MA 2025">Congresso Autismo MA 2025</MenuItem>
+            <MenuItem value="Congresso Autismo MA 2026">Congresso Autismo MA 2026</MenuItem>
           </Select>
         </FormControl>
         <FormControl fullWidth>

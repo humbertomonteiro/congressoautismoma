@@ -32,6 +32,7 @@ import { toast } from "react-toastify";
 
 const ROLE_LABELS = {
   adm: "Administrador",
+  suporte: "Suporte",
   viewer: "Visualizador",
   scanner: "Scanner",
   vendedor: "Vendedor",
@@ -39,6 +40,7 @@ const ROLE_LABELS = {
 
 const ROLE_COLORS = {
   adm: "error",
+  suporte: "secondary",
   viewer: "info",
   scanner: "success",
   vendedor: "warning",
@@ -333,6 +335,7 @@ const UserManagementSection = () => {
           <Box sx={{ p: 1.5, bgcolor: "#F5F5F5", borderRadius: "8px" }}>
             <Typography variant="body2" sx={{ color: "#555", fontSize: "0.82rem" }}>
               {form.role === "adm" && "Acesso total: pode ver, criar, editar e excluir tudo."}
+              {form.role === "suporte" && "Checkout manual (qualquer vendedor), emissão de certificados e credenciamento. Sem acesso ao dashboard ou gestão."}
               {form.role === "viewer" && "Apenas visualização: pode ver dados mas não pode editar ou excluir."}
               {form.role === "scanner" && "Acesso restrito ao credenciamento (QR Code)."}
               {form.role === "vendedor" && "Acesso restrito ao pagamento manual. Sempre vinculado a um vendedor cadastrado."}

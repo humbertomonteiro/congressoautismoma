@@ -40,6 +40,7 @@ import { useSearchParams } from "react-router-dom";
 
 const ROLE_LABELS = {
   adm: "Administrador",
+  suporte: "Suporte",
   viewer: "Visualizador",
   scanner: "Scanner",
   vendedor: "Vendedor",
@@ -194,7 +195,12 @@ const AdminDashboard = () => {
           label="Usuários"
           visible={canSeeUserManagement}
         />
-        {/* <NavItem section="event-config" icon={<MdOutlineSettings size={18} />} label="Config. Evento" visible={canSeeUserManagement} /> */}
+        {/* <NavItem
+          section="event-config"
+          icon={<MdOutlineSettings size={18} />}
+          label="Config. Evento"
+          visible={canSeeUserManagement}
+        /> */}
       </div>
 
       {/* Logout fixo no rodapé */}

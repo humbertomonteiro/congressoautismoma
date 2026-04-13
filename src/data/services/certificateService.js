@@ -7,12 +7,16 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { db } from "../../../firebaseConfig";
-import PdfService from "./PdfService.js"; // Ajuste o caminho conforme necessário
+import PdfService from "./PdfService.js";
+import EventCacheService from "./EventCacheService.js";
+
+// Eventos que já foram exportados para cache estático.
+// Adicione aqui o nome exato de cada evento já exportado.
+const CACHED_EVENTS = ["Congresso Autismo MA 2025"];
 
 export default class CertificateService {
   constructor() {
     this.pdfService = new PdfService();
-    // console.log("PdfService instanciado:", this.pdfService); // Log para depuração
   }
 
   async searchParticipant(name, cpf, email = "", phone = "") {
@@ -22,14 +26,20 @@ export default class CertificateService {
         email,
         phone
       );
-      const snapshot = await this.buildQuery();
 
-      let result = await this.findParticipantByCpf(cleanCpf, snapshot);
-      if (!result.participant && cleanEmail) {
-        result = await this.findParticipantByEmail(cleanEmail, snapshot);
-      }
-      if (!result.participant && cleanPhone) {
-        result = await this.findParticipantByPhone(cleanPhone, snapshot);
+      // ── Tenta o cache estático primeiro (zero leituras no Firestore) ────────
+      let result = await this.searchInCache(cleanCpf, cleanEmail, cleanPhone);
+
+      // ── Fallback: busca no Firestore se não encontrou em nenhum cache ───────
+      if (!result.participant) {
+        const snapshot = await this.buildQuery();
+        result = await this.findParticipantByCpf(cleanCpf, snapshot);
+        if (!result.participant && cleanEmail) {
+          result = await this.findParticipantByEmail(cleanEmail, snapshot);
+        }
+        if (!result.participant && cleanPhone) {
+          result = await this.findParticipantByPhone(cleanPhone, snapshot);
+        }
       }
 
       if (result.participant) {
@@ -343,6 +353,29 @@ export default class CertificateService {
       }
     }
 
+    return { participant: null, checkoutId: null, checkoutData: null };
+  }
+
+  /**
+   * Percorre todos os eventos em CACHED_EVENTS e busca o participante
+   * no JSON estático. Retorna o primeiro match encontrado.
+   */
+  async searchInCache(cleanCpf, cleanEmail, cleanPhone) {
+    for (const eventName of CACHED_EVENTS) {
+      let result = null;
+
+      if (cleanCpf) {
+        result = await EventCacheService.findParticipantByCpf(eventName, cleanCpf);
+      }
+      if (!result && cleanEmail) {
+        result = await EventCacheService.findParticipantByEmail(eventName, cleanEmail);
+      }
+      if (!result && cleanPhone) {
+        result = await EventCacheService.findParticipantByPhone(eventName, cleanPhone);
+      }
+
+      if (result) return result;
+    }
     return { participant: null, checkoutId: null, checkoutData: null };
   }
 

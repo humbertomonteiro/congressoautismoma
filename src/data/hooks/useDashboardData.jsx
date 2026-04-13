@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { db } from "../../../firebaseConfig";
 import { DEFAULT_EVENT_CONFIG } from "./useEventConfig";
 import {
@@ -12,6 +12,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import PaymentService from "../services/PaymentService";
+import EventCacheService from "../services/EventCacheService";
 import { toast } from "react-toastify";
 
 const formatToBrazilianCurrency = (value) => {
@@ -69,9 +70,21 @@ const useDashboardData = () => {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Controla se é o primeiro render (o mount já chama updateMetrics)
+  const isFirstEventRender = useRef(true);
+
   useEffect(() => {
     updateMetrics(true);
   }, []);
+
+  // Quando o usuário troca de evento, recarrega os dados da fonte correta
+  useEffect(() => {
+    if (isFirstEventRender.current) {
+      isFirstEventRender.current = false;
+      return;
+    }
+    handleEventChange(eventFilter);
+  }, [eventFilter]);
 
   const applyFilters = (data) => {
     let filteredData = [...data];
@@ -178,6 +191,48 @@ const useDashboardData = () => {
       });
     });
     setQrCodeData(qrData);
+  };
+
+  /**
+   * Troca de evento: usa cache JSON estático (zero leituras Firebase) se disponível,
+   * senão busca no Firestore normalmente via updateMetrics.
+   */
+  const handleEventChange = async (newEventFilter) => {
+    const id = toast.loading(`Carregando dados de "${newEventFilter}"...`, {
+      position: "bottom-right",
+    });
+    setErrorMessage("");
+
+    try {
+      const cached = await EventCacheService.load(newEventFilter);
+
+      if (cached) {
+        // Dados vêm do JSON estático — nenhuma leitura no Firestore
+        const allCheckouts = cached.checkouts;
+        setCheckouts(allCheckouts);
+        setLastUpdated(null); // força full-update se depois chamar updateMetrics
+        applyFilters(allCheckouts);
+        toast.update(id, {
+          render: `Dados de "${newEventFilter}" carregados do cache (${cached.exportedAt?.slice(0, 10)})`,
+          type: "success",
+          isLoading: false,
+          autoClose: 3000,
+        });
+        return;
+      }
+
+      // Sem cache → busca no Firebase (descarta o toast atual, updateMetrics cria o seu)
+      toast.dismiss(id);
+      await updateMetrics(true, newEventFilter);
+    } catch (err) {
+      console.error("Erro ao trocar evento:", err);
+      toast.update(id, {
+        render: "Erro ao carregar dados do evento.",
+        type: "error",
+        isLoading: false,
+        autoClose: true,
+      });
+    }
   };
 
   const updateMetrics = async (
@@ -431,6 +486,7 @@ const useDashboardData = () => {
     filteredMetrics,
     qrCodeData,
     updateMetrics,
+    handleEventChange,
     chartData,
     formatToBrazilianCurrency,
     loadMoreCheckouts: () => {},
