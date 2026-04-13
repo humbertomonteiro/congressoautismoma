@@ -1,10 +1,16 @@
 // src/services/PaymentService.js
 import axios from "axios";
+import { auth } from "../../../firebaseConfig";
 
 const isProduction = import.meta.env.VITE_ENV === "production";
 const baseUrl = isProduction
   ? import.meta.env.VITE_BASE_URL_PRODUCTION
   : import.meta.env.VITE_BASE_URL_SANDBOX;
+
+async function getAuthHeaders() {
+  const token = await auth.currentUser?.getIdToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 class PaymentService {
   static WHATSAPP_NUMBER = "+559888259214";
@@ -179,9 +185,11 @@ class PaymentService {
 
   async createManualCheckout(checkoutData) {
     try {
+      const headers = await getAuthHeaders();
       const response = await axios.post(
         `${baseUrl}/payments/manual`,
-        checkoutData
+        checkoutData,
+        { headers }
       );
       const { success, message, data } = response.data;
       if (!success) throw new Error(message);
