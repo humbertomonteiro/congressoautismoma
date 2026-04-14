@@ -98,27 +98,26 @@ const Item1 = ({ wpp, openChatbot }) => {
             {!wpp ? (
               <ButtonSecondary
                 style={{ width: "100%" }}
-                // action="link"
-                // link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
-                // target="_blank"
-                // action="button"
-                // onClick={() => {
-                //   navigate("/checkout");
-                //   handleAddToCart("individual", "Ingresso Individual", 499.9);
-                // }}
+                //bilheteria
+                action="link"
+                link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
+                target="_blank"
+
+                //whatsapp
                 // action="link"
                 // link="https://api.whatsapp.com/send?phone=5598991058908&text=Olá!%20Gostaria%20de%20comprar%20ingresso"
                 // target="_blank"
-                action="button"
-                onClick={() => {
-                  navigate("/checkout?all=1");
-                  handleAddToCart(
-                    "individual",
-                    "Ingresso Individual",
-                    Number(BASE_PRICE)
-                  );
-                }}
-                // disabled={true}
+
+                //checkout
+                // action="button"
+                // onClick={() => {
+                //   navigate("/checkout?all=1");
+                //   handleAddToCart(
+                //     "individual",
+                //     "Ingresso Individual",
+                //     Number(BASE_PRICE)
+                //   );
+                // }}
               >
                 Comprar Ingresso
                 {/* INGRESSOS ESGOTADOS */}
@@ -186,26 +185,26 @@ const Item2 = ({ wpp, openChatbot }) => {
             {!wpp ? (
               <ButtonSecondary
                 style={{ width: "100%" }}
-                // action="button"
-                // onClick={() => {
-                //   navigate("/checkout?tickets=5&coupon=grupo");
-                //   handleAddToCart("group", "Ingresso Grupo", 449.9);
-                // }}
+                //whatsapp
                 // action="link"
                 // link="https://api.whatsapp.com/send?phone=5598991058908&text=Olá!%20Gostaria%20de%20comprar%20ingresso"
                 // target="_blank"
-                // action="link"
-                // link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
-                // target="_blank"
-                action="button"
-                onClick={() => {
-                  navigate("/checkout?social=1");
-                  handleAddToCart(
-                    "social",
-                    "Ingresso Social",
-                    Number(SOCIAL_PRICE)
-                  );
-                }}
+
+                //bilheteria
+                action="link"
+                link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
+                target="_blank"
+
+                //checkout
+                // action="button"
+                // onClick={() => {
+                //   navigate("/checkout?social=1");
+                //   handleAddToCart(
+                //     "social",
+                //     "Ingresso Social",
+                //     Number(SOCIAL_PRICE)
+                //   );
+                // }}
               >
                 Comprar Ingresso{" "}
                 <IoTicketOutline style={{ fontSize: "1.2rem" }} />
@@ -287,18 +286,26 @@ const ItemHalf = ({ wpp, openChatbot }) => {
             {!wpp ? (
               <ButtonSecondary
                 style={{ width: "100%" }}
+                //whatsapp
                 // action="link"
                 // link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
                 // target="_blank"
-                action="button"
-                onClick={() => {
-                  navigate("/checkout?half=1");
-                  handleAddToCart(
-                    "half",
-                    "Ingresso Meia-Entrada",
-                    Number(HALF_PRICE)
-                  );
-                }}
+
+                //bilheteria
+                action="link"
+                link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
+                target="_blank"
+
+                //checkout
+                // action="button"
+                // onClick={() => {
+                //   navigate("/checkout?half=1");
+                //   handleAddToCart(
+                //     "half",
+                //     "Ingresso Meia-Entrada",
+                //     Number(HALF_PRICE)
+                //   );
+                // }}
               >
                 Comprar Ingresso{" "}
                 <IoTicketOutline style={{ fontSize: "1.2rem" }} />
