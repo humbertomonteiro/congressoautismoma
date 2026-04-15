@@ -1,10 +1,14 @@
 import {
   collection,
+  collectionGroup,
   query,
   where,
   getDocs,
+  getDoc,
   doc,
+  updateDoc,
   setDoc,
+  arrayUnion,
 } from "firebase/firestore";
 import { db } from "../../../firebaseConfig";
 import PdfService from "./PdfService.js";
@@ -30,86 +34,112 @@ export default class CertificateService {
       // ── Tenta o cache estático primeiro (zero leituras no Firestore) ────────
       let result = await this.searchInCache(cleanCpf, cleanEmail, cleanPhone);
 
-      // ── Fallback: busca no Firestore se não encontrou em nenhum cache ───────
+      // ── Fallback: busca na subcoleção participants (modelo atual) ───────────
       if (!result.participant) {
-        const snapshot = await this.buildQuery();
-        result = await this.findParticipantByCpf(cleanCpf, snapshot);
-        if (!result.participant && cleanEmail) {
-          result = await this.findParticipantByEmail(cleanEmail, snapshot);
-        }
-        if (!result.participant && cleanPhone) {
-          result = await this.findParticipantByPhone(cleanPhone, snapshot);
-        }
+        result = await this.searchInSubcollection(cleanCpf, cleanEmail, cleanPhone);
       }
 
       if (result.participant) {
-        // Verificar certificateIssued antes de qualquer outra validação
-        // if (
-        //   result.participant.certificateIssued === true &&
-        //   window.location.pathname !== "/dashboard"
-        // ) {
-        //   console.log("Certificado já emitido para:", {
-        //     cpf: cleanCpf,
-        //     email: cleanEmail,
-        //     phone: cleanPhone,
-        //   });
-        //   return {
-        //     status: "already_issued",
-        //     message: "Certificado já emitido.",
-        //     participant: result.participant,
-        //     checkoutId: result.checkoutId,
-        //     checkoutData: result.checkoutData,
-        //     registeredCpf: this.cleanIdentifier(
-        //       result.participant.cpf || result.participant.document
-        //     ),
-        //   };
-        // }
-
-        // Validar nome, se fornecido
         if (name) {
           const nameMatch = this.compareNames(name, result.participant.name);
           if (!nameMatch) {
-            console.log("Nomes não correspondem:", {
-              provided: name,
-              registered: result.participant.name,
-            });
             return {
               status: "mismatch",
               message: "Os nomes não correspondem.",
               participant: result.participant,
               checkoutId: result.checkoutId,
+              participantId: result.participantId,
               checkoutData: result.checkoutData,
               registeredCpf: this.cleanIdentifier(
-                result.participant.cpf || result.participant.document
+                result.participant.document || result.participant.cpf
               ),
             };
           }
         }
+
+        return {
+          status: "success",
+          message: "Participante encontrado.",
+          participant: result.participant,
+          checkoutId: result.checkoutId,
+          participantId: result.participantId,
+          checkoutData: result.checkoutData,
+          registeredCpf: this.cleanIdentifier(
+            result.participant.document || result.participant.cpf
+          ),
+        };
       }
 
-      return result.participant
-        ? {
-            status: "success",
-            message: "Participante encontrado.",
-            participant: result.participant,
-            checkoutId: result.checkoutId,
-            checkoutData: result.checkoutData,
-            registeredCpf: this.cleanIdentifier(
-              result.participant.cpf || result.participant.document
-            ),
-          }
-        : {
-            status: "not_found",
-            message: "Nenhum participante encontrado.",
-            participant: null,
-            checkoutId: null,
-            checkoutData: null,
-            registeredCpf: null,
-          };
+      return {
+        status: "not_found",
+        message: "Nenhum participante encontrado.",
+        participant: null,
+        checkoutId: null,
+        participantId: null,
+        checkoutData: null,
+        registeredCpf: null,
+      };
     } catch (error) {
       console.error("Erro ao buscar participante:", error);
       throw new Error(error.message || "Erro ao buscar participante.");
     }
+  }
+
+  /**
+   * Busca participante nas subcoleções usando collectionGroup.
+   * Funciona para todos os checkouts do modelo atual (2026+).
+   */
+  async searchInSubcollection(cleanCpf, cleanEmail, cleanPhone) {
+    const participantsGroup = collectionGroup(db, "participants");
+
+    // Tenta por CPF
+    if (cleanCpf) {
+      const snap = await getDocs(
+        query(participantsGroup, where("document", "==", cleanCpf))
+      );
+      const found = await this._findApprovedParticipant(snap);
+      if (found) return found;
+    }
+
+    // Tenta por e-mail
+    if (cleanEmail) {
+      const snap = await getDocs(
+        query(participantsGroup, where("email", "==", cleanEmail))
+      );
+      const found = await this._findApprovedParticipant(snap);
+      if (found) return found;
+    }
+
+    // Tenta por telefone
+    if (cleanPhone) {
+      const snap = await getDocs(
+        query(participantsGroup, where("phone", "==", cleanPhone))
+      );
+      const found = await this._findApprovedParticipant(snap);
+      if (found) return found;
+    }
+
+    return { participant: null, checkoutId: null, participantId: null, checkoutData: null };
+  }
+
+  /** Percorre os resultados do collectionGroup e retorna o primeiro cujo
+   *  checkout pai esteja com status "approved". */
+  async _findApprovedParticipant(snap) {
+    for (const pDoc of snap.docs) {
+      const checkoutRef = pDoc.ref.parent.parent;
+      const checkoutSnap = await getDoc(checkoutRef);
+      if (!checkoutSnap.exists()) continue;
+      const checkoutData = checkoutSnap.data();
+      if (checkoutData.status !== "approved") continue;
+
+      return {
+        participant: { id: pDoc.id, ...pDoc.data() },
+        participantId: pDoc.id,
+        checkoutId: checkoutRef.id,
+        checkoutData,
+      };
+    }
+    return null;
   }
 
   async generateCertificate(
@@ -118,93 +148,96 @@ export default class CertificateService {
     name,
     checkoutId,
     checkoutData,
-    windowLocation
+    windowLocation,
+    participantId = null
   ) {
     try {
       const cleanProvidedCpf = this.cleanIdentifier(providedCpf);
       const cleanRegisteredCpf = this.cleanIdentifier(registeredCpf);
-      if (!checkoutId || !checkoutData) {
-        throw new Error("Dados do checkout não fornecidos.");
+
+      if (!checkoutId) {
+        throw new Error("ID do checkout não fornecido.");
       }
       if (!cleanRegisteredCpf) {
         throw new Error("CPF registrado inválido.");
       }
 
-      // console.log("Gerando certificado:", {
-      //   cleanProvidedCpf,
-      //   cleanRegisteredCpf,
-      //   name,
-      // });
-
-      let participantFound = false;
       const isDashboard = window.location.pathname === "/dashboard";
-      const updatedParticipants = checkoutData.participants.map((p) => {
-        const participantCpf = this.cleanIdentifier(p.cpf || p.document);
-        if (participantCpf === cleanRegisteredCpf) {
-          participantFound = true;
-          // if (p.certificateIssued === true && !isDashboard) {
-          //   throw new Error("Certificado já emitido para este participante.");
-          // }
-          const certificateIssuedNames = Array.isArray(p.certificateIssuedNames)
-            ? [...p.certificateIssuedNames]
-            : [];
-          certificateIssuedNames.push({
+      const now = new Date().toISOString();
+
+      // ── Modelo atual: participante na subcoleção ───────────────────────────
+      if (participantId) {
+        const participantRef = doc(
+          db,
+          "checkouts",
+          checkoutId,
+          "participants",
+          participantId
+        );
+        await updateDoc(participantRef, {
+          certificateIssued: isDashboard ? false : true,
+          certificateIssuedAt: isDashboard ? null : now,
+          certificateIssuedNames: arrayUnion({
             name,
             cpf: cleanProvidedCpf || cleanRegisteredCpf,
-            timestamp: new Date().toISOString(),
-          });
-          return {
-            ...p,
-            certificateIssued: isDashboard
-              ? p.certificateIssued || false
-              : true,
-            certificateIssuedAt: isDashboard
-              ? p.certificateIssuedAt || null
-              : new Date().toISOString(),
-            certificateIssuedNames,
-            attempts: [],
-            emittedOnDashboard: isDashboard,
-          };
-        }
-        return p;
-      });
+            timestamp: now,
+          }),
+        });
+      }
+      // ── Modelo legado: participante inline no checkout ─────────────────────
+      else if (checkoutData?.participants && Array.isArray(checkoutData.participants)) {
+        let participantFound = false;
+        const updatedParticipants = checkoutData.participants.map((p) => {
+          const participantCpf = this.cleanIdentifier(p.cpf || p.document);
+          if (participantCpf === cleanRegisteredCpf) {
+            participantFound = true;
+            const certificateIssuedNames = Array.isArray(p.certificateIssuedNames)
+              ? [...p.certificateIssuedNames]
+              : [];
+            certificateIssuedNames.push({
+              name,
+              cpf: cleanProvidedCpf || cleanRegisteredCpf,
+              timestamp: now,
+            });
+            return {
+              ...p,
+              certificateIssued: isDashboard ? p.certificateIssued || false : true,
+              certificateIssuedAt: isDashboard ? p.certificateIssuedAt || null : now,
+              certificateIssuedNames,
+              attempts: [],
+              emittedOnDashboard: isDashboard,
+            };
+          }
+          return p;
+        });
 
-      if (!participantFound) {
-        console.error("Participante não encontrado para:", cleanRegisteredCpf);
-        throw new Error(
-          "Participante não encontrado para registrar o certificado."
+        if (!participantFound) {
+          throw new Error("Participante não encontrado para registrar o certificado.");
+        }
+
+        await setDoc(
+          doc(db, "checkouts", checkoutId),
+          { ...checkoutData, participants: updatedParticipants },
+          { merge: true }
         );
       }
 
-      // Atualizar os dados no Firestore
-      await setDoc(
-        doc(db, "checkouts", checkoutId),
-        { ...checkoutData, participants: updatedParticipants },
-        { merge: true }
-      );
-
+      // ── Registro na coleção certificates ──────────────────────────────────
       const certificateRef = doc(db, "certificates", cleanRegisteredCpf);
       await setDoc(
         certificateRef,
         {
           name,
           providedCpf: cleanProvidedCpf || cleanRegisteredCpf,
-          generatedAt: new Date().toISOString(),
+          generatedAt: now,
           emittedOnDashboard: isDashboard,
         },
         { merge: true }
       );
 
-      // console.log("Certificado registrado para:", cleanRegisteredCpf);
-
-      // console.log("Template name:", templateName);
-
-      // Tentar gerar e baixar o certificado automaticamente
-
-      const windowPathname = windowLocation;
+      // ── Determina o template pelo path ────────────────────────────────────
       let templateName = "default";
-
-      switch (windowPathname) {
+      switch (windowLocation) {
         case "/certificado-comissao-cientifica":
           templateName = "cientifica";
           break;
@@ -214,10 +247,9 @@ export default class CertificateService {
         case "/certificado-comissao-organizadora":
           templateName = "organizadora";
           break;
-        default:
-          templateName = "default";
       }
 
+      // ── Gera e baixa o PDF ────────────────────────────────────────────────
       try {
         const pdfData = await this.pdfService.generateCertificate(
           cleanRegisteredCpf,
@@ -225,135 +257,19 @@ export default class CertificateService {
           templateName
         );
         this.pdfService.downloadCertificate(pdfData);
-        return {
-          status: "success",
-          message: "Certificado gerado e baixado automaticamente.",
-          participant: updatedParticipants.find(
-            (p) =>
-              this.cleanIdentifier(p.cpf || p.document) === cleanRegisteredCpf
-          ),
-          checkoutId,
-          checkoutData,
-          registeredCpf: cleanRegisteredCpf,
-          pdfData, // Inclui pdfData para uso manual, se necessário
-        };
+        return { status: "success", message: "Certificado gerado e baixado.", pdfData };
       } catch (downloadError) {
         console.error("Erro no download automático:", downloadError);
         return {
           status: "success_with_manual_download",
           message: "Certificado gerado. Use a opção de download manual.",
-          participant: updatedParticipants.find(
-            (p) =>
-              this.cleanIdentifier(p.cpf || p.document) === cleanRegisteredCpf
-          ),
-          checkoutId,
-          checkoutData,
-          registeredCpf: cleanRegisteredCpf,
-          pdfData: null, // Pode incluir pdfData se quiser tentar gerar novamente no manual
+          pdfData: null,
         };
       }
     } catch (error) {
       console.error("Erro ao registrar certificado:", error);
       throw new Error(error.message || "Erro ao registrar certificado.");
     }
-  }
-
-  validateInputs(cpf, email, phone) {
-    const cleanCpf = this.cleanIdentifier(cpf);
-    const cleanEmail = this.cleanEmail(email);
-    const cleanPhone = this.cleanPhone(phone);
-    console.log("Entradas validadas:", { cleanCpf, cleanEmail, cleanPhone });
-
-    if (!cleanCpf && !cleanEmail && !cleanPhone) {
-      throw new Error("Forneça CPF, e-mail ou telefone válido.");
-    }
-
-    return { cleanCpf, cleanEmail, cleanPhone };
-  }
-
-  async buildQuery() {
-    const checkoutsRef = collection(db, "checkouts");
-    const q = query(checkoutsRef, where("status", "==", "approved"));
-    const snapshot = await getDocs(q);
-    console.log("Documentos encontrados:", snapshot.docs.length);
-    return snapshot;
-  }
-
-  async findParticipantByCpf(cleanCpf, snapshot) {
-    if (!cleanCpf)
-      return { participant: null, checkoutId: null, checkoutData: null };
-
-    for (const checkoutDoc of snapshot.docs) {
-      const checkout = checkoutDoc.data();
-      const participant = checkout.participants?.find((p) => {
-        const participantCpf = this.cleanIdentifier(p.cpf);
-        const participantDocument = this.cleanIdentifier(p.document);
-        // console.log("Comparando CPF:", {
-        //   participantCpf,
-        //   participantDocument,
-        //   cleanCpf,
-        // });
-        return participantCpf === cleanCpf || participantDocument === cleanCpf;
-      });
-
-      if (participant) {
-        return {
-          participant,
-          checkoutId: checkoutDoc.id,
-          checkoutData: checkout,
-        };
-      }
-    }
-
-    return { participant: null, checkoutId: null, checkoutData: null };
-  }
-
-  async findParticipantByEmail(cleanEmail, snapshot) {
-    if (!cleanEmail)
-      return { participant: null, checkoutId: null, checkoutData: null };
-
-    for (const checkoutDoc of snapshot.docs) {
-      const checkout = checkoutDoc.data();
-      const participant = checkout.participants?.find((p) => {
-        const participantEmail = this.cleanEmail(p.email);
-        console.log("Comparando email:", { participantEmail, cleanEmail });
-        return participantEmail === cleanEmail;
-      });
-
-      if (participant) {
-        return {
-          participant,
-          checkoutId: checkoutDoc.id,
-          checkoutData: checkout,
-        };
-      }
-    }
-
-    return { participant: null, checkoutId: null, checkoutData: null };
-  }
-
-  async findParticipantByPhone(cleanPhone, snapshot) {
-    if (!cleanPhone)
-      return { participant: null, checkoutId: null, checkoutData: null };
-
-    for (const checkoutDoc of snapshot.docs) {
-      const checkout = checkoutDoc.data();
-      const participant = checkout.participants?.find((p) => {
-        const participantPhone = this.cleanPhone(p.number);
-        console.log("Comparando telefone:", { participantPhone, cleanPhone });
-        return participantPhone === cleanPhone;
-      });
-
-      if (participant) {
-        return {
-          participant,
-          checkoutId: checkoutDoc.id,
-          checkoutData: checkout,
-        };
-      }
-    }
-
-    return { participant: null, checkoutId: null, checkoutData: null };
   }
 
   /**
@@ -374,21 +290,26 @@ export default class CertificateService {
         result = await EventCacheService.findParticipantByPhone(eventName, cleanPhone);
       }
 
-      if (result) return result;
+      if (result) return { ...result, participantId: null };
     }
-    return { participant: null, checkoutId: null, checkoutData: null };
+    return { participant: null, checkoutId: null, participantId: null, checkoutData: null };
+  }
+
+  validateInputs(cpf, email, phone) {
+    const cleanCpf = this.cleanIdentifier(cpf);
+    const cleanEmail = this.cleanEmail(email);
+    const cleanPhone = this.cleanPhone(phone);
+
+    if (!cleanCpf && !cleanEmail && !cleanPhone) {
+      throw new Error("Forneça CPF, e-mail ou telefone válido.");
+    }
+
+    return { cleanCpf, cleanEmail, cleanPhone };
   }
 
   compareNames(providedName, registeredName) {
     const providedFirstName = providedName.trim().split(" ")[0].toLowerCase();
-    const registeredFirstName = registeredName
-      .trim()
-      .split(" ")[0]
-      .toLowerCase();
-    console.log("Comparando nomes:", {
-      providedFirstName,
-      registeredFirstName,
-    });
+    const registeredFirstName = registeredName.trim().split(" ")[0].toLowerCase();
     return providedFirstName === registeredFirstName;
   }
 

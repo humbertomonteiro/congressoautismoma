@@ -356,6 +356,7 @@ const usePaymentForm = () => {
               state: {
                 total: totals.total,
                 paymentMethod: "boleto",
+                checkoutId: response.checkoutId,
                 boletoLink: response.boletoLink,
                 linhaDigitavel: response.linhaDigitavel,
                 qrCodePix: response.qrCodePix,

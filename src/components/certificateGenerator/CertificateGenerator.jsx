@@ -92,7 +92,8 @@ const CertificateGenerator = () => {
     registeredCpf,
     name,
     checkoutId,
-    checkoutData
+    checkoutData,
+    participantId
   ) => {
     const { url, name: fileName } = await pdfService.generateCertificate(
       cleanCpf,
@@ -105,7 +106,8 @@ const CertificateGenerator = () => {
       name,
       checkoutId,
       checkoutData,
-      windowLocation
+      windowLocation,
+      participantId
     );
     setSuccess(true);
   };
@@ -142,7 +144,8 @@ const CertificateGenerator = () => {
           result.registeredCpf,
           formData.name,
           result.checkoutId,
-          result.checkoutData
+          result.checkoutData,
+          result.participantId
         );
       } else if (result.status === "mismatch") {
         if (isCertificatePath && result.checkoutId) {
@@ -211,7 +214,8 @@ const CertificateGenerator = () => {
           result.registeredCpf,
           formData.name,
           result.checkoutId,
-          result.checkoutData
+          result.checkoutData,
+          result.participantId
         );
         closeDialog("notFound")();
       } else if (result.status === "mismatch") {

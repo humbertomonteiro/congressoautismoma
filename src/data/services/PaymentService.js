@@ -62,6 +62,7 @@ class PaymentService {
       return {
         success: response.data.success,
         paymentId: response.data.paymentId,
+        checkoutId: response.data.checkoutId,
         boletoLink: response.data.boletoUrl,
         linhaDigitavel: response.data.linhaDigitavel,
         qrCodePix: response.data.qrCodePix || null,

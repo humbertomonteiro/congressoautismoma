@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import styles from "./ThankYouPage.module.css";
 import { FaCheckCircle } from "react-icons/fa";
@@ -7,6 +7,11 @@ import ButtonSecondary from "../../components/shared/ButtonSecondary";
 import { IoMdDownload } from "react-icons/io";
 import { GoHomeFill } from "react-icons/go";
 
+const isProduction = import.meta.env.VITE_ENV === "production";
+const baseUrl = isProduction
+  ? import.meta.env.VITE_BASE_URL_PRODUCTION
+  : import.meta.env.VITE_BASE_URL_SANDBOX;
+
 const ThankYouPage = ({ totalValue }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -14,9 +19,12 @@ const ThankYouPage = ({ totalValue }) => {
   // Extrair dados do estado da navegação
   const rawTotal = totalValue || location.state?.total || 0;
   const paymentMethod = location.state?.paymentMethod || "creditCard";
+  const checkoutId = location.state?.checkoutId || null;
   const boletoLink = location.state?.boletoLink || null;
   const linhaDigitavel = location.state?.linhaDigitavel || null;
   const qrCodePix = location.state?.qrCodePix || null;
+
+  const [downloadLoading, setDownloadLoading] = useState(false);
   const purchaseTotal =
     typeof rawTotal === "string" ? parseFloat(rawTotal) : Number(rawTotal);
   const formattedTotal = isNaN(purchaseTotal)
@@ -76,11 +84,35 @@ const ThankYouPage = ({ totalValue }) => {
     </>
   );
 
-  const handleDownloadBoleto = () => {
+  const handleDownloadBoleto = async () => {
+    // Tenta o PDF pré-gerado primeiro; se não existir, pede ao backend para (re)gerar
     if (boletoLink) {
       window.open(boletoLink, "_blank");
-    } else {
-      console.error("Link do boleto não disponível.");
+      return;
+    }
+
+    if (!checkoutId) {
+      alert("Link do boleto não disponível. Use o código de barras abaixo para pagar.");
+      return;
+    }
+
+    setDownloadLoading(true);
+    try {
+      const response = await fetch(`${baseUrl}/payments/boleto/${checkoutId}/pdf`);
+      if (!response.ok) throw new Error("Erro ao gerar PDF");
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `boleto_${checkoutId}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Erro ao baixar boleto:", err);
+      alert("Não foi possível baixar o PDF. Use o código de barras abaixo para pagar.");
+    } finally {
+      setDownloadLoading(false);
     }
   };
 
@@ -138,9 +170,10 @@ const ThankYouPage = ({ totalValue }) => {
           )}
         </div>
         <div className={styles.actions}>
-          {!isCreditCard && boletoLink && (
-            <ButtonSecondary onClick={handleDownloadBoleto}>
-              Baixar Boleto <IoMdDownload style={{ fontSize: "1.5rem" }} />
+          {!isCreditCard && (
+            <ButtonSecondary onClick={handleDownloadBoleto} disabled={downloadLoading}>
+              {downloadLoading ? "Gerando PDF..." : "Baixar Boleto"}{" "}
+              <IoMdDownload style={{ fontSize: "1.5rem" }} />
             </ButtonSecondary>
           )}
           <ButtonSecondary onClick={() => navigate("/")}>
