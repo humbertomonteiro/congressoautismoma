@@ -1,5 +1,5 @@
 // src/hooks/usePaymentForm.js
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import PaymentService from "../services/PaymentService";
 import useEventConfig from "./useEventConfig";
@@ -91,6 +91,18 @@ const usePaymentForm = () => {
     total: "0.00",
     totalInCents: 0,
   });
+
+  const pixPollingRef = useRef(null);
+
+  const stopPixPolling = () => {
+    if (pixPollingRef.current) {
+      clearInterval(pixPollingRef.current);
+      pixPollingRef.current = null;
+    }
+  };
+
+  // Limpa o polling ao desmontar o componente
+  useEffect(() => () => stopPixPolling(), []);
 
   // Total de ingressos derivado das 3 categorias
   const ticketQuantity =
@@ -434,6 +446,8 @@ const usePaymentForm = () => {
             state: { total: totals.total, paymentMethod: "creditCard" },
           });
         } else if (formState.paymentMethod === "pix") {
+          setFormState((prev) => ({ ...prev, loading: false }));
+
           const expiresAt = response.expirationDate
             ? new Date(response.expirationDate).toLocaleTimeString("pt-BR", {
                 hour: "2-digit",
@@ -601,6 +615,7 @@ const usePaymentForm = () => {
     handlePayment,
     TICKET_TYPE_LABELS,
     deriveTicketType,
+    ticketPrices: eventConfig.ticketPrices,
   };
 };
 

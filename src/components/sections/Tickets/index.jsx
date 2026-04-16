@@ -12,12 +12,9 @@ import { useNavigate } from "react-router-dom";
 import { formatToBRL } from "../../../data/functions/formatToBRL";
 import bannerDesktopBg from "../../../assets/speakers/banner-desktop-bg.png";
 import bannerMobile from "../../../assets/speakers/banner-mobile.png";
+import useEventConfig from "../../../data/hooks/useEventConfig";
 
 // import panfletoFiqueAtento from "../../../assets/shared/panfleto-fique-atento.jpeg";
-
-const BASE_PRICE = import.meta.env.VITE_BASE_PRICE;
-const HALF_PRICE = import.meta.env.VITE_HALF_PRICE;
-const SOCIAL_PRICE = import.meta.env.VITE_SOCIAL_PRICE;
 // const TAX_PRICE_PERCENTAGE = 10;
 
 const handleAddToCart = (itemId, itemName, price) => {
@@ -50,22 +47,22 @@ const handleViewContent = (itemId, itemName, price) => {
   });
 };
 
-const Item1 = ({ wpp, openChatbot }) => {
+const Item1 = ({ wpp, openChatbot, basePrice, batchLabel, availableUntil }) => {
   const navigate = useNavigate();
   return (
     <div className={styles.box} data-active="true">
       <div className={styles.boxContent}>
         <span>Ingresso</span>
-        <h4>INDIVIDUAL - 2° Lote</h4>
+        <h4>INDIVIDUAL{batchLabel ? ` - ${batchLabel}` : ""}</h4>
         <h5>Disponível até:</h5>
-        <p>01/04 ou enquanto durar</p>
+        <p>{availableUntil}</p>
       </div>
       <div className={styles.boxValue}>
         {/* <span>
-          De <s>{formatToBRL(Number(BASE_PRICE))}</s> por:
+          De <s>{formatToBRL(Number(basePrice))}</s> por:
         </span> */}
         <h4 className={styles.valueTicket}>
-          {formatToBRL(Number(BASE_PRICE))}
+          {formatToBRL(Number(basePrice))}
           {/* <span>À vista</span> */}
           {/* <div className={styles.infoPrice}>
             Taxa da Bilheteria Digital cobrada no momento da compra.
@@ -99,9 +96,9 @@ const Item1 = ({ wpp, openChatbot }) => {
               <ButtonSecondary
                 style={{ width: "100%" }}
                 //bilheteria
-                action="link"
-                link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
-                target="_blank"
+                // action="link"
+                // link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
+                // target="_blank"
 
                 //whatsapp
                 // action="link"
@@ -109,15 +106,15 @@ const Item1 = ({ wpp, openChatbot }) => {
                 // target="_blank"
 
                 //checkout
-                // action="button"
-                // onClick={() => {
-                //   navigate("/checkout?all=1");
-                //   handleAddToCart(
-                //     "individual",
-                //     "Ingresso Individual",
-                //     Number(BASE_PRICE)
-                //   );
-                // }}
+                action="button"
+                onClick={() => {
+                  navigate("/checkout?all=1");
+                  handleAddToCart(
+                    "individual",
+                    "Ingresso Individual",
+                    Number(basePrice)
+                  );
+                }}
               >
                 Comprar Ingresso
                 {/* INGRESSOS ESGOTADOS */}
@@ -144,20 +141,26 @@ const Item1 = ({ wpp, openChatbot }) => {
   );
 };
 
-const Item2 = ({ wpp, openChatbot }) => {
+const Item2 = ({
+  wpp,
+  openChatbot,
+  socialPrice,
+  batchLabel,
+  availableUntil,
+}) => {
   const navigate = useNavigate();
   return (
     <div className={styles.box} data-active="true">
       <div className={styles.boxContent}>
         <span>Ingresso</span>
-        <h4>SOCIAL - 2° Lote</h4>
+        <h4>SOCIAL{batchLabel ? ` - ${batchLabel}` : ""}</h4>
         <h5>Disponível até:</h5>
-        <p>01/04 ou enquanto durar</p>
+        <p>{availableUntil}</p>
         {/* <p>Compre no mínimo 5 ingressos para ter desconto.</p> */}
       </div>
       <div className={styles.boxValue}>
         <h4 className={styles.valueTicket}>
-          {formatToBRL(Number(SOCIAL_PRICE))}
+          {formatToBRL(Number(socialPrice))}
           <span>+ 1kg de alimento</span>
         </h4>
 
@@ -191,20 +194,20 @@ const Item2 = ({ wpp, openChatbot }) => {
                 // target="_blank"
 
                 //bilheteria
-                action="link"
-                link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
-                target="_blank"
+                // action="link"
+                // link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
+                // target="_blank"
 
                 //checkout
-                // action="button"
-                // onClick={() => {
-                //   navigate("/checkout?social=1");
-                //   handleAddToCart(
-                //     "social",
-                //     "Ingresso Social",
-                //     Number(SOCIAL_PRICE)
-                //   );
-                // }}
+                action="button"
+                onClick={() => {
+                  navigate("/checkout?social=1");
+                  handleAddToCart(
+                    "social",
+                    "Ingresso Social",
+                    Number(socialPrice)
+                  );
+                }}
               >
                 Comprar Ingresso{" "}
                 <IoTicketOutline style={{ fontSize: "1.2rem" }} />
@@ -229,15 +232,21 @@ const Item2 = ({ wpp, openChatbot }) => {
   );
 };
 
-const ItemHalf = ({ wpp, openChatbot }) => {
+const ItemHalf = ({
+  wpp,
+  openChatbot,
+  halfPrice,
+  batchLabel,
+  availableUntil,
+}) => {
   const navigate = useNavigate();
   return (
     <div className={styles.box} data-active="true">
       <div className={styles.boxContent}>
         <span>Ingresso</span>
-        <h4>MEIA-ENTRADA - 2° Lote</h4>
+        <h4>MEIA-ENTRADA{batchLabel ? ` - ${batchLabel}` : ""}</h4>
         <h5>Disponível até:</h5>
-        <p>01/04 ou enquanto durar</p>
+        <p>{availableUntil}</p>
         <p>
           Lembre-se: os documentos comprobatórios devem ser apresentados na
           entrada do evento.
@@ -246,7 +255,7 @@ const ItemHalf = ({ wpp, openChatbot }) => {
       <div className={styles.boxValue}>
         {/* <span>50% de R$ 798,00:</span> */}
         <h4 className={styles.valueTicket}>
-          {formatToBRL(Number(HALF_PRICE))}
+          {formatToBRL(Number(halfPrice))}
           {/* <span>À vista</span> */}
         </h4>
 
@@ -292,20 +301,20 @@ const ItemHalf = ({ wpp, openChatbot }) => {
                 // target="_blank"
 
                 //bilheteria
-                action="link"
-                link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
-                target="_blank"
+                // action="link"
+                // link="https://www.bilheteriadigital.com/iv-congresso-de-autismo-16-de-maio"
+                // target="_blank"
 
                 //checkout
-                // action="button"
-                // onClick={() => {
-                //   navigate("/checkout?half=1");
-                //   handleAddToCart(
-                //     "half",
-                //     "Ingresso Meia-Entrada",
-                //     Number(HALF_PRICE)
-                //   );
-                // }}
+                action="button"
+                onClick={() => {
+                  navigate("/checkout?half=1");
+                  handleAddToCart(
+                    "half",
+                    "Ingresso Meia-Entrada",
+                    Number(halfPrice)
+                  );
+                }}
               >
                 Comprar Ingresso{" "}
                 <IoTicketOutline style={{ fontSize: "1.2rem" }} />
@@ -342,6 +351,14 @@ const ItemHalf = ({ wpp, openChatbot }) => {
 };
 
 const Tickets = ({ wpp }) => {
+  const { config } = useEventConfig();
+  const {
+    full: basePrice,
+    half: halfPrice,
+    social: socialPrice,
+  } = config.ticketPrices;
+  const { ticketBatches } = config;
+
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [initialTicketType, setInitialTicketType] = useState("");
   // const [targetDate, setTargetDate] = useState("");
@@ -350,45 +367,6 @@ const Tickets = ({ wpp }) => {
     setInitialTicketType(ticketType);
     setIsChatbotOpen(true);
   };
-
-  // useEffect(() => {
-  //   const calculateTargetDate = () => {
-  //     const currentDate = new Date();
-  //     const target = new Date(currentDate);
-  //     target.setDate(currentDate.getDate() + 3); // 3 dias a partir de hoje
-  //     target.setHours(23, 59, 59, 999);
-
-  //     const year = target.getFullYear();
-  //     const month = String(target.getMonth() + 1).padStart(2, "0");
-  //     const day = String(target.getDate()).padStart(2, "0");
-
-  //     return `${year}-${month}-${day}T23:59:59`;
-  //   };
-
-  //   const storedDate = localStorage.getItem("countdownTargetDate");
-  //   const now = new Date().getTime();
-
-  //   if (storedDate) {
-  //     const storedTimestamp = new Date(storedDate).getTime();
-  //     if (storedTimestamp > now) {
-  //       // Data armazenada ainda é válida
-  //       setTargetDate(storedDate);
-  //       console.log("Using stored targetDate:", storedDate);
-  //     } else {
-  //       // Data expirou, calcular nova
-  //       const newTargetDate = calculateTargetDate();
-  //       localStorage.setItem("countdownTargetDate", newTargetDate);
-  //       setTargetDate(newTargetDate);
-  //       console.log("Stored date expired, new targetDate:", newTargetDate);
-  //     }
-  //   } else {
-  //     // Nenhuma data armazenada, calcular nova
-  //     const newTargetDate = calculateTargetDate();
-  //     localStorage.setItem("countdownTargetDate", newTargetDate);
-  //     setTargetDate(newTargetDate);
-  //     console.log("No stored date, new targetDate:", newTargetDate);
-  //   }
-  // }, []);
 
   return (
     <Section>
@@ -404,7 +382,7 @@ const Tickets = ({ wpp }) => {
           {/* <strong>⚡ Confira os valores e garanta o melhor preço:</strong> */}
           {/* <CountdownTimer targetDate={"2026-05-30T23:59:59"} /> */}
 
-          <img
+          {/* <img
             className={styles.bannerDesktop}
             src={bannerDesktopBg}
             alt="Banner dos palestrantes desktop"
@@ -413,19 +391,37 @@ const Tickets = ({ wpp }) => {
             className={styles.bannerMobile}
             src={bannerMobile}
             alt="Banner dos palestrantes mobile"
-          />
+          /> */}
 
-          <strong className={styles.highlightText}>
+          {/* <strong className={styles.highlightText}>
             As primeiras 300 inscrições ganharão uma exclusiva camisa do
             Congresso!
-          </strong>
+          </strong> */}
           {/* <CountdownTimer targetDate={new Date().getTime()} /> */}
         </div>
         <div className={styles.boxes}>
           {/* <img src={panfletoFiqueAtento} alt="Panfleto fique atento" /> */}
-          <Item1 wpp={wpp} openChatbot={openChatbot} />
-          <Item2 wpp={wpp} openChatbot={openChatbot} />
-          <ItemHalf wpp={wpp} openChatbot={openChatbot} />
+          <Item1
+            wpp={wpp}
+            openChatbot={openChatbot}
+            basePrice={basePrice}
+            batchLabel={ticketBatches.full.label}
+            availableUntil={ticketBatches.full.availableUntil}
+          />
+          <Item2
+            wpp={wpp}
+            openChatbot={openChatbot}
+            socialPrice={socialPrice}
+            batchLabel={ticketBatches.social.label}
+            availableUntil={ticketBatches.social.availableUntil}
+          />
+          <ItemHalf
+            wpp={wpp}
+            openChatbot={openChatbot}
+            halfPrice={halfPrice}
+            batchLabel={ticketBatches.half.label}
+            availableUntil={ticketBatches.half.availableUntil}
+          />
         </div>
       </div>
       <Chatbot

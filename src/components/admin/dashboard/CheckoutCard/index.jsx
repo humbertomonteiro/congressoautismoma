@@ -31,22 +31,42 @@ import useRole from "../../../../data/hooks/useRole";
 
 // ── Config visual de status ────────────────────────────────────────────────
 const STATUS_CONFIG = {
-  approved: { label: "Aprovado", color: "#16a34a", bg: "#dcfce7", border: "#bbf7d0" },
-  pending:  { label: "Pendente", color: "#d97706", bg: "#fef9c3", border: "#fde68a" },
-  error:    { label: "Erro",     color: "#dc2626", bg: "#fee2e2", border: "#fca5a5" },
-  expired:  { label: "Expirado", color: "#64748b", bg: "#f1f5f9", border: "#cbd5e1" },
-  canceled: { label: "Cancelado",color: "#64748b", bg: "#f1f5f9", border: "#cbd5e1" },
-  test:     { label: "Teste",    color: "#7c3aed", bg: "#ede9fe", border: "#c4b5fd" },
+  approved: {
+    label: "Aprovado",
+    color: "#16a34a",
+    bg: "#dcfce7",
+    border: "#bbf7d0",
+  },
+  pending: {
+    label: "Pendente",
+    color: "#d97706",
+    bg: "#fef9c3",
+    border: "#fde68a",
+  },
+  error: { label: "Erro", color: "#dc2626", bg: "#fee2e2", border: "#fca5a5" },
+  expired: {
+    label: "Expirado",
+    color: "#64748b",
+    bg: "#f1f5f9",
+    border: "#cbd5e1",
+  },
+  canceled: {
+    label: "Cancelado",
+    color: "#64748b",
+    bg: "#f1f5f9",
+    border: "#cbd5e1",
+  },
+  test: { label: "Teste", color: "#7c3aed", bg: "#ede9fe", border: "#c4b5fd" },
 };
 
 const PAYMENT_LABEL = {
   creditCard: "Cartão de Crédito",
-  pix:        "PIX",
-  boleto:     "Boleto",
-  cash:       "Dinheiro",
-  internal:   "Pagamento Interno",
-  courtesy:   "Cortesia",
-  debitCard:  "Cartão de Débito",
+  pix: "PIX",
+  boleto: "Boleto",
+  cash: "Dinheiro",
+  internal: "Pagamento Interno",
+  courtesy: "Cortesia",
+  debitCard: "Cartão de Débito",
 };
 
 const formatTimestamp = (timestamp) => {
@@ -65,18 +85,27 @@ const CheckoutCard = ({ checkout, isMobile }) => {
 
   const statusCfg = STATUS_CONFIG[checkout.status] ?? STATUS_CONFIG.expired;
   const firstParticipant = (checkout.participants || [])[0] ?? {};
-  const fullTickets = checkout.orderDetails?.fullTickets ?? checkout.orderDetails?.allTickets ?? 0;
+  const fullTickets =
+    checkout.orderDetails?.fullTickets ??
+    checkout.orderDetails?.allTickets ??
+    0;
   const halfTickets = checkout.orderDetails?.halfTickets ?? 0;
+  const socialTickets = checkout.orderDetails?.socialTickets ?? 0;
   const total =
     parseFloat(checkout.totalAmount) ||
     parseFloat(checkout.orderDetails?.total) ||
     0;
-  const isManual   = checkout.manual === true;
-  const isCourtesy = checkout.isCourtesy === true || checkout.paymentMethod === "courtesy";
+  const isManual = checkout.manual === true;
+  const isCourtesy =
+    checkout.isCourtesy === true || checkout.paymentMethod === "courtesy";
 
   const updateCheckoutInContext = (updated) => {
-    setCheckouts((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-    setFilteredCheckouts((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+    setCheckouts((prev) =>
+      prev.map((c) => (c.id === updated.id ? updated : c))
+    );
+    setFilteredCheckouts((prev) =>
+      prev.map((c) => (c.id === updated.id ? updated : c))
+    );
   };
 
   const handleDelete = async () => {
@@ -94,9 +123,13 @@ const CheckoutCard = ({ checkout, isMobile }) => {
   const handleWhatsApp = () => {
     const clean = (firstParticipant.phone || "").replace(/\D/g, "");
     const phone = clean.startsWith("55") ? clean : `55${clean}`;
-    const method = PAYMENT_LABEL[checkout.paymentMethod] || checkout.paymentMethod;
+    const method =
+      PAYMENT_LABEL[checkout.paymentMethod] || checkout.paymentMethod;
     const msg = `Olá! Vi que houve uma tentativa de pagamento via ${method} no ${checkout.eventName}. Podemos ajudar com algo?`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
+    window.open(
+      `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,
+      "_blank"
+    );
   };
 
   return (
@@ -115,7 +148,9 @@ const CheckoutCard = ({ checkout, isMobile }) => {
       >
         <CardContent sx={{ p: "12px 14px 8px", flexGrow: 1 }}>
           {/* ── Linha 1: nome + status ─────────────────────────────────── */}
-          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, mb: 0.75 }}>
+          <Box
+            sx={{ display: "flex", alignItems: "flex-start", gap: 1, mb: 0.75 }}
+          >
             <Typography
               sx={{
                 flex: 1,
@@ -150,17 +185,33 @@ const CheckoutCard = ({ checkout, isMobile }) => {
             <Box sx={{ display: "flex", gap: 0.5, mb: 0.75 }}>
               {isManual && (
                 <Chip
-                  icon={<span style={{ display: "flex", paddingLeft: 4 }}><MdHandshake size={11} /></span>}
+                  icon={
+                    <span style={{ display: "flex", paddingLeft: 4 }}>
+                      <MdHandshake size={11} />
+                    </span>
+                  }
                   label="Manual"
                   size="small"
-                  sx={{ height: 18, fontSize: "0.65rem", fontWeight: 600, bgcolor: "#ede9fe", color: "#6d28d9" }}
+                  sx={{
+                    height: 18,
+                    fontSize: "0.65rem",
+                    fontWeight: 600,
+                    bgcolor: "#ede9fe",
+                    color: "#6d28d9",
+                  }}
                 />
               )}
               {isCourtesy && (
                 <Chip
                   label="Cortesia"
                   size="small"
-                  sx={{ height: 18, fontSize: "0.65rem", fontWeight: 600, bgcolor: "#fce7f3", color: "#be185d" }}
+                  sx={{
+                    height: 18,
+                    fontSize: "0.65rem",
+                    fontWeight: 600,
+                    bgcolor: "#fce7f3",
+                    color: "#be185d",
+                  }}
                 />
               )}
             </Box>
@@ -173,29 +224,71 @@ const CheckoutCard = ({ checkout, isMobile }) => {
             <MdConfirmationNumber size={13} color="#64748b" />
             <Box sx={{ display: "flex", gap: 0.5, flex: 1, flexWrap: "wrap" }}>
               {fullTickets > 0 && (
-                <Typography sx={{ fontSize: "0.75rem", color: "#334155", fontWeight: 600 }}>
+                <Typography
+                  sx={{
+                    fontSize: "0.75rem",
+                    color: "#334155",
+                    fontWeight: 600,
+                  }}
+                >
                   {fullTickets} inteira{fullTickets > 1 ? "s" : ""}
                 </Typography>
               )}
-              {fullTickets > 0 && halfTickets > 0 && (
-                <Typography sx={{ fontSize: "0.75rem", color: "#94a3b8" }}>·</Typography>
+              {fullTickets > 0 && halfTickets > 0 && socialTickets > 0 && (
+                <Typography sx={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+                  ·
+                </Typography>
+              )}
+              {socialTickets > 0 && (
+                <Typography
+                  sx={{
+                    fontSize: "0.75rem",
+                    color: "#334155",
+                    fontWeight: 600,
+                  }}
+                >
+                  {socialTickets} Social{socialTickets > 1 ? "s" : ""}
+                </Typography>
               )}
               {halfTickets > 0 && (
-                <Typography sx={{ fontSize: "0.75rem", color: "#334155", fontWeight: 600 }}>
+                <Typography
+                  sx={{
+                    fontSize: "0.75rem",
+                    color: "#334155",
+                    fontWeight: 600,
+                  }}
+                >
                   {halfTickets} meia{halfTickets > 1 ? "s" : ""}
                 </Typography>
               )}
-              {fullTickets === 0 && halfTickets === 0 && (
-                <Typography sx={{ fontSize: "0.75rem", color: "#94a3b8" }}>—</Typography>
-              )}
+              {fullTickets === 0 &&
+                halfTickets === 0 &&
+                socialTickets === 0 && (
+                  <Typography sx={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+                    —
+                  </Typography>
+                )}
             </Box>
-            <Typography sx={{ fontSize: "0.8rem", fontWeight: 700, color: "#0f172a", flexShrink: 0 }}>
+            <Typography
+              sx={{
+                fontSize: "0.8rem",
+                fontWeight: 700,
+                color: "#0f172a",
+                flexShrink: 0,
+              }}
+            >
               R$ {total.toFixed(2).replace(".", ",")}
             </Typography>
           </Box>
 
           {/* ── Linha 4: método + data ─────────────────────────────────── */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <Typography sx={{ fontSize: "0.73rem", color: "#64748b" }}>
               {PAYMENT_LABEL[checkout.paymentMethod] ?? checkout.paymentMethod}
             </Typography>
@@ -206,9 +299,13 @@ const CheckoutCard = ({ checkout, isMobile }) => {
 
           {/* ── Vendedor ──────────────────────────────────────────────── */}
           {checkout.seller && (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.5 }}>
+            <Box
+              sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.5 }}
+            >
               <MdVerified size={12} color="#1976d2" />
-              <Typography sx={{ fontSize: "0.72rem", color: "#1976d2", fontWeight: 600 }}>
+              <Typography
+                sx={{ fontSize: "0.72rem", color: "#1976d2", fontWeight: 600 }}
+              >
                 {checkout.seller.name}
               </Typography>
             </Box>
@@ -218,13 +315,26 @@ const CheckoutCard = ({ checkout, isMobile }) => {
         <Divider />
 
         {/* ── Ações ─────────────────────────────────────────────────────── */}
-        <CardActions sx={{ px: "10px", py: "6px", justifyContent: "space-between", gap: 0.5 }}>
+        <CardActions
+          sx={{
+            px: "10px",
+            py: "6px",
+            justifyContent: "space-between",
+            gap: 0.5,
+          }}
+        >
           <Box sx={{ display: "flex", gap: 0.5 }}>
             <Button
               size="small"
               startIcon={<MdOpenInNew size={13} />}
               onClick={() => setOpenDetailsModal(checkout.id)}
-              sx={{ textTransform: "none", fontSize: "0.73rem", px: 1, py: 0.3, color: "#3b82f6" }}
+              sx={{
+                textTransform: "none",
+                fontSize: "0.73rem",
+                px: 1,
+                py: 0.3,
+                color: "#3b82f6",
+              }}
             >
               Detalhes
             </Button>
@@ -246,7 +356,11 @@ const CheckoutCard = ({ checkout, isMobile }) => {
               <IconButton
                 size="small"
                 onClick={handleWhatsApp}
-                sx={{ color: "#25D366", "&:hover": { color: "#1EBE56" }, p: 0.4 }}
+                sx={{
+                  color: "#25D366",
+                  "&:hover": { color: "#1EBE56" },
+                  p: 0.4,
+                }}
               >
                 <FaWhatsapp size={18} />
               </IconButton>
@@ -256,7 +370,10 @@ const CheckoutCard = ({ checkout, isMobile }) => {
       </Card>
 
       {/* ── Modal de detalhes ──────────────────────────────────────────── */}
-      <Modal open={!!openDetailsModal} onClose={() => setOpenDetailsModal(null)}>
+      <Modal
+        open={!!openDetailsModal}
+        onClose={() => setOpenDetailsModal(null)}
+      >
         <Box
           sx={{
             position: "absolute",
@@ -306,18 +423,31 @@ const CheckoutCard = ({ checkout, isMobile }) => {
             textAlign: "center",
           }}
         >
-          <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 700, color: "#0f172a" }}>
+          <Typography
+            variant="h6"
+            sx={{ mb: 1.5, fontWeight: 700, color: "#0f172a" }}
+          >
             Confirmar Exclusão
           </Typography>
           <Typography sx={{ mb: 3, color: "#64748b", fontSize: "0.9rem" }}>
             Excluir este checkout de <strong>{firstParticipant.name}</strong>?
-            <br />Os dados serão perdidos permanentemente.
+            <br />
+            Os dados serão perdidos permanentemente.
           </Typography>
           <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
-            <Button variant="outlined" onClick={() => setShowModalDelete(false)} sx={{ textTransform: "none" }}>
+            <Button
+              variant="outlined"
+              onClick={() => setShowModalDelete(false)}
+              sx={{ textTransform: "none" }}
+            >
               Cancelar
             </Button>
-            <Button variant="contained" color="error" onClick={handleDelete} sx={{ textTransform: "none" }}>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleDelete}
+              sx={{ textTransform: "none" }}
+            >
               Excluir
             </Button>
           </Box>

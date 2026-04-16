@@ -29,6 +29,7 @@ import {
   MdEventNote,
   MdConfirmationNumber,
   MdCalendarMonth,
+  MdLocalOffer,
 } from "react-icons/md";
 import useEventConfig from "../../../data/hooks/useEventConfig";
 
@@ -94,6 +95,28 @@ const diffConfig = (before, after) => {
     });
   }
 
+  const batchKeys = [
+    { key: "full",   label: "Inteira" },
+    { key: "half",   label: "Meia entrada" },
+    { key: "social", label: "Social" },
+  ];
+  for (const { key, label } of batchKeys) {
+    if (before.ticketBatches?.[key]?.label !== after.ticketBatches?.[key]?.label) {
+      changes.push({
+        field: `Lote — ${label}`,
+        from: before.ticketBatches?.[key]?.label || "—",
+        to: after.ticketBatches?.[key]?.label || "—",
+      });
+    }
+    if (before.ticketBatches?.[key]?.availableUntil !== after.ticketBatches?.[key]?.availableUntil) {
+      changes.push({
+        field: `Disponibilidade — ${label}`,
+        from: before.ticketBatches?.[key]?.availableUntil || "—",
+        to: after.ticketBatches?.[key]?.availableUntil || "—",
+      });
+    }
+  }
+
   return changes;
 };
 
@@ -122,6 +145,11 @@ export default function EventConfigSection() {
       eventName: config.eventName,
       eventDates: [...config.eventDates],
       ticketPrices: { ...config.ticketPrices },
+      ticketBatches: {
+        full:   { ...config.ticketBatches.full },
+        half:   { ...config.ticketBatches.half },
+        social: { ...config.ticketBatches.social },
+      },
     });
     setEditing(true);
     setSaveError("");
@@ -185,6 +213,11 @@ export default function EventConfigSection() {
           full:   parseFloat(form.ticketPrices.full),
           half:   parseFloat(form.ticketPrices.half),
           social: parseFloat(form.ticketPrices.social),
+        },
+        ticketBatches: {
+          full:   { label: form.ticketBatches.full.label.trim(),   availableUntil: form.ticketBatches.full.availableUntil.trim() },
+          half:   { label: form.ticketBatches.half.label.trim(),   availableUntil: form.ticketBatches.half.availableUntil.trim() },
+          social: { label: form.ticketBatches.social.label.trim(), availableUntil: form.ticketBatches.social.availableUntil.trim() },
         },
       });
       setSaveSuccess(true);
@@ -298,6 +331,29 @@ export default function EventConfigSection() {
               </Box>
             }
           />
+          <ConfigCard
+            icon={<MdLocalOffer size={20} color="#1976d2" />}
+            title="Lotes dos ingressos"
+            value={
+              <Box sx={{ display: "flex", gap: 3, mt: 0.75, flexWrap: "wrap" }}>
+                {[
+                  { label: "Inteira",      key: "full" },
+                  { label: "Meia entrada", key: "half" },
+                  { label: "Social",       key: "social" },
+                ].map(({ label, key }) => (
+                  <Box key={key} sx={{ minWidth: 130 }}>
+                    <Typography variant="caption" color="text.secondary">{label}</Typography>
+                    <Typography fontWeight={600} sx={{ fontSize: "0.9rem" }}>
+                      {config.ticketBatches[key].label || "—"}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Até: {config.ticketBatches[key].availableUntil || "—"}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            }
+          />
           {config.updatedAt && (
             <Typography variant="caption" color="text.disabled">
               Última atualização: {formatTs(config.updatedAt)} — {config.updatedBy}
@@ -381,6 +437,60 @@ export default function EventConfigSection() {
                   sx={{ width: 150 }}
                   slotProps={{ htmlInput: { min: 0, step: "0.01" } }}
                 />
+              ))}
+            </Box>
+          </Box>
+
+          {/* Lotes */}
+          <Box>
+            <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+              Lotes dos ingressos
+            </Typography>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {[
+                { key: "full",   label: "Inteira" },
+                { key: "half",   label: "Meia entrada" },
+                { key: "social", label: "Social" },
+              ].map(({ key, label }) => (
+                <Box key={key}>
+                  <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 0.5, display: "block" }}>
+                    {label}
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+                    <TextField
+                      size="small"
+                      label="Lote / Fase"
+                      placeholder="Ex: 2° Lote, Pré-Venda…"
+                      value={form.ticketBatches[key].label}
+                      onChange={(e) =>
+                        setForm((p) => ({
+                          ...p,
+                          ticketBatches: {
+                            ...p.ticketBatches,
+                            [key]: { ...p.ticketBatches[key], label: e.target.value },
+                          },
+                        }))
+                      }
+                      sx={{ width: 200 }}
+                    />
+                    <TextField
+                      size="small"
+                      label="Disponível até"
+                      placeholder="Ex: 01/04 ou enquanto durar"
+                      value={form.ticketBatches[key].availableUntil}
+                      onChange={(e) =>
+                        setForm((p) => ({
+                          ...p,
+                          ticketBatches: {
+                            ...p.ticketBatches,
+                            [key]: { ...p.ticketBatches[key], availableUntil: e.target.value },
+                          },
+                        }))
+                      }
+                      sx={{ width: 260 }}
+                    />
+                  </Box>
+                </Box>
               ))}
             </Box>
           </Box>

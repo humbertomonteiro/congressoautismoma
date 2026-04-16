@@ -251,9 +251,7 @@ const ModalCheckoutDetails = ({
     }
     const emailData = {
       checkoutId: checkout.id,
-      from: EMAIL_FROM,
-      to: participant.email,
-      subject: `Confirmação de Pagamento - ${eventConfig.eventName}`,
+      participantId: participant.id,
       data: {
         name: participant.name,
         transactionId: checkout.transactionId,

@@ -12,6 +12,11 @@ export const DEFAULT_EVENT_CONFIG = {
   eventName: "Congresso Autismo MA 2026",
   eventDates: ["2026-05-16", "2026-05-17"],
   ticketPrices: { full: 674, half: 337, social: 347 },
+  ticketBatches: {
+    full:   { label: "2° Lote", availableUntil: "01/04 ou enquanto durar" },
+    half:   { label: "2° Lote", availableUntil: "01/04 ou enquanto durar" },
+    social: { label: "2° Lote", availableUntil: "01/04 ou enquanto durar" },
+  },
 };
 
 /**
@@ -44,6 +49,20 @@ const useEventConfig = () => {
             ticketPrices: {
               ...DEFAULT_EVENT_CONFIG.ticketPrices,
               ...(data.ticketPrices || {}),
+            },
+            ticketBatches: {
+              full: {
+                ...DEFAULT_EVENT_CONFIG.ticketBatches.full,
+                ...(data.ticketBatches?.full || {}),
+              },
+              half: {
+                ...DEFAULT_EVENT_CONFIG.ticketBatches.half,
+                ...(data.ticketBatches?.half || {}),
+              },
+              social: {
+                ...DEFAULT_EVENT_CONFIG.ticketBatches.social,
+                ...(data.ticketBatches?.social || {}),
+              },
             },
           });
         } else {

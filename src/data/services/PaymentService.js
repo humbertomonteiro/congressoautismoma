@@ -40,7 +40,12 @@ class PaymentService {
       return { success, message, ...data };
     } catch (error) {
       console.error("Erro ao processar Pix:", error);
-      throw new Error(error.response?.data?.error || "Erro ao gerar Pix");
+      throw new Error(
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message ||
+        "Erro ao gerar Pix"
+      );
     }
   }
 

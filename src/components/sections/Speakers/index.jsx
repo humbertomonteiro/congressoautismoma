@@ -12,6 +12,9 @@ import thiagoCastroImg from "../../../assets/speakers/dr-thiago-castro.jpeg";
 import deboraSauressig from "../../../assets/speakers/debora-sauressig.jpeg";
 import drElizangilaLeite from "../../../assets/speakers/dr-elizangila-leite.jpeg";
 
+// import palestrantes1 from "../../../assets/speakers/palestrantes1.jpeg";
+// import palestrantes2 from "../../../assets/speakers/palestrantes2.jpeg";
+
 import imgLogo from "../../../assets/logos/logo-no-text.png";
 
 const speakers = [
@@ -19,11 +22,13 @@ const speakers = [
     name: "Dr. Thiago Castro",
     description: "Pela primeira vez no Maranhão",
     image: thiagoCastroImg,
+    // image: palestrantes1,
   },
   {
     name: "Débora Saueressig",
     description: "Especialista convidado",
     image: deboraSauressig,
+    // image: palestrantes2,
   },
   {
     name: "Dra. Elizangila Leite",
@@ -35,7 +40,7 @@ const speakers = [
 export default function Speakers() {
   return (
     <Section>
-      <Title text="Mais de 12 Palestrantes" align="center" />d
+      <Title text="Mais de 12 Palestrantes" align="center" />
       <div className={styles.container}>
         {/* Vídeo */}
         <div className={styles.video}>
@@ -85,7 +90,7 @@ export default function Speakers() {
                     <h3>
                       {speaker.description}: {speaker.name}
                     </h3>
-                    <img src={speaker.image} alt={speaker.name} />
+                    <img src={speaker.image} alt={index} />
                   </div>
                 </SwiperSlide>
               ))}

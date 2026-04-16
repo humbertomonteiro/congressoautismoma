@@ -14,11 +14,9 @@ import AnimatedButton from "../../components/shared/AnimatedButton";
 import { useLocation, useNavigate } from "react-router-dom";
 import ButtonWhatsapp from "../../components/sections/ButtonWhatsapp";
 
-const TICKET_PRICES = {
-  all: "R$ 674,00",
-  half: "R$ 337,00",
-  social: "R$ 347,00",
-};
+const formatPrice = (val) =>
+  `R$ ${Number(val ?? 0).toFixed(2).replace(".", ",")}`;
+
 const TICKET_LABELS = {
   all: "Inteiro",
   half: "Meia-entrada",
@@ -51,6 +49,7 @@ const PaymentForm = () => {
     handleRemoveCoupon,
     handlePayment,
     deriveTicketType,
+    ticketPrices,
   } = usePaymentForm();
 
   const [step, setStep] = useState(1);
@@ -257,7 +256,8 @@ const PaymentForm = () => {
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    if (!selectedPayer) {
+    // PIX usa participants[0] no backend — payer não é necessário
+    if (formState.paymentMethod !== "pix" && !selectedPayer) {
       setModalState({
         isOpen: true,
         title: "Pagador Não Selecionado",
@@ -267,7 +267,11 @@ const PaymentForm = () => {
       });
       return;
     }
-    handlePayment(e, selectedPayer, navigate);
+    const effectivePayer =
+      formState.paymentMethod === "pix"
+        ? participants[0] ?? selectedPayer
+        : selectedPayer;
+    handlePayment(e, effectivePayer, navigate);
   };
 
   return (
@@ -320,9 +324,14 @@ const PaymentForm = () => {
                         {TICKET_LABELS[type]}
                       </span>
                       <span className={styles.ticketPrice}>
-                        {TICKET_PRICES[type]}{" "}
-                        {type === "social" &&
-                          " + 1kg de alimento para cada ingresso"}
+                        {formatPrice(
+                          type === "all"
+                            ? ticketPrices?.full
+                            : type === "half"
+                            ? ticketPrices?.half
+                            : ticketPrices?.social
+                        )}
+                        {type === "social" && " + 1kg de alimento para cada ingresso"}
                       </span>
                     </div>
                     <div className={styles.counter}>
@@ -530,19 +539,19 @@ const PaymentForm = () => {
                 <h2>Resumo do Pedido</h2>
                 {formState.allTickets > 0 && (
                   <p>
-                    Inteiro: {formState.allTickets} × R$ 674,00 ={" "}
+                    Inteiro: {formState.allTickets} × {formatPrice(ticketPrices?.full)} ={" "}
                     <strong>R$ {totals.valueTicketsAll}</strong>
                   </p>
                 )}
                 {formState.halfTickets > 0 && (
                   <p>
-                    Meia-entrada: {formState.halfTickets} × R$ 337,00 ={" "}
+                    Meia-entrada: {formState.halfTickets} × {formatPrice(ticketPrices?.half)} ={" "}
                     <strong>R$ {totals.valueTicketsHalf}</strong>
                   </p>
                 )}
                 {formState.socialTickets > 0 && (
                   <p>
-                    Social: {formState.socialTickets} × R$ 347,00 ={" "}
+                    Social: {formState.socialTickets} × {formatPrice(ticketPrices?.social)} ={" "}
                     <strong>R$ {totals.valueTicketsSocial}</strong>
                   </p>
                 )}

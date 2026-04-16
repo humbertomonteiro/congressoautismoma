@@ -11,7 +11,7 @@ import {
   MdOutlineQrCodeScanner,
   MdOutlineWorkspacePremium,
   MdOutlineShoppingCart,
-  // MdOutlineSettings,
+  MdOutlineSettings,
 } from "react-icons/md";
 import {
   AppBar,
@@ -34,7 +34,7 @@ import SellerSection from "../../components/admin/SellerSection";
 import UserManagementSection from "../../components/admin/UserManagementSection";
 import CouponManagementSection from "../../components/admin/CouponManagementSection";
 import CaixaSection from "../../components/admin/caixa/CaixaSection";
-import EventConfigSection from "../../components/admin/EventConfigSection";
+// import EventConfigSection from "../../components/admin/EventConfigSection";
 import { DashboardProvider } from "../../data/contexts/DashboardContext";
 import { useSearchParams } from "react-router-dom";
 
@@ -195,12 +195,12 @@ const AdminDashboard = () => {
           label="Usuários"
           visible={canSeeUserManagement}
         />
-        {/* <NavItem
+        <NavItem
           section="event-config"
           icon={<MdOutlineSettings size={18} />}
           label="Config. Evento"
           visible={canSeeUserManagement}
-        /> */}
+        />
       </div>
 
       {/* Logout fixo no rodapé */}
@@ -286,9 +286,9 @@ const AdminDashboard = () => {
           {activeSection === "users" && canSeeUserManagement && (
             <UserManagementSection />
           )}
-          {activeSection === "event-config" && canSeeUserManagement && (
+          {/* {activeSection === "event-config" && canSeeUserManagement && (
             <EventConfigSection />
-          )}
+          )} */}
         </Box>
       </Box>
     </DashboardProvider>
