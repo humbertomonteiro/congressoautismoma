@@ -675,14 +675,14 @@ const PaymentForm = () => {
                         />
                       </label>
                       <label>
-                        <p>Vencimento (MM/AAAA)</p>
+                        <p>Vencimento (MM/AA)</p>
                         <InputMask
-                          mask="99/9999"
+                          mask="99/99"
                           value={creditCardData.maturity}
                           onChange={(e) =>
                             handleCreditCardChange("maturity", e.target.value)
                           }
-                          placeholder="Ex: 05/2026"
+                          placeholder="Ex: 05/26"
                           required
                         >
                           {(inputProps) => (

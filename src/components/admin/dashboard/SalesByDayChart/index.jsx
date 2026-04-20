@@ -25,13 +25,14 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from "recharts";
 
-const SalesByDayChart = ({ checkouts, formatToBrazilianCurrency }) => {
+const SalesByDayChart = ({ checkouts }) => {
   const [period, setPeriod] = useState("month");
 
-  // Processar os dados de vendas
+  // Processar os dados de ingressos por dia
   const salesData = useMemo(() => {
     const approvedCheckouts = checkouts.filter((c) => c.status === "approved");
 
@@ -53,27 +54,41 @@ const SalesByDayChart = ({ checkouts, formatToBrazilianCurrency }) => {
         break;
     }
 
-    const salesByDay = {};
+    const ticketsByDay = {};
     approvedCheckouts.forEach((checkout) => {
       const date = checkout.timestamp?.toDate
-        ? checkout.timestamp.toDate() // Firestore Timestamp
-        : new Date(checkout.timestamp); // Converte para Date corretamente
+        ? checkout.timestamp.toDate()
+        : new Date(checkout.timestamp);
       const dayKey = format(date, "yyyy-MM-dd", { locale: ptBR });
 
       if (date >= startDate && date <= endDate) {
-        salesByDay[dayKey] =
-          (salesByDay[dayKey] || 0) + parseFloat(checkout.totalAmount || 0);
+        const od = checkout.orderDetails || {};
+        const full = od.allTickets ?? od.fullTickets ?? 0;
+        const half = od.halfTickets || 0;
+        const social = od.socialTickets || 0;
+        const total = Number(full) + Number(half) + Number(social);
+
+        if (!ticketsByDay[dayKey]) {
+          ticketsByDay[dayKey] = { total: 0, full: 0, half: 0, social: 0 };
+        }
+        ticketsByDay[dayKey].total += total;
+        ticketsByDay[dayKey].full += Number(full);
+        ticketsByDay[dayKey].half += Number(half);
+        ticketsByDay[dayKey].social += Number(social);
       }
     });
 
     // Ordenar e converter para formato do Recharts
-    return Object.keys(salesByDay)
+    return Object.keys(ticketsByDay)
       .map((day) => ({
         name:
           period === "year"
             ? format(parseISO(day), "MMM", { locale: ptBR })
             : format(parseISO(day), "dd/MM", { locale: ptBR }),
-        value: salesByDay[day],
+        total: ticketsByDay[day].total,
+        inteiros: ticketsByDay[day].full,
+        meias: ticketsByDay[day].half,
+        sociais: ticketsByDay[day].social,
       }))
       .sort((a, b) => new Date(a.name) - new Date(b.name));
   }, [checkouts, period]);
@@ -89,7 +104,7 @@ const SalesByDayChart = ({ checkouts, formatToBrazilianCurrency }) => {
       }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
           <Typography sx={{ color: "#0f172a", fontWeight: 700, fontSize: "0.95rem" }}>
-            Vendas por Dia
+            Ingressos por Dia
           </Typography>
           <FormControl sx={{ minWidth: 120 }}>
             <InputLabel id="period-select-label">Período</InputLabel>
@@ -109,9 +124,9 @@ const SalesByDayChart = ({ checkouts, formatToBrazilianCurrency }) => {
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={salesData}>
             <XAxis dataKey="name" stroke="#94a3b8" tick={{ fontSize: 12 }} />
-            <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} />
+            <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} allowDecimals={false} />
             <Tooltip
-              formatter={(value) => formatToBrazilianCurrency(value)}
+              formatter={(value, name) => [value, name]}
               contentStyle={{
                 backgroundColor: "#fff",
                 border: "1px solid #e2e8f0",
@@ -120,7 +135,10 @@ const SalesByDayChart = ({ checkouts, formatToBrazilianCurrency }) => {
                 fontSize: "0.82rem",
               }}
             />
-            <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+            <Legend wrapperStyle={{ fontSize: "0.78rem" }} />
+            <Bar dataKey="inteiros" name="Inteiros" stackId="a" fill="#3b82f6" />
+            <Bar dataKey="meias" name="Meias" stackId="a" fill="#a855f7" />
+            <Bar dataKey="sociais" name="Sociais" stackId="a" fill="#22c55e" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </Card>

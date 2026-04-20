@@ -81,10 +81,7 @@ const DashboardSection = () => {
           mb: 4,
         }}
       >
-        <SalesByDayChart
-          checkouts={checkouts}
-          formatToBrazilianCurrency={formatToBrazilianCurrency}
-        />
+        <SalesByDayChart checkouts={checkouts} />
 
         <Box sx={{
           width: "100%",

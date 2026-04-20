@@ -172,6 +172,17 @@ const useDashboardData = () => {
     const totalAmount = (c) =>
       parseFloat(c.totalAmount) || parseFloat(c.orderDetails?.total) || 0;
 
+    const ticketCounts = approvedCheckouts.reduce(
+      (acc, c) => {
+        const od = c.orderDetails || {};
+        acc.full += Number(od.allTickets ?? od.fullTickets ?? 0);
+        acc.half += Number(od.halfTickets || 0);
+        acc.social += Number(od.socialTickets || 0);
+        return acc;
+      },
+      { full: 0, half: 0, social: 0 }
+    );
+
     setFilteredMetrics({
       approvedValue: formatToBrazilianCurrency(
         approvedCheckouts.reduce((a, c) => a + totalAmount(c), 0)
@@ -182,6 +193,9 @@ const useDashboardData = () => {
       ),
       pendingCount: pendingCheckouts.length,
       errorCount: errorCheckouts.length,
+      successTicketsFull: ticketCounts.full,
+      successTicketsHalf: ticketCounts.half,
+      successTicketsSocial: ticketCounts.social,
     });
 
     const qrData = {};
