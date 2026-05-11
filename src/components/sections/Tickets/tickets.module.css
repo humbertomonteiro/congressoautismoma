@@ -241,7 +241,7 @@
 @media (max-width: 1060px) {
   .container {
     & .boxes {
-      flex-direction: column;
+      flex-direction: column-reverse;
       & .box {
         width: 100%;
       }

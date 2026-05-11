@@ -6,6 +6,7 @@ import ButtonSecondary from "../../components/shared/ButtonSecondary";
 
 import { IoMdDownload } from "react-icons/io";
 import { GoHomeFill } from "react-icons/go";
+import { FaTicket } from "react-icons/fa6";
 
 const isProduction = import.meta.env.VITE_ENV === "production";
 const baseUrl = isProduction
@@ -92,13 +93,17 @@ const ThankYouPage = ({ totalValue }) => {
     }
 
     if (!checkoutId) {
-      alert("Link do boleto não disponível. Use o código de barras abaixo para pagar.");
+      alert(
+        "Link do boleto não disponível. Use o código de barras abaixo para pagar."
+      );
       return;
     }
 
     setDownloadLoading(true);
     try {
-      const response = await fetch(`${baseUrl}/payments/boleto/${checkoutId}/pdf`);
+      const response = await fetch(
+        `${baseUrl}/payments/boleto/${checkoutId}/pdf`
+      );
       if (!response.ok) throw new Error("Erro ao gerar PDF");
 
       const blob = await response.blob();
@@ -110,7 +115,9 @@ const ThankYouPage = ({ totalValue }) => {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Erro ao baixar boleto:", err);
-      alert("Não foi possível baixar o PDF. Use o código de barras abaixo para pagar.");
+      alert(
+        "Não foi possível baixar o PDF. Use o código de barras abaixo para pagar."
+      );
     } finally {
       setDownloadLoading(false);
     }
@@ -171,7 +178,10 @@ const ThankYouPage = ({ totalValue }) => {
         </div>
         <div className={styles.actions}>
           {!isCreditCard && (
-            <ButtonSecondary onClick={handleDownloadBoleto} disabled={downloadLoading}>
+            <ButtonSecondary
+              onClick={handleDownloadBoleto}
+              disabled={downloadLoading}
+            >
               {downloadLoading ? "Gerando PDF..." : "Baixar Boleto"}{" "}
               <IoMdDownload style={{ fontSize: "1.5rem" }} />
             </ButtonSecondary>
@@ -179,6 +189,11 @@ const ThankYouPage = ({ totalValue }) => {
           <ButtonSecondary onClick={() => navigate("/")}>
             Voltar para a Home <GoHomeFill style={{ fontSize: "1.5rem" }} />
           </ButtonSecondary>
+          {isCreditCard && (
+            <ButtonSecondary action="link" link="/ingressos">
+              Acessar ingresso <FaTicket styles={{ fontSize: "1.5rem" }} />
+            </ButtonSecondary>
+          )}
         </div>
       </div>
     </div>

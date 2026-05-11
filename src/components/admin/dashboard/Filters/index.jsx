@@ -11,7 +11,6 @@ import {
 import { useDashboard } from "../../../../data/contexts/DashboardContext";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { endOfDay } from "date-fns";
 
 const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
   const {
@@ -32,32 +31,27 @@ const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
     setEventFilter,
   } = useDashboard();
 
+  // Formata usando campos locais para evitar desvio de timezone (UTC vs BRT)
+  const toLocalDateString = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
   const handleStartDateChange = (date) => {
-    if (date) {
-      console.log("Date recebido do DatePicker:", date);
-      console.log("ISO original:", date.toISOString());
-
-      // Cria uma nova instância e adiciona um dia
-      const adjustedDate = new Date(date);
-      adjustedDate.setDate(adjustedDate.getDate() + 1); // Adiciona 1 dia
-      adjustedDate.setHours(0, 0, 0, 0); // Garante o início do dia
-
-      const formattedDate = adjustedDate.toISOString().split("T")[0];
-      console.log("Data ajustada:", formattedDate);
-
-      setStartDateFilter(formattedDate);
-    } else {
-      setStartDateFilter("");
-    }
+    setStartDateFilter(date ? toLocalDateString(date) : "");
   };
 
   const handleEndDateChange = (date) => {
-    if (date) {
-      const localDate = endOfDay(date);
-      setEndDateFilter(localDate.toISOString().split("T")[0]);
-    } else {
-      setEndDateFilter("");
-    }
+    setEndDateFilter(date ? toLocalDateString(date) : "");
+  };
+
+  // Converte "YYYY-MM-DD" de volta para Date local (evita UTC midnight)
+  const parseLocalDate = (str) => {
+    if (!str) return null;
+    const [y, m, d] = str.split("-").map(Number);
+    return new Date(y, m - 1, d);
   };
 
   const handleClearFilters = () => {
@@ -165,7 +159,7 @@ const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
         }}
       >
         <DatePicker
-          selected={startDateFilter ? new Date(startDateFilter) : null}
+          selected={parseLocalDate(startDateFilter)}
           onChange={handleStartDateChange}
           dateFormat="dd/MM/yyyy"
           placeholderText="DD/MM/YYYY"
@@ -178,7 +172,7 @@ const Filters = ({ isMobile, setOpenFiltersDrawer }) => {
           }
         />
         <DatePicker
-          selected={endDateFilter ? new Date(endDateFilter) : null}
+          selected={parseLocalDate(endDateFilter)}
           onChange={handleEndDateChange}
           dateFormat="dd/MM/yyyy"
           placeholderText="DD/MM/YYYY"

@@ -122,14 +122,12 @@ class PaymentService {
       };
     } catch (error) {
       console.error("Erro ao calcular totais:", error);
-      return {
-        valueTicketsAll: "0.00",
-        valueTicketsHalf: "0.00",
-        valueTicketsSocial: "0.00",
-        discount: "0.00",
-        total: "0.00",
-        totalInCents: 0,
-      };
+      throw new Error(
+        error.response?.data?.message ||
+          error.response?.data?.error ||
+          error.message ||
+          "Erro ao calcular totais"
+      );
     }
   }
 
@@ -179,6 +177,24 @@ class PaymentService {
       console.error("Erro ao enviar email de confirmação:", error);
       throw new Error(
         error.response?.data?.error || "Erro ao enviar email de confirmação"
+      );
+    }
+  }
+
+  async sendTransferEmail({ checkoutId, participantId }) {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await axios.post(
+        `${baseUrl}/email/send-transfer-confirmation`,
+        { checkoutId, participantId },
+        { headers }
+      );
+      const { success, message } = response.data;
+      if (!success) throw new Error(message);
+      return { success, message };
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.error || "Erro ao enviar e-mail de transferência"
       );
     }
   }

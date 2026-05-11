@@ -16,7 +16,13 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 import { IoIosArrowDown } from "react-icons/io";
 import { useState } from "react";
-import { doc, updateDoc, writeBatch } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  updateDoc,
+  writeBatch,
+  serverTimestamp,
+} from "firebase/firestore";
 import { db } from "../../../../../firebaseConfig";
 import PaymentService from "../../../../data/services/PaymentService";
 import { toast } from "react-toastify";
@@ -27,6 +33,7 @@ import {
   MdQrCode,
   MdPerson,
   MdBadge,
+  MdSwapHoriz,
 } from "react-icons/md";
 import useRole from "../../../../data/hooks/useRole";
 import useEventConfig from "../../../../data/hooks/useEventConfig";
@@ -108,8 +115,9 @@ const ModalCheckoutDetails = ({
     paymentId: checkout?.paymentId || "",
     total: checkout?.orderDetails?.total ?? checkout?.totalAmount ?? "",
     orderDetails: {
-      fullTickets: checkout?.orderDetails?.fullTickets ?? 0,
+      fullTickets: checkout?.orderDetails?.allTickets ?? checkout?.orderDetails?.fullTickets ?? 0,
       halfTickets: checkout?.orderDetails?.halfTickets ?? 0,
+      socialTickets: checkout?.orderDetails?.socialTickets ?? 0,
       coupon: checkout?.orderDetails?.coupon ?? "",
       discount: checkout?.orderDetails?.discount ?? "0.00",
       valueTicketsAll:
@@ -125,6 +133,13 @@ const ModalCheckoutDetails = ({
 
   const [isEditingOrder, setIsEditingOrder] = useState(false);
   const [editingParticipantIdx, setEditingParticipantIdx] = useState(null);
+  const [transferringIdx, setTransferringIdx] = useState(null);
+  const [transferForm, setTransferForm] = useState({
+    name: "",
+    email: "",
+    document: "",
+    phone: "",
+  });
   const { canEdit } = useRole();
 
   // ── handleOrderDataChange(field, value, nestedField?) ──────────────────────
@@ -132,8 +147,9 @@ const ModalCheckoutDetails = ({
     setOrderData((prev) => {
       const next = { ...prev };
       if (nestedField) {
-        const FULL_PRICE = 499.9;
-        const HALF_PRICE = 399.9;
+        const FULL_PRICE = eventConfig.ticketPrices?.full ?? 499.9;
+        const HALF_PRICE = eventConfig.ticketPrices?.half ?? 399.9;
+        const SOCIAL_PRICE = eventConfig.ticketPrices?.social ?? 199.9;
         const details = { ...next.orderDetails, [nestedField]: value };
         details.valueTicketsAll = (
           parseInt(details.fullTickets || 0) * FULL_PRICE
@@ -144,7 +160,8 @@ const ModalCheckoutDetails = ({
         next.orderDetails = details;
         next.total = (
           parseInt(details.fullTickets || 0) * FULL_PRICE +
-          parseInt(details.halfTickets || 0) * HALF_PRICE -
+          parseInt(details.halfTickets || 0) * HALF_PRICE +
+          parseInt(details.socialTickets || 0) * SOCIAL_PRICE -
           parseFloat(details.discount || 0)
         ).toFixed(2);
       } else {
@@ -175,7 +192,7 @@ const ModalCheckoutDetails = ({
 
   const saveChanges = async () => {
     try {
-      // Salva participantes na subcoleção
+      // Participantes na subcoleção (formato novo)
       if (participants.some((p) => p.id)) {
         const batch = writeBatch(db);
         participants.forEach((p) => {
@@ -195,7 +212,7 @@ const ModalCheckoutDetails = ({
       }
 
       // Salva dados do pedido no checkout
-      await updateDoc(doc(db, "checkouts", checkout.id), {
+      const checkoutUpdate = {
         document: orderData.document,
         status: orderData.status,
         paymentMethod: orderData.paymentMethod,
@@ -203,14 +220,18 @@ const ModalCheckoutDetails = ({
         totalAmount: parseFloat(orderData.total) || 0,
         orderDetails: {
           ...checkout.orderDetails,
+          allTickets: parseInt(orderData.orderDetails.fullTickets || 0),
           fullTickets: parseInt(orderData.orderDetails.fullTickets || 0),
           halfTickets: parseInt(orderData.orderDetails.halfTickets || 0),
+          socialTickets: parseInt(orderData.orderDetails.socialTickets || 0),
           coupon: orderData.orderDetails.coupon,
           discount: parseFloat(orderData.orderDetails.discount || 0).toFixed(2),
           valueTicketsAll: orderData.orderDetails.valueTicketsAll,
           valueTicketsHalf: orderData.orderDetails.valueTicketsHalf,
         },
-      });
+      };
+
+      await updateDoc(doc(db, "checkouts", checkout.id), checkoutUpdate);
 
       toast.success("Alterações salvas com sucesso!");
       updateCheckoutInContext({
@@ -223,8 +244,10 @@ const ModalCheckoutDetails = ({
         totalAmount: parseFloat(orderData.total) || 0,
         orderDetails: {
           ...checkout.orderDetails,
+          allTickets: parseInt(orderData.orderDetails.fullTickets || 0),
           fullTickets: parseInt(orderData.orderDetails.fullTickets || 0),
           halfTickets: parseInt(orderData.orderDetails.halfTickets || 0),
+          socialTickets: parseInt(orderData.orderDetails.socialTickets || 0),
           coupon: orderData.orderDetails.coupon,
           discount: parseFloat(orderData.orderDetails.discount || 0).toFixed(2),
           valueTicketsAll: orderData.orderDetails.valueTicketsAll,
@@ -236,6 +259,110 @@ const ModalCheckoutDetails = ({
     } catch (err) {
       console.error("Erro ao salvar alterações:", err);
       toast.error("Erro ao salvar alterações");
+    }
+  };
+
+  const handleTransfer = async (index) => {
+    const oldParticipant = participants[index];
+    if (!oldParticipant?.id) {
+      toast.error("Participante sem ID — não é possível transferir.");
+      return;
+    }
+    if (!transferForm.name.trim() || !transferForm.document.trim()) {
+      toast.error("Nome e CPF do novo participante são obrigatórios.");
+      return;
+    }
+
+    try {
+      const batch = writeBatch(db);
+
+      const oldRef = doc(
+        db,
+        "checkouts",
+        checkout.id,
+        "participants",
+        oldParticipant.id
+      );
+      batch.update(oldRef, {
+        status: "transferred",
+        active: false,
+        transferredTo: {
+          name: transferForm.name.trim(),
+          email: transferForm.email.trim(),
+          document: transferForm.document.replace(/\D/g, ""),
+          phone: transferForm.phone.trim(),
+        },
+        transferredAt: serverTimestamp(),
+      });
+
+      const newRef = doc(
+        collection(db, "checkouts", checkout.id, "participants")
+      );
+      batch.set(newRef, {
+        name: transferForm.name.trim(),
+        email: transferForm.email.trim(),
+        document: transferForm.document.replace(/\D/g, ""),
+        phone: transferForm.phone.trim(),
+        ticketType: oldParticipant.ticketType,
+        status: "active",
+        active: true,
+        transferredFrom: oldParticipant.id,
+        checkoutId: checkout.id,
+        checkedIn: false,
+        checkedInAt: null,
+        emailSent: false,
+        createdAt: serverTimestamp(),
+      });
+
+      await batch.commit();
+
+      // Envia e-mail de confirmação para o novo titular (em background, sem bloquear)
+      PaymentService.sendTransferEmail({
+        checkoutId: checkout.id,
+        participantId: newRef.id,
+      })
+        .then(() =>
+          toast.info("E-mail de transferência enviado ao novo titular.")
+        )
+        .catch((err) => {
+          console.error("Erro ao enviar e-mail de transferência:", err);
+          toast.warning(
+            "Transferência salva, mas o e-mail não pôde ser enviado. Tente reenviar manualmente."
+          );
+        });
+
+      const newParticipant = {
+        id: newRef.id,
+        name: transferForm.name.trim(),
+        email: transferForm.email.trim(),
+        document: transferForm.document.replace(/\D/g, ""),
+        phone: transferForm.phone.trim(),
+        ticketType: oldParticipant.ticketType,
+        status: "active",
+        active: true,
+        transferredFrom: oldParticipant.id,
+        checkoutId: checkout.id,
+        checkedIn: false,
+      };
+
+      const updatedParticipants = [
+        ...participants.map((p, i) =>
+          i === index ? { ...p, status: "transferred", active: false } : p
+        ),
+        newParticipant,
+      ];
+
+      setParticipants(updatedParticipants);
+      updateCheckoutInContext({
+        ...checkout,
+        participants: updatedParticipants,
+      });
+      setTransferringIdx(null);
+      setTransferForm({ name: "", email: "", document: "", phone: "" });
+      toast.success("Titularidade transferida com sucesso!");
+    } catch (err) {
+      console.error("Erro ao transferir:", err);
+      toast.error("Erro ao transferir ingresso.");
     }
   };
 
@@ -395,6 +522,19 @@ const ModalCheckoutDetails = ({
               >
                 {p.name}
               </Typography>
+              {p.status === "transferred" && (
+                <Chip
+                  label="Transferido"
+                  size="small"
+                  sx={{
+                    fontSize: "0.62rem",
+                    height: 18,
+                    bgcolor: "#ede9fe",
+                    color: "#7c3aed",
+                    fontWeight: 700,
+                  }}
+                />
+              )}
               {p.emailSent && (
                 <MdEmail size={14} color="#16a34a" title="E-mail enviado" />
               )}
@@ -416,7 +556,7 @@ const ModalCheckoutDetails = ({
 
           <AccordionDetails sx={{ pt: 0, pb: 1.5 }}>
             {/* Botão editar participante */}
-            {canEdit && (
+            {canEdit && p.status !== "transferred" && (
               <Button
                 size="small"
                 variant="outlined"
@@ -436,6 +576,117 @@ const ModalCheckoutDetails = ({
                   ? "Cancelar edição"
                   : "Editar dados"}
               </Button>
+            )}
+
+            {/* Botão transferir ingresso */}
+            {canEdit && p.status !== "transferred" && p.id && (
+              <Button
+                size="small"
+                variant="outlined"
+                color="warning"
+                startIcon={<MdSwapHoriz size={14} />}
+                onClick={() => {
+                  setTransferringIdx(transferringIdx === index ? null : index);
+                  setTransferForm({
+                    name: "",
+                    email: "",
+                    document: "",
+                    phone: "",
+                  });
+                  setEditingParticipantIdx(null);
+                }}
+                sx={{
+                  mb: 1.5,
+                  ml: 1,
+                  textTransform: "none",
+                  fontSize: "0.75rem",
+                }}
+              >
+                {transferringIdx === index
+                  ? "Cancelar transferência"
+                  : "Transferir ingresso"}
+              </Button>
+            )}
+
+            {/* Formulário de transferência */}
+            {transferringIdx === index && (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1.5,
+                  mb: 2,
+                  p: 1.5,
+                  bgcolor: "#fffbeb",
+                  borderRadius: 2,
+                  border: "1px solid #fcd34d",
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  sx={{ color: "#92400e", fontWeight: 700 }}
+                >
+                  Dados do novo titular:
+                </Typography>
+                <TextField
+                  size="small"
+                  label="Nome *"
+                  fullWidth
+                  value={transferForm.name}
+                  onChange={(e) =>
+                    setTransferForm((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
+                />
+                <TextField
+                  size="small"
+                  label="CPF *"
+                  fullWidth
+                  value={transferForm.document}
+                  onChange={(e) =>
+                    setTransferForm((prev) => ({
+                      ...prev,
+                      document: e.target.value,
+                    }))
+                  }
+                />
+                <TextField
+                  size="small"
+                  label="E-mail"
+                  fullWidth
+                  value={transferForm.email}
+                  onChange={(e) =>
+                    setTransferForm((prev) => ({
+                      ...prev,
+                      email: e.target.value,
+                    }))
+                  }
+                />
+                <TextField
+                  size="small"
+                  label="Telefone"
+                  fullWidth
+                  value={transferForm.phone}
+                  onChange={(e) =>
+                    setTransferForm((prev) => ({
+                      ...prev,
+                      phone: e.target.value,
+                    }))
+                  }
+                />
+                <Button
+                  variant="contained"
+                  color="warning"
+                  size="small"
+                  startIcon={<MdSwapHoriz size={14} />}
+                  onClick={() => handleTransfer(index)}
+                  sx={{ textTransform: "none", alignSelf: "flex-start" }}
+                >
+                  Confirmar Transferência
+                </Button>
+              </Box>
             )}
 
             {editingParticipantIdx === index ? (
@@ -512,6 +763,32 @@ const ModalCheckoutDetails = ({
                 {p.checkedIn && <InfoRow label="Credenciado" value="Sim" />}
                 {p.certificateIssued && (
                   <InfoRow label="Certificado" value="Emitido" />
+                )}
+                {p.status === "transferred" && p.transferredTo && (
+                  <Box
+                    sx={{ mt: 1, p: 1, bgcolor: "#ede9fe", borderRadius: 1 }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: "0.72rem",
+                        color: "#7c3aed",
+                        fontWeight: 700,
+                        mb: 0.5,
+                      }}
+                    >
+                      Transferido para:
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.75rem" }}>
+                      {p.transferredTo.name}
+                    </Typography>
+                    {p.transferredTo.document && (
+                      <Typography
+                        sx={{ fontSize: "0.72rem", color: "#64748b" }}
+                      >
+                        CPF: {p.transferredTo.document}
+                      </Typography>
+                    )}
+                  </Box>
                 )}
               </Box>
             )}
@@ -673,6 +950,21 @@ const ModalCheckoutDetails = ({
               }
               slotProps={{ htmlInput: { min: 0 } }}
             />
+            <TextField
+              size="small"
+              label="Ingressos social"
+              type="number"
+              fullWidth
+              value={orderData.orderDetails.socialTickets}
+              onChange={(e) =>
+                handleOrderDataChange(
+                  "orderDetails",
+                  e.target.value,
+                  "socialTickets"
+                )
+              }
+              slotProps={{ htmlInput: { min: 0 } }}
+            />
           </Box>
           <Box sx={{ display: "flex", gap: 1.5 }}>
             <TextField
@@ -734,7 +1026,7 @@ const ModalCheckoutDetails = ({
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: "1fr",
               gap: "2px 16px",
               mb: 1,
             }}
@@ -754,6 +1046,10 @@ const ModalCheckoutDetails = ({
             <InfoRow
               label="Ingressos meia"
               value={orderData.orderDetails.halfTickets}
+            />
+            <InfoRow
+              label="Ingressos social"
+              value={orderData.orderDetails.socialTickets}
             />
             {orderData.orderDetails.valueTicketsAll !== "0.00" && (
               <InfoRow

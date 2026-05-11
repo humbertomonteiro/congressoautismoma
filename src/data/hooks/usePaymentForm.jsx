@@ -41,7 +41,7 @@ const usePaymentForm = () => {
   const [formState, setFormState] = useState({
     paymentMethod: "creditCard",
     loading: false,
-    allTickets: 1,
+    allTickets: 0,
     halfTickets: 0,
     socialTickets: 0,
     coupon: { code: "", isApplied: false },
@@ -271,7 +271,7 @@ const usePaymentForm = () => {
       .toLowerCase();
     if (!trimmedCoupon) {
       setModalError("Cupom Inválido", "Digite um cupom válido.");
-      return;
+      return false;
     }
 
     // ticketOverride permite passar quantidades corretas ao aplicar via URL
@@ -300,6 +300,7 @@ const usePaymentForm = () => {
           type: "success",
         });
       }
+      return true;
     } catch (error) {
       console.error("Erro ao aplicar cupom:", error);
       setFormState((prev) => ({
@@ -307,6 +308,7 @@ const usePaymentForm = () => {
         coupon: { code: "", isApplied: false },
       }));
       setModalError("Cupom Inválido", error.message || "Cupom inválido!");
+      return false;
     }
   };
 

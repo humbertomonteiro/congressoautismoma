@@ -28,6 +28,7 @@ import {
   MdCheckCircle,
   MdCancel,
   MdWarning,
+  MdSwapHoriz,
   MdWifiOff,
   MdWifi,
   MdSync,
@@ -150,6 +151,14 @@ const validateOffline = (qrData, participantsCache, eventDates) => {
     return {
       type: "error",
       message: "Participante sem QR Code cadastrado.",
+    };
+  }
+
+  if (participant.status === "transferred") {
+    return {
+      type: "transferred",
+      name: participant.name,
+      message: `Ingresso transferido para ${participant.transferredTo?.name || "outro participante"}. Este QR Code não é mais válido.`,
     };
   }
 
@@ -432,6 +441,12 @@ const Scanner = () => {
               date: parsed.date,
               message: serviceResult.message || "Credenciado com sucesso!",
             };
+          } else if (serviceResult.transferred) {
+            result = {
+              type: "transferred",
+              name: participantName,
+              message: serviceResult.message || "Ingresso transferido. QR Code inválido.",
+            };
           } else if (serviceResult.alreadyCheckedIn) {
             result = {
               type: "already",
@@ -535,6 +550,15 @@ const Scanner = () => {
         bgColor: "#fff8e1",
         borderColor: "#ff9800",
         btnColor: "warning",
+        btnLabel: "Fechar",
+      },
+      transferred: {
+        icon: <MdSwapHoriz size={80} color="#7c3aed" style={{ marginBottom: 8 }} />,
+        title: "INATIVO — TRANSFERIDO",
+        titleColor: "#7c3aed",
+        bgColor: "#f5f3ff",
+        borderColor: "#7c3aed",
+        btnColor: "secondary",
         btnLabel: "Fechar",
       },
       error: {
@@ -752,7 +776,7 @@ const Scanner = () => {
           icon={isOnline ? <MdWifi size={18} /> : <MdWifiOff size={18} />}
           sx={{ mb: 2, py: 0.5 }}
         >
-          {participantsCache.length} participantes carregados
+          {participantsCache.filter((p) => p.status !== "transferred").length} participantes carregados
           {!isOnline && " — modo offline ativo"}
           {cacheTime &&
             ` · sync ${cacheTime.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`}

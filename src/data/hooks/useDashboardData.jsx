@@ -11,6 +11,7 @@ import {
   where,
   Timestamp,
 } from "firebase/firestore";
+import { saveTicketSnapshot } from "./useTicketSnapshots";
 import PaymentService from "../services/PaymentService";
 import EventCacheService from "../services/EventCacheService";
 import { toast } from "react-toastify";
@@ -39,15 +40,16 @@ const fetchParticipantsForCheckout = async (checkoutId) => {
 const enrichCheckoutsWithParticipants = async (checkouts) => {
   return Promise.all(
     checkouts.map(async (checkout) => {
-      // Legado: já tem array inline com dados → mantém
-      if (
-        Array.isArray(checkout.participants) &&
-        checkout.participants.length > 0
-      ) {
+      // Sempre busca da subcoleção primeiro (retorna id dos documentos)
+      const subcollectionParticipants = await fetchParticipantsForCheckout(checkout.id);
+      if (subcollectionParticipants.length > 0) {
+        return { ...checkout, participants: subcollectionParticipants };
+      }
+      // Fallback: array embutido legado (sem id, checkouts muito antigos não migrados)
+      if (Array.isArray(checkout.participants) && checkout.participants.length > 0) {
         return checkout;
       }
-      const participants = await fetchParticipantsForCheckout(checkout.id);
-      return { ...checkout, participants };
+      return { ...checkout, participants: [] };
     })
   );
 };
@@ -100,16 +102,26 @@ const useDashboardData = () => {
     }
 
     if (startDateFilter || endDateFilter) {
+      // Parse "YYYY-MM-DD" como horário local (evita desvio UTC/BRT)
+      const parseLocal = (str, endOfDay = false) => {
+        const [y, m, d] = str.split("-").map(Number);
+        return endOfDay
+          ? new Date(y, m - 1, d, 23, 59, 59, 999)
+          : new Date(y, m - 1, d, 0, 0, 0, 0);
+      };
+
+      const startDate = startDateFilter ? parseLocal(startDateFilter, false) : null;
+      const endDate   = endDateFilter   ? parseLocal(endDateFilter, true)    : null;
+
       filteredData = filteredData.filter((checkout) => {
-        const checkoutDate = new Date(checkout.timestamp);
-        let startDate = startDateFilter ? new Date(startDateFilter) : null;
-        let endDate = endDateFilter ? new Date(endDateFilter) : null;
-        if (startDate) startDate.setHours(0, 0, 0, 0);
-        if (endDate) endDate.setHours(23, 59, 59, 999);
-        if (startDate && endDate)
-          return checkoutDate >= startDate && checkoutDate <= endDate;
+        // Suporta Firestore Timestamp (.toDate()) e ISO string
+        const rawTs = checkout.timestamp;
+        const checkoutDate = rawTs?.toDate ? rawTs.toDate() : new Date(rawTs);
+
+        if (!checkoutDate || isNaN(checkoutDate)) return false;
+        if (startDate && endDate) return checkoutDate >= startDate && checkoutDate <= endDate;
         if (startDate) return checkoutDate >= startDate;
-        if (endDate) return checkoutDate <= endDate;
+        if (endDate)   return checkoutDate <= endDate;
         return true;
       });
     }
@@ -307,7 +319,7 @@ const useDashboardData = () => {
             0;
           // "allTickets" é o campo atual (manual e backend novo); "fullTickets" é legado
           const fullTickets =
-            data.orderDetails?.fullTickets ?? data.orderDetails?.allTickets ?? 0;
+            data.orderDetails?.allTickets ?? data.orderDetails?.fullTickets ?? 0;
           const halfTickets = data.orderDetails?.halfTickets || 0;
           const socialTickets = data.orderDetails?.socialTickets || 0;
 
@@ -415,6 +427,9 @@ const useDashboardData = () => {
       updatedMetrics.lastUpdated = Timestamp.fromDate(new Date()).toMillis();
 
       await setDoc(doc(db, "dashboard_metrics", "metrics"), updatedMetrics);
+      saveTicketSnapshot(updatedMetrics, currentEventFilter).catch((e) =>
+        console.warn("Erro ao salvar snapshot de ingressos:", e)
+      );
       localStorage.setItem("dashboard_metrics", JSON.stringify(updatedMetrics));
       localStorage.setItem(
         "metrics_last_updated",

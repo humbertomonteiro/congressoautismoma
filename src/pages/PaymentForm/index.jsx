@@ -15,7 +15,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import ButtonWhatsapp from "../../components/sections/ButtonWhatsapp";
 
 const formatPrice = (val) =>
-  `R$ ${Number(val ?? 0).toFixed(2).replace(".", ",")}`;
+  `R$ ${Number(val ?? 0)
+    .toFixed(2)
+    .replace(".", ",")}`;
 
 const TICKET_LABELS = {
   all: "Inteiro",
@@ -59,6 +61,7 @@ const PaymentForm = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isCouponAppliedInitially, setIsCouponAppliedInitially] =
     useState(false);
+  const [couponInput, setCouponInput] = useState("");
 
   const brands = ["Visa", "Mastercard", "Amex", "Elo"];
   const location = useLocation();
@@ -121,11 +124,16 @@ const PaymentForm = () => {
     if (couponParam && !isCouponAppliedInitially) {
       // Passa as quantidades resolvidas diretamente para evitar ler
       // o estado ainda não atualizado dentro do hook
-      handleApplyCoupon(null, couponParam, {
-        allTickets: resolvedAll,
-        halfTickets: resolvedHalf,
-        socialTickets: resolvedSocial,
-      }, true);
+      handleApplyCoupon(
+        null,
+        couponParam,
+        {
+          allTickets: resolvedAll,
+          halfTickets: resolvedHalf,
+          socialTickets: resolvedSocial,
+        },
+        true
+      );
       setIsCouponAppliedInitially(true);
     }
 
@@ -331,7 +339,8 @@ const PaymentForm = () => {
                             ? ticketPrices?.half
                             : ticketPrices?.social
                         )}
-                        {type === "social" && " + 1kg de alimento para cada ingresso"}
+                        {type === "social" &&
+                          " + 1kg de alimento para cada ingresso"}
                       </span>
                     </div>
                     <div className={styles.counter}>
@@ -370,6 +379,45 @@ const PaymentForm = () => {
                   Total de ingressos: <strong>{ticketQuantity}</strong>
                 </p>
               )}
+
+              <div className={styles.couponInputWrapper}>
+                <input
+                  type="text"
+                  placeholder="Código do cupom"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                  disabled={formState.coupon.isApplied}
+                />
+                {!formState.coupon.isApplied ? (
+                  <button
+                    type="button"
+                    className={styles.applyButton}
+                    onClick={async (e) => {
+                      const ok = await handleApplyCoupon(e, couponInput);
+                      if (!ok) setCouponInput("");
+                    }}
+                    disabled={!couponInput.trim()}
+                  >
+                    Aplicar
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.removeCouponButton}
+                    onClick={() => {
+                      handleRemoveCoupon();
+                      setCouponInput("");
+                    }}
+                  >
+                    Remover
+                  </button>
+                )}
+                <p className={styles.couponNotice}>
+                  ⚠️ Cupons de desconto são válidos apenas para ingressos{" "}
+                  <strong>Inteiros</strong>. Ingressos Meia-entrada e Social não
+                  participam de promoções com cupom.
+                </p>
+              </div>
 
               {formState.coupon.isApplied && (
                 <p className={styles.infoCoupon}>
@@ -539,19 +587,22 @@ const PaymentForm = () => {
                 <h2>Resumo do Pedido</h2>
                 {formState.allTickets > 0 && (
                   <p>
-                    Inteiro: {formState.allTickets} × {formatPrice(ticketPrices?.full)} ={" "}
+                    Inteiro: {formState.allTickets} ×{" "}
+                    {formatPrice(ticketPrices?.full)} ={" "}
                     <strong>R$ {totals.valueTicketsAll}</strong>
                   </p>
                 )}
                 {formState.halfTickets > 0 && (
                   <p>
-                    Meia-entrada: {formState.halfTickets} × {formatPrice(ticketPrices?.half)} ={" "}
+                    Meia-entrada: {formState.halfTickets} ×{" "}
+                    {formatPrice(ticketPrices?.half)} ={" "}
                     <strong>R$ {totals.valueTicketsHalf}</strong>
                   </p>
                 )}
                 {formState.socialTickets > 0 && (
                   <p>
-                    Social: {formState.socialTickets} × {formatPrice(ticketPrices?.social)} ={" "}
+                    Social: {formState.socialTickets} ×{" "}
+                    {formatPrice(ticketPrices?.social)} ={" "}
                     <strong>R$ {totals.valueTicketsSocial}</strong>
                   </p>
                 )}

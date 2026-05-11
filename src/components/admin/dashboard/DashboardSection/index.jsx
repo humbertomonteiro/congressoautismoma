@@ -7,7 +7,13 @@ import {
   useMediaQuery,
   useTheme,
   Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
 } from "@mui/material";
+import useTicketSnapshots from "../../../../data/hooks/useTicketSnapshots";
 import styles from "./dashboardSection.module.css";
 // import Loading from "../../../shared/Loading";
 import Filters from "../Filters";
@@ -35,6 +41,8 @@ const DashboardSection = () => {
     formatToBrazilianCurrency,
     checkouts,
   } = useDashboard();
+
+  const { snapshots } = useTicketSnapshots();
 
   // if (loading || !metrics) return <Loading />;
 
@@ -134,6 +142,60 @@ const DashboardSection = () => {
       />
 
       <CertificateGenerator />
+
+      {snapshots.length > 0 && (
+        <Card sx={{
+          backgroundColor: "#fff",
+          borderRadius: "12px",
+          border: "1px solid #e2e8f0",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          mt: 4,
+          p: 3,
+        }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: "#1e293b" }}>
+            Histórico de Ingressos Aprovados
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 2, color: "#64748b" }}>
+            Registro diário automático — salvo sempre que as métricas são atualizadas. Apenas checkouts com status <strong>aprovado</strong> são contabilizados.
+          </Typography>
+          <Box sx={{ overflowX: "auto" }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ "& th": { fontWeight: 600, color: "#475569", fontSize: "0.8rem" } }}>
+                  <TableCell>Data</TableCell>
+                  <TableCell align="center">Inteiros</TableCell>
+                  <TableCell align="center">Meias</TableCell>
+                  <TableCell align="center">Sociais</TableCell>
+                  <TableCell align="center">Total aprovados</TableCell>
+                  <TableCell>Registrado às</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {snapshots.map((s) => {
+                  const savedAt = s.savedAt?.toDate?.();
+                  const hora = savedAt
+                    ? savedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+                    : "—";
+                  const [ano, mes, dia] = s.date.split("-");
+                  const dataFormatada = `${dia}/${mes}/${ano}`;
+                  return (
+                    <TableRow key={s.id} sx={{ "&:last-child td": { border: 0 } }}>
+                      <TableCell sx={{ fontWeight: 500 }}>{dataFormatada}</TableCell>
+                      <TableCell align="center">{s.approved?.full ?? 0}</TableCell>
+                      <TableCell align="center">{s.approved?.half ?? 0}</TableCell>
+                      <TableCell align="center">{s.approved?.social ?? 0}</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, color: "#16a34a" }}>
+                        {s.approved?.total ?? 0}
+                      </TableCell>
+                      <TableCell sx={{ color: "#94a3b8", fontSize: "0.8rem" }}>{hora}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </Box>
+        </Card>
+      )}
     </div>
   );
 };

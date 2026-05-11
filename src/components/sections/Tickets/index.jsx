@@ -54,8 +54,8 @@ const Item1 = ({ wpp, openChatbot, basePrice, batchLabel, availableUntil }) => {
       <div className={styles.boxContent}>
         <span>Ingresso</span>
         <h4>INDIVIDUAL{batchLabel ? ` - ${batchLabel}` : ""}</h4>
-        <h5>Disponível até:</h5>
-        <p>{availableUntil}</p>
+        {/* <h5>Disponível até:</h5>
+        <p>{availableUntil}</p> */}
       </div>
       <div className={styles.boxValue}>
         {/* <span>
@@ -154,8 +154,8 @@ const Item2 = ({
       <div className={styles.boxContent}>
         <span>Ingresso</span>
         <h4>SOCIAL{batchLabel ? ` - ${batchLabel}` : ""}</h4>
-        <h5>Disponível até:</h5>
-        <p>{availableUntil}</p>
+        {/* <h5>Disponível até:</h5>
+        <p>{availableUntil}</p> */}
         {/* <p>Compre no mínimo 5 ingressos para ter desconto.</p> */}
       </div>
       <div className={styles.boxValue}>
@@ -245,8 +245,8 @@ const ItemHalf = ({
       <div className={styles.boxContent}>
         <span>Ingresso</span>
         <h4>MEIA-ENTRADA{batchLabel ? ` - ${batchLabel}` : ""}</h4>
-        <h5>Disponível até:</h5>
-        <p>{availableUntil}</p>
+        {/* <h5>Disponível até:</h5>
+        <p>{availableUntil}</p> */}
         <p>
           Lembre-se: os documentos comprobatórios devem ser apresentados na
           entrada do evento.
