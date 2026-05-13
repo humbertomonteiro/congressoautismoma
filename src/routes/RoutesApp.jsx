@@ -14,6 +14,7 @@ import Certificate from "../pages/Certificate";
 import VendedoresCredenciados from "../pages/VendedoresCredenciados";
 
 import FormRegisterSalud from "../pages/FormRegisterSalud";
+import PhotoFrame from "../pages/PhotoFrame";
 
 const RoutesApp = () => {
   return (
@@ -51,6 +52,7 @@ const RoutesApp = () => {
         path="/certificado-comissao-organizadora"
         element={<CertificateHome />}
       />
+      <Route path="/eu-vou" element={<PhotoFrame />} />
       <Route path="/formulario-pre-inscricao" element={<FormRegisterSalud />} />
       <Route
         path="/vendedores-credenciados"
